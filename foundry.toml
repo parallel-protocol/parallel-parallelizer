@@ -1,0 +1,82 @@
+[profile.default]
+src = 'contract'
+out = 'out'
+test = 'test'
+libs = ['node_modules', 'lib']
+script = 'scripts'
+cache_path = 'cache-forge'
+gas_reports = ["*"]
+via_ir = true
+sizes = true
+optimizer = true
+optimizer_runs=1000
+solc_version = '0.8.26'
+ffi = true
+fs_permissions = [ 
+ { access = "read-write", path = "./scripts/selectors.json"},
+ { access = "read-write", path = "./scripts/selectors_replace.json"}, 
+ { access = "read-write", path = "./scripts/selectors_add.json"}, 
+ { access = "read-write", path = "./scripts/vanity.json"}
+]
+memory_limit = 1000043554432
+
+[fuzz]
+runs = 10000
+
+[invariant]
+runs = 8
+depth = 256
+
+[rpc_endpoints]
+arbitrum = "${ETH_NODE_URI_ARBITRUM}"
+gnosis = "${ETH_NODE_URI_GNOSIS}"
+mainnet = "${ETH_NODE_URI_MAINNET}"
+optimism = "${ETH_NODE_URI_OPTIMISM}"
+polygon = "${ETH_NODE_URI_POLYGON}"
+fork = "${ETH_NODE_URI_FORK}"
+avalanche = "${ETH_NODE_URI_AVALANCHE}"
+celo = "${ETH_NODE_URI_CELO}"
+polygonzkevm = "${ETH_NODE_URI_POLYGONZKEVM}"
+bsc = "${ETH_NODE_URI_BSC}"
+base = "${ETH_NODE_URI_BASE}"
+linea = "${ETH_NODE_URI_LINEA}"
+
+[etherscan]
+arbitrum = { key = "${ARBITRUM_ETHERSCAN_API_KEY}" }
+gnosis = { key = "${GNOSIS_ETHERSCAN_API_KEY}" , url = "https://api.gnosisscan.io/api"}
+mainnet = { key = "${MAINNET_ETHERSCAN_API_KEY}" }
+optimism = { key = "${OPTIMISM_ETHERSCAN_API_KEY}" }
+polygon = { key = "${POLYGON_ETHERSCAN_API_KEY}" }
+avalanche = { key = "${AVALANCHE_ETHERSCAN_API_KEY}" }
+celo = { key = "${CELO_ETHERSCAN_API_KEY}", url = "https://api.celoscan.io/api" }
+base = { key = "${BASE_ETHERSCAN_API_KEY}", url = "https://api.basescan.org/api" }
+polygon-zkevm = { key = "${POLYGONZKEVM_ETHERSCAN_API_KEY}", url = "https://api-zkevm.polygonscan.com/api" }
+bsc = { key = "${BSC_ETHERSCAN_API_KEY}"}
+linea = { key = "${LINEA_ETHERSCAN_API_KEY}"}
+
+[profile.dev]
+via_ir = false
+src = 'contracts'
+gas_reports = ["*"]
+
+[profile.dev.fuzz]
+runs = 200000
+
+[profile.dev.invariant]
+runs = 100
+depth = 30
+fail_on_revert = false
+
+[profile.ci]
+optimizer = true
+src = 'contracts'
+via_ir = false
+gas_reports = ["*"]
+
+[profile.ci.fuzz]
+runs = 1000
+
+[profile.ci.invariant]
+runs = 10
+depth = 30
+fail_on_revert = false
