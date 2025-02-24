@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.19;
 
-import { IERC20 } from "oz/token/ERC20/IERC20.sol";
-import { Math } from "oz/utils/math/Math.sol";
-import { SafeCast } from "oz/utils/math/SafeCast.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { LibHelpers } from "./LibHelpers.sol";
 import { LibManager } from "./LibManager.sol";
@@ -84,9 +84,9 @@ library LibGetters {
         }
         // The `stablecoinsIssued` value need to be rounded up because it is then used as a divizer when computing
         // the `collatRatio`
-        stablecoinsIssued = uint256(ts.normalizedStables).mulDiv(ts.normalizer, BASE_27, Math.Rounding.Up);
+        stablecoinsIssued = uint256(ts.normalizedStables).mulDiv(ts.normalizer, BASE_27, Math.Rounding.Ceil);
         if (stablecoinsIssued > 0) {
-            collatRatio = (totalCollateralization.mulDiv(BASE_9, stablecoinsIssued, Math.Rounding.Up)).toUint64();
+            collatRatio = (totalCollateralization.mulDiv(BASE_9, stablecoinsIssued, Math.Rounding.Ceil)).toUint64();
         } else collatRatio = type(uint64).max;
     }
 }

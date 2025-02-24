@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.19;
 
-import { Address } from "oz/utils/Address.sol";
-import { IERC20 } from "oz/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "oz/token/ERC20/utils/SafeERC20.sol";
-import { Math } from "oz/utils/math/Math.sol";
-import { SafeCast } from "oz/utils/math/SafeCast.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { IAgToken } from "interfaces/IAgToken.sol";
 import { ISwapper } from "interfaces/ISwapper.sol";
@@ -194,7 +194,7 @@ contract Swapper is ISwapper, AccessControlModifiers {
             TransmuterStorage storage ts = s.transmuterStorage();
             if (mint) {
                 _checkHardCaps(collatInfo, amountOut, ts.normalizer);
-                uint128 changeAmount = (amountOut.mulDiv(BASE_27, ts.normalizer, Math.Rounding.Up)).toUint128();
+                uint128 changeAmount = (amountOut.mulDiv(BASE_27, ts.normalizer, Math.Rounding.Ceil)).toUint128();
                 // The amount of stablecoins issued from a collateral are not stored as absolute variables, but
                 // as variables normalized by a `normalizer`
                 collatInfo.normalizedStables = collatInfo.normalizedStables + uint216(changeAmount);
@@ -375,7 +375,7 @@ contract Swapper is ISwapper, AccessControlModifiers {
                                     amountStable.mulDiv(
                                         uint256((v.upperFees - currentFees)),
                                         2 * amountToNextBreakPointNormalizer,
-                                        Math.Rounding.Up
+                                        Math.Rounding.Ceil
                                     )
                                 )
                         );
@@ -388,7 +388,7 @@ contract Swapper is ISwapper, AccessControlModifiers {
                         uint256 ac4 = BASE_9.mulDiv(
                             2 * amountStable * uint256(v.upperFees - currentFees),
                             v.amountToNextBreakPoint,
-                            Math.Rounding.Up
+                            Math.Rounding.Ceil
                         );
 
                         if (v.isMint) {
@@ -398,7 +398,7 @@ contract Swapper is ISwapper, AccessControlModifiers {
                             //                      = (g(0)-1+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1})]) / 2
                             midFee = int64(
                                 (int256(
-                                    Math.sqrt((uint256(int256(BASE_9) + currentFees)) ** 2 + ac4, Math.Rounding.Up)
+                                    Math.sqrt((uint256(int256(BASE_9) + currentFees)) ** 2 + ac4, Math.Rounding.Ceil)
                                 ) +
                                     currentFees -
                                     int256(BASE_9)) / 2
@@ -420,11 +420,11 @@ contract Swapper is ISwapper, AccessControlModifiers {
                                             uint256(
                                                 currentFees +
                                                     int256(BASE_9) -
-                                                    int256(Math.sqrt(baseMinusCurrentSquared - ac4, Math.Rounding.Down))
+                                                    int256(Math.sqrt(baseMinusCurrentSquared - ac4, Math.Rounding.Floor))
                                             ),
                                             1,
                                             2,
-                                            Math.Rounding.Up
+                                            Math.Rounding.Ceil
                                         )
                                     )
                                 );
@@ -568,8 +568,8 @@ contract Swapper is ISwapper, AccessControlModifiers {
             uint256 castedFees = uint256(int256(fees));
             // Consider that if fees are above `BASE_12` this is equivalent to infinite fees
             if (castedFees >= BASE_12) revert InvalidSwap();
-            amountIn = amountOut.mulDiv(BASE_9 + castedFees, BASE_9, Math.Rounding.Up);
-        } else amountIn = amountOut.mulDiv(BASE_9 - uint256(int256(-fees)), BASE_9, Math.Rounding.Up);
+            amountIn = amountOut.mulDiv(BASE_9 + castedFees, BASE_9, Math.Rounding.Ceil);
+        } else amountIn = amountOut.mulDiv(BASE_9 - uint256(int256(-fees)), BASE_9, Math.Rounding.Ceil);
     }
 
     /// @notice Applies `fees` to an `amountIn` of stablecoins to get an `amountOut` of assets
@@ -587,7 +587,7 @@ contract Swapper is ISwapper, AccessControlModifiers {
         if (fees >= 0) {
             uint256 castedFees = uint256(int256(fees));
             if (castedFees >= MAX_BURN_FEE) revert InvalidSwap();
-            amountIn = amountOut.mulDiv(BASE_9, BASE_9 - castedFees, Math.Rounding.Up);
-        } else amountIn = amountOut.mulDiv(BASE_9, BASE_9 + uint256(int256(-fees)), Math.Rounding.Up);
+            amountIn = amountOut.mulDiv(BASE_9, BASE_9 - castedFees, Math.Rounding.Ceil);
+        } else amountIn = amountOut.mulDiv(BASE_9, BASE_9 + uint256(int256(-fees)), Math.Rounding.Ceil);
     }
 }

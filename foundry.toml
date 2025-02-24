@@ -1,8 +1,8 @@
 [profile.default]
-src = 'contract'
+src = 'contracts'
+interfaces = 'contracts/interfaces'
 out = 'out'
-test = 'test'
-libs = ['node_modules', 'lib']
+test = 'tests'
 script = 'scripts'
 cache_path = 'cache-forge'
 gas_reports = ["*"]
@@ -29,30 +29,19 @@ depth = 256
 
 [rpc_endpoints]
 arbitrum = "${ETH_NODE_URI_ARBITRUM}"
-gnosis = "${ETH_NODE_URI_GNOSIS}"
 mainnet = "${ETH_NODE_URI_MAINNET}"
 optimism = "${ETH_NODE_URI_OPTIMISM}"
 polygon = "${ETH_NODE_URI_POLYGON}"
 fork = "${ETH_NODE_URI_FORK}"
-avalanche = "${ETH_NODE_URI_AVALANCHE}"
-celo = "${ETH_NODE_URI_CELO}"
-polygonzkevm = "${ETH_NODE_URI_POLYGONZKEVM}"
-bsc = "${ETH_NODE_URI_BSC}"
 base = "${ETH_NODE_URI_BASE}"
-linea = "${ETH_NODE_URI_LINEA}"
 
 [etherscan]
 arbitrum = { key = "${ARBITRUM_ETHERSCAN_API_KEY}" }
-gnosis = { key = "${GNOSIS_ETHERSCAN_API_KEY}" , url = "https://api.gnosisscan.io/api"}
 mainnet = { key = "${MAINNET_ETHERSCAN_API_KEY}" }
 optimism = { key = "${OPTIMISM_ETHERSCAN_API_KEY}" }
 polygon = { key = "${POLYGON_ETHERSCAN_API_KEY}" }
-avalanche = { key = "${AVALANCHE_ETHERSCAN_API_KEY}" }
-celo = { key = "${CELO_ETHERSCAN_API_KEY}", url = "https://api.celoscan.io/api" }
 base = { key = "${BASE_ETHERSCAN_API_KEY}", url = "https://api.basescan.org/api" }
-polygon-zkevm = { key = "${POLYGONZKEVM_ETHERSCAN_API_KEY}", url = "https://api-zkevm.polygonscan.com/api" }
 bsc = { key = "${BSC_ETHERSCAN_API_KEY}"}
-linea = { key = "${LINEA_ETHERSCAN_API_KEY}"}
 
 [profile.dev]
 via_ir = false

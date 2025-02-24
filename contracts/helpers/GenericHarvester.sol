@@ -2,22 +2,22 @@
 
 pragma solidity ^0.8.23;
 
-import { SafeCast } from "oz/utils/math/SafeCast.sol";
-import { SafeERC20 } from "oz/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 } from "oz/interfaces/IERC20.sol";
-import { IERC20Metadata } from "oz/interfaces/IERC20Metadata.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
+import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
+import { RouterSwapper } from "@helpers/RouterSwapper.sol";
 
 import { ITransmuter } from "interfaces/ITransmuter.sol";
 import { IAgToken } from "interfaces/IAgToken.sol";
-import { RouterSwapper } from "utils/src/RouterSwapper.sol";
-
-import { IAccessControlManager } from "../utils/AccessControl.sol";
-import "../utils/Constants.sol";
-import "../utils/Errors.sol";
-
-import { IERC3156FlashBorrower } from "oz/interfaces/IERC3156FlashBorrower.sol";
-import { IERC3156FlashLender } from "oz/interfaces/IERC3156FlashLender.sol";
 import { IERC4626 } from "interfaces/external/IERC4626.sol";
+
+import { IAccessControlManager } from "utils/AccessControl.sol";
+import "utils/Constants.sol";
+import "utils/Errors.sol";
+
 import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
 
 enum SwapType {
@@ -58,7 +58,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
         if (address(definitiveFlashloan) == address(0)) revert ZeroAddress();
         flashloan = definitiveFlashloan;
 
-        IERC20(agToken).safeApprove(address(definitiveFlashloan), type(uint256).max);
+        IERC20(agToken).approve(address(definitiveFlashloan), type(uint256).max);
     }
 
     /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -8,8 +8,8 @@ import "./BaseSavings.sol";
 /// @author Angle Labs, Inc.
 /// @notice In this implementation, assets in the contract increase in value following a `rate` chosen by governance
 contract Savings is BaseSavings {
-    using SafeERC20 for IERC20;
-    using MathUpgradeable for uint256;
+    using SafeERC20 for IERC20Metadata;
+    using Math for uint256;
 
     /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                 PARAMETERS / REFERENCES                                             
@@ -60,7 +60,7 @@ contract Savings is BaseSavings {
     /// where the the first user of the contract tries to steal everyone else's tokens
     function initialize(
         IAccessControlManager _accessControlManager,
-        IERC20MetadataUpgradeable asset_,
+        IERC20Metadata asset_,
         string memory name_,
         string memory symbol_,
         uint256 divizer
@@ -136,14 +136,14 @@ contract Savings is BaseSavings {
     /// @inheritdoc ERC4626Upgradeable
     function deposit(uint256 assets, address receiver) public override whenNotPaused returns (uint256 shares) {
         uint256 newTotalAssets = _accrue();
-        shares = _convertToShares(assets, newTotalAssets, MathUpgradeable.Rounding.Down);
+        shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Floor);
         _deposit(_msgSender(), receiver, assets, shares);
     }
 
     /// @inheritdoc ERC4626Upgradeable
     function mint(uint256 shares, address receiver) public override whenNotPaused returns (uint256 assets) {
         uint256 newTotalAssets = _accrue();
-        assets = _convertToAssets(shares, newTotalAssets, MathUpgradeable.Rounding.Up);
+        assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Ceil);
         _deposit(_msgSender(), receiver, assets, shares);
     }
 
@@ -154,7 +154,7 @@ contract Savings is BaseSavings {
         address owner
     ) public override whenNotPaused returns (uint256 shares) {
         uint256 newTotalAssets = _accrue();
-        shares = _convertToShares(assets, newTotalAssets, MathUpgradeable.Rounding.Up);
+        shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Ceil);
         _withdraw(_msgSender(), receiver, owner, assets, shares);
     }
 
@@ -165,7 +165,7 @@ contract Savings is BaseSavings {
         address owner
     ) public override whenNotPaused returns (uint256 assets) {
         uint256 newTotalAssets = _accrue();
-        assets = _convertToAssets(shares, newTotalAssets, MathUpgradeable.Rounding.Down);
+        assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Floor);
         _withdraw(_msgSender(), receiver, owner, assets, shares);
     }
 
@@ -176,7 +176,7 @@ contract Savings is BaseSavings {
     /// @inheritdoc ERC4626Upgradeable
     function _convertToShares(
         uint256 assets,
-        MathUpgradeable.Rounding rounding
+        Math.Rounding rounding
     ) internal view override returns (uint256 shares) {
         return _convertToShares(assets, totalAssets(), rounding);
     }
@@ -185,19 +185,19 @@ contract Savings is BaseSavings {
     function _convertToShares(
         uint256 assets,
         uint256 newTotalAssets,
-        MathUpgradeable.Rounding rounding
+        Math.Rounding rounding
     ) internal view returns (uint256 shares) {
         uint256 supply = totalSupply();
         return
             (assets == 0 || supply == 0)
-                ? assets.mulDiv(BASE_18, 10 ** (IERC20MetadataUpgradeable(asset()).decimals()), rounding)
+                ? assets.mulDiv(BASE_18, 10 ** (IERC20Metadata(asset()).decimals()), rounding)
                 : assets.mulDiv(supply, newTotalAssets, rounding);
     }
 
     /// @inheritdoc ERC4626Upgradeable
     function _convertToAssets(
         uint256 shares,
-        MathUpgradeable.Rounding rounding
+        Math.Rounding rounding
     ) internal view override returns (uint256 assets) {
         return _convertToAssets(shares, totalAssets(), rounding);
     }
@@ -206,12 +206,12 @@ contract Savings is BaseSavings {
     function _convertToAssets(
         uint256 shares,
         uint256 newTotalAssets,
-        MathUpgradeable.Rounding rounding
+        Math.Rounding rounding
     ) internal view returns (uint256 assets) {
         uint256 supply = totalSupply();
         return
             (supply == 0)
-                ? shares.mulDiv(10 ** (IERC20MetadataUpgradeable(asset()).decimals()), BASE_18, rounding)
+                ? shares.mulDiv(10 ** (IERC20Metadata(asset()).decimals()), BASE_18, rounding)
                 : shares.mulDiv(newTotalAssets, supply, rounding);
     }
 

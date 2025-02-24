@@ -4,8 +4,8 @@ pragma solidity ^0.8.19;
 
 import { IRewardHandler } from "interfaces/IRewardHandler.sol";
 
-import { IERC20 } from "oz/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "oz/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { LibDiamond } from "../libraries/LibDiamond.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";

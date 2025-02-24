@@ -2,10 +2,10 @@
 
 pragma solidity >=0.5.0;
 
-import { ICbETH } from "interfaces/external/coinbase/ICbETH.sol";
-import { ISfrxETH } from "interfaces/external/frax/ISfrxETH.sol";
-import { IStETH } from "interfaces/external/lido/IStETH.sol";
-import { IRETH } from "interfaces/external/rocketPool/IRETH.sol";
+import { ICbETH } from "../interfaces/external/coinbase/ICbETH.sol";
+import { ISfrxETH } from "../interfaces/external/frax/ISfrxETH.sol";
+import { IStETH } from "../interfaces/external/lido/IStETH.sol";
+import { IRETH } from "../interfaces/external/rocketPool/IRETH.sol";
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                  STORAGE SLOTS                                                  

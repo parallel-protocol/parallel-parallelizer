@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-import { Math } from "oz/utils/math/Math.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../Storage.sol";
 

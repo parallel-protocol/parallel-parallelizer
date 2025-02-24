@@ -4,13 +4,14 @@ pragma solidity ^0.8.23;
 
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IAccessControlManager } from "../utils/AccessControl.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
 import { ITransmuter } from "../interfaces/ITransmuter.sol";
 import { IAgToken } from "../interfaces/IAgToken.sol";
 import { IPool } from "../interfaces/IPool.sol";
-import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 
 import "../utils/Errors.sol";
 import "../utils/Constants.sol";
@@ -20,7 +21,7 @@ import "../utils/Constants.sol";
 /// @dev Contract to harvest yield from multiple yield bearing assets in multiple blocks transactions
 contract MultiBlockHarvester is BaseHarvester {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
+    using Math for uint256;
 
     /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                        VARIABLES
