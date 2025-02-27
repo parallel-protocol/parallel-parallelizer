@@ -297,8 +297,8 @@ contract CommonUtils is CommonBase, JsonReader {
     ) internal pure returns (string memory) {
         if (name == ContractType.EURp) return "EUR.token";
         else if (name == ContractType.USDp) return "USD.token";
-        else if (name == ContractType.LZEURp) return "EUR.bridges.LayerZero";
-        else if (name == ContractType.LZUSDp) return "USD.bridges.LayerZero";
+        else if (name == ContractType.LZEURp) return "EUR.lzToken";
+        else if (name == ContractType.LZUSDp) return "USD.lzToken";
         else if (name == ContractType.PRL) return "PRL";
         else if (name == ContractType.sEURp) return "EUR.Savings";
         else if (name == ContractType.sUSDp) return "USD.Savings";
@@ -318,6 +318,9 @@ contract CommonUtils is CommonBase, JsonReader {
             return "MulticallWithFailure";
         else if (name == ContractType.OracleNativeUSD) return "OracleNativeUSD";
         else if (name == ContractType.Swapper) return "Swapper";
+        else if (name == ContractType.ProxyAdmin) return "ProxyAdmin";
+        else if (name == ContractType.DaoMultisig) return "DaoMultisig";
+        else if (name == ContractType.GuardianMultisig) return "GuardianMultisig";
 
         else revert("contract not supported");
     }
@@ -378,23 +381,37 @@ contract CommonUtils is CommonBase, JsonReader {
         cmd[3] = "methods";
         bytes memory res = vm.ffi(cmd);
         string memory st = string(res);
-
         // if empty, try again
         if (bytes(st).length == 0) {
             if (retries != 0) {
                 return _generateSelectors(_facetName, retries - 1);
             }
         }
-
-        // extract function signatures and take first 4 bytes of keccak
+        // convert to slice
         strings.slice memory s = st.toSlice();
-        strings.slice memory delim = ":".toSlice();
-        strings.slice memory delim2 = ",".toSlice();
-        selectors = new bytes4[]((s.count(delim)));
+
+        // define delimiters
+        strings.slice memory rowDelim = "\n".toSlice();
+        strings.slice memory partDelim = "|".toSlice();
+        strings.slice memory spaceDelim = " ".toSlice();
+
+        // remove first line
+        s.split(rowDelim);
+        
+        // determine number of methods
+        uint256 count = s.count(rowDelim);
+        count = count > 2 ? (count - 1 )/2 : count;
+        selectors = new bytes4[](count);
+        // remove column headers and separator lines
+        s.split(rowDelim);
+        s.split(rowDelim);
+
         for (uint i = 0; i < selectors.length; ++i) {
-            s.split('"'.toSlice());
-            selectors[i] = bytes4(s.split(delim).until('"'.toSlice()).keccak());
-            s.split(delim2);
+            strings.slice memory currentLine = s.split(rowDelim);
+            // isolate method by removing space around it
+            currentLine.split(spaceDelim);
+            selectors[i] = bytes4(currentLine.split(spaceDelim).keccak());
+            s.split(rowDelim);
         }
         return selectors;
     }
