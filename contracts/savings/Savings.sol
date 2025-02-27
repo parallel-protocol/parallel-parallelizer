@@ -48,9 +48,6 @@ contract Savings is BaseSavings {
                                                     INITIALIZATION                                                  
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
-
     /// @notice Initializes the contract
     /// @param _accessControlManager Reference to the `AccessControlManager` contract
     /// @param name_ Name of the savings contract
@@ -68,6 +65,7 @@ contract Savings is BaseSavings {
         if (address(_accessControlManager) == address(0)) revert ZeroAddress();
         __ERC4626_init(asset_);
         __ERC20_init(name_, symbol_);
+        __UUPSUpgradeable_init();
         _setNameAndSymbol(name_, symbol_);
         accessControlManager = _accessControlManager;
         _deposit(msg.sender, address(this), 10 ** (asset_.decimals()) / divizer, BASE_18 / divizer);

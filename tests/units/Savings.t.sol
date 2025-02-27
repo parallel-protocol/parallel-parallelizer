@@ -4,10 +4,9 @@ pragma solidity ^0.8.19;
 
 import { SavingsNameable } from "contracts/savings/nameable/SavingsNameable.sol";
 import { Savings } from "contracts/savings/Savings.sol";
-import { Vm } from "@forge-std/Vm.sol";
 
 import { IERC20Metadata } from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
-import { ITransparentUpgradeableProxy,TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import "../Fixture.sol";
 
@@ -15,8 +14,7 @@ contract SavingsNameableUpgradeTest is Fixture {
     string public name = "Staked EURp";
     string public symbol = "sEURp";
 
-    address public saving;
-    address public savingsImpl;
+    SavingsNameable public saving;
     
     function setUp() public override{
         super.setUp();
@@ -24,26 +22,22 @@ contract SavingsNameableUpgradeTest is Fixture {
         
         deal({token: address(agToken), to: governor, give:1e18});
 
-        savingsImpl = address(new SavingsNameable());
-        vm.recordLogs();
-        saving = address(
-            new TransparentUpgradeableProxy(savingsImpl, governor,"")
-        );
+        SavingsNameable savingsImpl = new SavingsNameable();
 
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        proxyAdmin= ProxyAdmin(entries[1].emitter);
-    
-        vm.label(saving, "saving");
-        agToken.approve(saving, 1e18);
+        // Calculate the future proxy address
+        address futureProxyAddress = vm.computeCreateAddress(governor, vm.getNonce(governor));
+        
+        // Pre-approve the future proxy address
+        agToken.approve(futureProxyAddress, 1e18);
 
-        SavingsNameable(saving).initialize(
-            accessControlManager,
+        saving = SavingsNameable(address(
+            new ERC1967Proxy(address(savingsImpl), abi.encodeWithSelector(savingsImpl.initialize.selector, accessControlManager,
             IERC20Metadata(address(agToken)),
             name,
             symbol,
-            1
+            1)))
         );
-        
+        vm.label(address(saving), "saving");
     }
 
     function test_deploySavings() public {
@@ -66,8 +60,9 @@ contract SavingsNameableUpgradeTest is Fixture {
         string memory newName = "new Staked EURp";
         string memory newSymbol = "new sEURp";
 
-        savingsImpl = address(new SavingsNameable());
-        proxyAdmin.upgradeAndCall(ITransparentUpgradeableProxy(saving), savingsImpl, "");
+        address newSavingsImpl = address(new SavingsNameable());
+        saving.upgradeToAndCall(newSavingsImpl, "");
+
         SavingsNameable(saving).setNameAndSymbol(newName, newSymbol);
 
         assertEq(IERC20Metadata(saving).name(), newName);
@@ -82,6 +77,13 @@ contract SavingsNameableUpgradeTest is Fixture {
         assertEq(SavingsNameable(saving).paused(), 0);
         assertEq(SavingsNameable(saving).lastUpdate(), 0);
         assertEq(SavingsNameable(saving).rate(), 0);
+    }
+
+    function test_upgradeSavings_RevertWhen_CallerIsNotGovernor() public {
+        vm.startPrank(alice);
+        address newSavingsImpl = address(new SavingsNameable());
+        vm.expectRevert(abi.encodeWithSelector(NotGovernor.selector));
+        saving.upgradeToAndCall(newSavingsImpl, "");    
     }
 
 }

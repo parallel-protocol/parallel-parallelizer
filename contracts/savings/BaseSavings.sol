@@ -37,10 +37,11 @@ pragma solidity ^0.8.19;
 
 import { ERC4626Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 import { ERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-
 import { IAgToken } from "contracts/interfaces/IAgToken.sol";
 
 import { AccessControl, IAccessControlManager } from "../utils/AccessControl.sol";
@@ -60,6 +61,16 @@ import "../utils/Errors.sol";
 /// (like `deposit`, `mint`, `redeem` or `withdraw`). Even though there should be no specific sandwiching
 /// issue with current implementations, it is still recommended to interact with Angle Savings contracts
 /// through a router that can implement such a protection.
-abstract contract BaseSavings is ERC4626Upgradeable, AccessControl {
+abstract contract BaseSavings is Initializable, ERC4626Upgradeable, AccessControl, UUPSUpgradeable {
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+
+    /// @notice Upgrade the implementation of the contract
+    /// @dev This function can only be called by the governor only
+    /// @param newImplementation The address of the new implementation
+    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor { }
 }
