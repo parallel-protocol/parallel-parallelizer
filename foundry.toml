@@ -16,7 +16,8 @@ fs_permissions = [
  { access = "read-write", path = "./scripts/selectors.json"},
  { access = "read-write", path = "./scripts/selectors_replace.json"}, 
  { access = "read-write", path = "./scripts/selectors_add.json"}, 
- { access = "read-write", path = "./scripts/vanity.json"}
+ { access = "read-write", path = "./scripts/vanity.json"},
+ { access = "read-write", path = "./libs/helpers/registry/registry.json"}
 ]
 memory_limit = 1000043554432
 

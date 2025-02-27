@@ -3,7 +3,9 @@
 pragma solidity ^0.8.19;
 
 import { console } from "@forge-std/console.sol";
+
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import { ProxyAdmin } from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import { Constants,ContractType } from "@helpers/Constants.sol";
 
 import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
@@ -13,7 +15,6 @@ import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV
 
 import {CHAIN_SOURCE} from "scripts/helpers/Constants.s.sol";
 
-import { ProxyAdmin } from "./mock/MockProxyAdmin.sol";
 import { MockAccessControlManager } from "./mock/MockAccessControlManager.sol";
 import { MockChainlinkOracle } from "./mock/MockChainlinkOracle.sol";
 import { MockTokenPermit } from "./mock/MockTokenPermit.sol";
@@ -59,10 +60,10 @@ contract Fixture is Transmuter {
         charlie = vm.addr(3);
         dylan = vm.addr(4);
         sweeper = address(uint160(uint256(keccak256(abi.encodePacked("sweeper")))));
+        governor = address(uint160(uint256(keccak256(abi.encodePacked("governor")))));
+        guardian = address(uint160(uint256(keccak256(abi.encodePacked("guardian")))));
 
-        governor = _chainToContract(CHAIN_SOURCE, ContractType.DaoMultisig);
-        guardian = _chainToContract(CHAIN_SOURCE, ContractType.GuardianMultisig);
-
+        vm.label(governor, "Governor");
         vm.label(governor, "Governor");
         vm.label(guardian, "Guardian");
         vm.label(alice, "Alice");
@@ -75,26 +76,34 @@ contract Fixture is Transmuter {
         accessControlManager = IAccessControlManager(address(new MockAccessControlManager()));
         MockAccessControlManager(address(accessControlManager)).toggleGovernor(governor);
         MockAccessControlManager(address(accessControlManager)).toggleGuardian(guardian);
-        proxyAdmin = new ProxyAdmin();
+        proxyAdmin = new ProxyAdmin(governor);
 
         // agToken
         agToken = IAgToken(address(new MockTokenPermit("agEUR", "agEUR", 18)));
 
         // Collaterals
         eurA = IERC20(address(new MockTokenPermit("EUR_A", "EUR_A", 6)));
+        vm.label(address(eurA), "eurA");
         oracleA = AggregatorV3Interface(address(new MockChainlinkOracle()));
+        vm.label(address(oracleA), "oracleA");
         MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(BASE_8));
 
         eurB = IERC20(address(new MockTokenPermit("EUR_B", "EUR_B", 12)));
+        vm.label(address(eurB), "eurB");
         oracleB = AggregatorV3Interface(address(new MockChainlinkOracle()));
+        vm.label(address(oracleB), "oracleB");
         MockChainlinkOracle(address(oracleB)).setLatestAnswer(int256(BASE_8));
 
         eurY = IERC20(address(new MockTokenPermit("EUR_Y", "EUR_Y", 18)));
+        vm.label(address(eurY), "eurY");
         oracleY = AggregatorV3Interface(address(new MockChainlinkOracle()));
+        vm.label(address(oracleY), "oracleY");
         MockChainlinkOracle(address(oracleY)).setLatestAnswer(int256(BASE_8));
 
         // Config
+
         config = address(new Test());
+
         deployTransmuter(
             config,
             abi.encodeWithSelector(

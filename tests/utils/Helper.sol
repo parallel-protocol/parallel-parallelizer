@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 
 import "interfaces/IDiamondLoupe.sol";
 
-import { Test, stdError } from "@forge-std/Test.sol";
+import { Test, stdError, Vm } from "@forge-std/Test.sol";
 import { CommonUtils } from "@helpers/CommonUtils.sol";
 import "@helpers/Constants.sol";
 import "@stringutils/strings.sol";

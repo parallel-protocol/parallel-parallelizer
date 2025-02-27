@@ -19,6 +19,7 @@ import "contracts/utils/Errors.sol";
 import { DummyDiamondImplementation } from "scripts/generated/DummyDiamondImplementation.sol";
 
 import "./Helper.sol";
+import {console} from "@forge-std/console.sol";
 
 abstract contract Transmuter is Helper {
     // Diamond
@@ -60,6 +61,7 @@ abstract contract Transmuter is Helper {
         // Build appropriate payload
         uint256 n = facetNames.length;
         FacetCut[] memory cut = new FacetCut[](n);
+
         for (uint256 i = 0; i < n; ++i) {
             cut[i] = FacetCut({
                 facetAddress: facetAddressList[i],

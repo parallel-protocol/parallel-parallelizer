@@ -13,79 +13,8 @@ contract CommonUtils is CommonBase, JsonReader {
     using strings for *;
     bytes32 private constant EUR_HASH = keccak256(abi.encodePacked("EUR"));
     bytes32 private constant USD_HASH = keccak256(abi.encodePacked("USD"));
-    bytes32 private constant ANGLE_HASH = keccak256(abi.encodePacked("ANGLE"));
 
-    mapping(uint256 => uint256) internal forkIdentifier;
-    uint256 public arbitrumFork;
-    uint256 public avalancheFork;
-    uint256 public ethereumFork;
-    uint256 public optimismFork;
-    uint256 public polygonFork;
-    uint256 public gnosisFork;
-    uint256 public bnbFork;
-    uint256 public celoFork;
-    uint256 public polygonZkEVMFork;
-    uint256 public baseFork;
-    uint256 public lineaFork;
-    uint256 public mantleFork;
-    uint256 public modeFork;
-    uint256 public blastFork;
-    uint256 public xlayerFork;
-    uint256 public chainFork;
-    uint256 public fantomFork;
-    uint256 public auroraFork;
-    uint256 public thunderCoreFork;
-    uint256 public coreDaoFork;
-    uint256 public taikoFork;
-    uint256 public fuseFork;
-    uint256 public immutableFork;
-    uint256 public scrollFork;
-    uint256 public mantaFork;
-    uint256 public seiFork;
-    uint256 public fraxtalFork;
-    uint256 public astarFork;
-    uint256 public astarZkEVMFork;
-    uint256 public rootstockFork;
-    uint256 public moonbeamFork;
-    uint256 public skaleFork;
-    uint256 public worldchainFork;
-    uint256 public liskFork;
-    uint256 public etherlinkFork;
-    uint256 public artheraFork;
-    uint256 public swellFork;
-
-    function setUpForks() public virtual {
-        if (vm.envExists("ETH_NODE_URI_ARBITRUM")) {
-            arbitrumFork = vm.createFork(vm.envString("ETH_NODE_URI_ARBITRUM"));
-            forkIdentifier[Constants.CHAIN_ARBITRUM] = arbitrumFork;
-        }
-        if (vm.envExists("ETH_NODE_URI_AVALANCHE")) {
-            avalancheFork = vm.createFork(
-                vm.envString("ETH_NODE_URI_AVALANCHE")
-            );
-            forkIdentifier[Constants.CHAIN_AVALANCHE] = avalancheFork;
-        }
-        if (vm.envExists("ETH_NODE_URI_MAINNET")) {
-            ethereumFork = vm.createFork(vm.envString("ETH_NODE_URI_MAINNET"));
-            forkIdentifier[Constants.CHAIN_ETHEREUM] = ethereumFork;
-        }
-        if (vm.envExists("ETH_NODE_URI_POLYGON")) {
-            polygonFork = vm.createFork(vm.envString("ETH_NODE_URI_POLYGON"));
-            forkIdentifier[Constants.CHAIN_POLYGON] = polygonFork;
-        }
-        if (vm.envExists("ETH_NODE_URI_BASE")) {
-            baseFork = vm.createFork(vm.envString("ETH_NODE_URI_BASE"));
-            forkIdentifier[Constants.CHAIN_BASE] = baseFork;
-        }
-        if (vm.envExists("ETH_NODE_URI_FORK")) {
-            chainFork = vm.createFork(vm.envString("ETH_NODE_URI_FORK"));
-            forkIdentifier[Constants.CHAIN_FORK] = chainFork;
-        }
-        if (vm.envExists("ETH_NODE_URI_FANTOM")) {
-            fantomFork = vm.createFork(vm.envString("ETH_NODE_URI_FANTOM"));
-            forkIdentifier[Constants.CHAIN_FANTOM] = fantomFork;
-        }
-    }
+    
 
     function _getAllContracts(
         uint256 chainId
@@ -337,31 +266,6 @@ contract CommonUtils is CommonBase, JsonReader {
         return result;
     }
 
-    function _getLZChainId(uint256 chainId) internal returns (uint16) {
-        string[] memory cmd = new string[](4);
-        cmd[0] = "node";
-        cmd[1] = "utils/forwardUtils.js";
-        cmd[2] = "layerZeroChainIds";
-        cmd[3] = vm.toString(chainId);
-
-        VmSafe.FfiResult memory res = vm.tryFfi(cmd);
-        if (res.exitCode != 0) revert("Chain not supported");
-        return uint16(_stringToUint(string(res.stdout)));
-    }
-
-    function _getChainIdFromLZChainId(
-        uint256 lzChainId
-    ) internal returns (uint16) {
-        string[] memory cmd = new string[](4);
-        cmd[0] = "node";
-        cmd[1] = "utils/forwardUtils.js";
-        cmd[2] = "chainIdFromLZChainIds";
-        cmd[3] = vm.toString(lzChainId);
-
-        VmSafe.FfiResult memory res = vm.tryFfi(cmd);
-        if (res.exitCode != 0) revert("Chain not supported");
-        return uint16(_stringToUint(string(res.stdout)));
-    }
 
     function _generateSelectors(
         string memory _facetName
@@ -417,18 +321,4 @@ contract CommonUtils is CommonBase, JsonReader {
     }
 
 
-    function _deployUpgradeable(
-        address proxyAdmin,
-        address implementation,
-        bytes memory data
-    ) internal returns (address) {
-        return
-            address(
-                new TransparentUpgradeableProxy(
-                    implementation,
-                    proxyAdmin,
-                    data
-                )
-            );
-    }
 }
