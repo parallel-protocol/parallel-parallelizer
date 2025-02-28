@@ -44,7 +44,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IAgToken } from "contracts/interfaces/IAgToken.sol";
 
-import { AccessControl, IAccessControlManager } from "../utils/AccessControl.sol";
+import { AccessManagedUpgradeable, IAccessManager } from "../utils/AccessManagedUpgradeable.sol";
 
 
 import "../utils/Constants.sol";
@@ -61,7 +61,7 @@ import "../utils/Errors.sol";
 /// (like `deposit`, `mint`, `redeem` or `withdraw`). Even though there should be no specific sandwiching
 /// issue with current implementations, it is still recommended to interact with Angle Savings contracts
 /// through a router that can implement such a protection.
-abstract contract BaseSavings is Initializable, ERC4626Upgradeable, AccessControl, UUPSUpgradeable {
+abstract contract BaseSavings is Initializable, AccessManagedUpgradeable, ERC4626Upgradeable, UUPSUpgradeable {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -72,5 +72,5 @@ abstract contract BaseSavings is Initializable, ERC4626Upgradeable, AccessContro
     /// @notice Upgrade the implementation of the contract
     /// @dev This function can only be called by the governor only
     /// @param newImplementation The address of the new implementation
-    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor { }
+    function _authorizeUpgrade(address newImplementation) internal override restricted { }
 }

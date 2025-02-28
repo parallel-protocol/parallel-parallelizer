@@ -5,7 +5,7 @@ pragma solidity ^0.8.19;
 import { console } from "@forge-std/console.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import { ProxyAdmin } from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+
 import { Constants,ContractType } from "@helpers/Constants.sol";
 
 import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
@@ -23,12 +23,12 @@ import { CollateralSetup, Test } from "contracts/transmuter/configs/Test.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol";
 import { ITransmuter, Transmuter } from "./utils/Transmuter.sol";
+import { ConfigAccessManager } from "./utils/ConfigAccessManager.sol";
 
 
-
-contract Fixture is Transmuter {
+contract Fixture is Transmuter, ConfigAccessManager {
     IAccessControlManager public accessControlManager;
-    ProxyAdmin public proxyAdmin;
+
     IAgToken public agToken;
 
     IERC20 public eurA;
@@ -64,7 +64,6 @@ contract Fixture is Transmuter {
         guardian = address(uint160(uint256(keccak256(abi.encodePacked("guardian")))));
 
         vm.label(governor, "Governor");
-        vm.label(governor, "Governor");
         vm.label(guardian, "Guardian");
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");
@@ -72,11 +71,13 @@ contract Fixture is Transmuter {
         vm.label(dylan, "Dylan");
         vm.label(sweeper, "Sweeper");
 
+        deployAccessManager(governor, governor, guardian);
+
         // Access Control
         accessControlManager = IAccessControlManager(address(new MockAccessControlManager()));
         MockAccessControlManager(address(accessControlManager)).toggleGovernor(governor);
         MockAccessControlManager(address(accessControlManager)).toggleGuardian(guardian);
-        proxyAdmin = new ProxyAdmin(governor);
+
 
         // agToken
         agToken = IAgToken(address(new MockTokenPermit("agEUR", "agEUR", 18)));

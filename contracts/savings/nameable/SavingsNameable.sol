@@ -24,7 +24,7 @@ contract SavingsNameable is Savings {
     }
 
     /// @notice Updates the name and symbol of the token
-    function setNameAndSymbol(string memory newName, string memory newSymbol) external onlyGovernor {
+    function setNameAndSymbol(string memory newName, string memory newSymbol) external restricted {
         _setNameAndSymbol(newName, newSymbol);
     }
 

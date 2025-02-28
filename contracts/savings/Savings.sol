@@ -49,25 +49,25 @@ contract Savings is BaseSavings {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Initializes the contract
-    /// @param _accessControlManager Reference to the `AccessControlManager` contract
+    /// @param _authority Reference to the `AccessManagerContract` contract
     /// @param name_ Name of the savings contract
     /// @param symbol_ Symbol of the savings contract
     /// @param divizer Quantifies the first initial deposit (should be typically 1 for tokens like agEUR)
     /// @dev A first deposit is done at initialization to protect for the classical issue of ERC4626 contracts
     /// where the the first user of the contract tries to steal everyone else's tokens
     function initialize(
-        IAccessControlManager _accessControlManager,
+        address _authority,
         IERC20Metadata asset_,
         string memory name_,
         string memory symbol_,
         uint256 divizer
     ) public initializer {
-        if (address(_accessControlManager) == address(0)) revert ZeroAddress();
+        if (address(_authority) == address(0)) revert ZeroAddress();
         __ERC4626_init(asset_);
         __ERC20_init(name_, symbol_);
         __UUPSUpgradeable_init();
+        __AccessManaged_init(_authority);
         _setNameAndSymbol(name_, symbol_);
-        accessControlManager = _accessControlManager;
         _deposit(msg.sender, address(this), 10 ** (asset_.decimals()) / divizer, BASE_18 / divizer);
     }
 
@@ -82,8 +82,8 @@ contract Savings is BaseSavings {
     }
 
     /// @notice Checks whether the sender is allowed to update the rate
-    modifier onlyTrustedOrGuardian() {
-        if (isTrustedUpdater[msg.sender] == 0 && !accessControlManager.isGovernorOrGuardian(msg.sender))
+    modifier onlyTrustedOrRestricted() {
+        if (isTrustedUpdater[msg.sender] == 0 && !_checkCanCall(_msgSender(), _msgData()))
             revert NotTrusted();
         _;
     }
@@ -235,14 +235,14 @@ contract Savings is BaseSavings {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
     /// @notice Pauses the contract
-    function togglePause() external onlyGuardian {
+    function togglePause() external restricted {
         uint8 pauseStatus = 1 - paused;
         paused = pauseStatus;
         emit ToggledPause(pauseStatus);
     }
 
     /// @notice Toggles an address
-    function toggleTrusted(address trustedAddress) external onlyGuardian {
+    function toggleTrusted(address trustedAddress) external restricted {
         uint256 trustedStatus = 1 - isTrustedUpdater[trustedAddress];
         isTrustedUpdater[trustedAddress] = trustedStatus;
         emit ToggledTrusted(trustedAddress, trustedStatus);
@@ -251,7 +251,7 @@ contract Savings is BaseSavings {
     /// @notice Updates the inflation rate for depositing `asset` in this contract
     /// @dev Any `rate` can be set by the guardian or by a trusted address provided that it is inferior to
     ///the `maxRate` settable by a governor address
-    function setRate(uint208 newRate) external onlyTrustedOrGuardian {
+    function setRate(uint208 newRate) external onlyTrustedOrRestricted {
         if (newRate > maxRate) revert InvalidRate();
         _accrue();
         rate = newRate;
@@ -259,7 +259,7 @@ contract Savings is BaseSavings {
     }
 
     /// @notice Updates the maximum rate settable
-    function setMaxRate(uint256 newMaxRate) external onlyGovernor {
+    function setMaxRate(uint256 newMaxRate) external restricted {
         maxRate = newMaxRate;
         emit MaxRateUpdated(newMaxRate);
     }
