@@ -49,11 +49,11 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
         address initialSwapRouter,
         IAgToken definitiveAgToken,
         ITransmuter definitiveTransmuter,
-        IAccessControlManager definitiveAccessControlManager,
+        address initialAuthority,
         IERC3156FlashLender definitiveFlashloan
     )
         RouterSwapper(initialSwapRouter, initialTokenTransferAddress)
-        BaseHarvester(initialMaxSlippage, definitiveAccessControlManager, definitiveAgToken, definitiveTransmuter)
+        BaseHarvester(initialMaxSlippage, initialAuthority, definitiveAgToken, definitiveTransmuter)
     {
         if (address(definitiveFlashloan) == address(0)) revert ZeroAddress();
         flashloan = definitiveFlashloan;
@@ -210,7 +210,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
      * @notice Set the token transfer address
      * @param newTokenTransferAddress address of the token transfer contract
      */
-    function setTokenTransferAddress(address newTokenTransferAddress) public override onlyGuardian {
+    function setTokenTransferAddress(address newTokenTransferAddress) public override restricted {
         super.setTokenTransferAddress(newTokenTransferAddress);
     }
 
@@ -218,7 +218,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
      * @notice Set the swap router
      * @param newSwapRouter address of the swap router
      */
-    function setSwapRouter(address newSwapRouter) public override onlyGuardian {
+    function setSwapRouter(address newSwapRouter) public override restricted {
         super.setSwapRouter(newSwapRouter);
     }
 

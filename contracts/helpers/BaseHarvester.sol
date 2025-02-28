@@ -3,7 +3,7 @@
 pragma solidity ^0.8.23;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { AccessControl, IAccessControlManager } from "../utils/AccessControl.sol";
+import {AccessManaged} from "../utils/AccessManaged.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITransmuter } from "../interfaces/ITransmuter.sol";
 import { IAgToken } from "../interfaces/IAgToken.sol";
@@ -28,7 +28,7 @@ struct YieldBearingParams {
 /// @title BaseHarvester
 /// @author Angle Labs, Inc.
 /// @dev Abstract contract for a harvester that aims at rebalancing a Transmuter
-abstract contract BaseHarvester is IHarvester, AccessControl {
+abstract contract BaseHarvester is IHarvester, AccessManaged {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,8 +48,8 @@ abstract contract BaseHarvester is IHarvester, AccessControl {
      * @notice Checks whether the `msg.sender` is trusted or guardian to update
      * target exposure and do others non critical operations
      */
-    modifier onlyTrustedOrGuardian() {
-        if (!isTrusted[msg.sender] && !accessControlManager.isGovernorOrGuardian(msg.sender))
+    modifier onlyTrustedOrRestricted() {
+        if (!isTrusted[msg.sender] && !_checkCanCall(_msgSender(), _msgData()))
             revert NotTrustedOrGuardian();
         _;
     }
@@ -82,12 +82,11 @@ abstract contract BaseHarvester is IHarvester, AccessControl {
 
     constructor(
         uint96 initialMaxSlippage,
-        IAccessControlManager definitiveAccessControlManager,
+        address initialAuthority,
         IAgToken definitiveAgToken,
         ITransmuter definitiveTransmuter
-    ) {
+    ) AccessManaged(initialAuthority) {
         _setMaxSlippage(initialMaxSlippage);
-        accessControlManager = definitiveAccessControlManager;
         agToken = definitiveAgToken;
         transmuter = definitiveTransmuter;
     }
@@ -112,7 +111,7 @@ abstract contract BaseHarvester is IHarvester, AccessControl {
         uint64 minExposure,
         uint64 maxExposure,
         uint64 overrideExposures
-    ) external onlyGuardian {
+    ) external restricted {
         _setYieldBearingAssetData(
             yieldBearingAsset,
             asset,
@@ -137,7 +136,7 @@ abstract contract BaseHarvester is IHarvester, AccessControl {
      * @notice Set the max allowed slippage
      * @param newMaxSlippage new max allowed slippage
      */
-    function setMaxSlippage(uint96 newMaxSlippage) external onlyGuardian {
+    function setMaxSlippage(uint96 newMaxSlippage) external restricted {
         _setMaxSlippage(newMaxSlippage);
     }
 
@@ -145,7 +144,7 @@ abstract contract BaseHarvester is IHarvester, AccessControl {
      * @notice Toggle the trusted status of an address
      * @param trusted address to toggle the trusted status
      */
-    function toggleTrusted(address trusted) external onlyGuardian {
+    function toggleTrusted(address trusted) external restricted {
         emit TrustedToggled(trusted, isTrusted[trusted]);
         isTrusted[trusted] = !isTrusted[trusted];
     }
@@ -156,7 +155,7 @@ abstract contract BaseHarvester is IHarvester, AccessControl {
      * @param amountToRecover amount to recover
      * @param to address to send the recovered tokens
      */
-    function recoverERC20(address tokenAddress, uint256 amountToRecover, address to) external onlyGuardian {
+    function recoverERC20(address tokenAddress, uint256 amountToRecover, address to) external restricted {
         emit Recovered(tokenAddress, amountToRecover, to);
         IERC20(tokenAddress).safeTransfer(to, amountToRecover);
     }
@@ -170,7 +169,7 @@ abstract contract BaseHarvester is IHarvester, AccessControl {
      * @param yieldBearingAsset address of the yield bearing asset
      * @param targetExposure target exposure to the yield bearing asset used
      */
-    function setTargetExposure(address yieldBearingAsset, uint64 targetExposure) external onlyTrustedOrGuardian {
+    function setTargetExposure(address yieldBearingAsset, uint64 targetExposure) external onlyTrustedOrRestricted {
         yieldBearingData[yieldBearingAsset].targetExposure = targetExposure;
     }
 

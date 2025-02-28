@@ -5,7 +5,6 @@ pragma solidity ^0.8.23;
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { IAccessControlManager } from "../utils/AccessControl.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
 import { ITransmuter } from "../interfaces/ITransmuter.sol";
@@ -36,10 +35,10 @@ contract MultiBlockHarvester is BaseHarvester {
 
     constructor(
         uint96 initialMaxSlippage,
-        IAccessControlManager definitiveAccessControlManager,
+        address initialAuthority,
         IAgToken definitiveAgToken,
         ITransmuter definitiveTransmuter
-    ) BaseHarvester(initialMaxSlippage, definitiveAccessControlManager, definitiveAgToken, definitiveTransmuter) {}
+    ) BaseHarvester(initialMaxSlippage, initialAuthority, definitiveAgToken, definitiveTransmuter) {}
 
     /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                         GUARDIAN FUNCTIONS
@@ -53,7 +52,7 @@ contract MultiBlockHarvester is BaseHarvester {
     function setYieldBearingToDepositAddress(
         address yieldBearingAsset,
         address newDepositAddress
-    ) external onlyGuardian {
+    ) external restricted {
         yieldBearingToDepositAddress[yieldBearingAsset] = newDepositAddress;
     }
 
