@@ -3,8 +3,12 @@
 pragma solidity ^0.8.0;
 
 import { LibStorage as s } from "./LibStorage.sol";
+import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {AuthorityUtils} from "@openzeppelin/contracts/access/manager/AuthorityUtils.sol";
+
 
 import "../../utils/Errors.sol";
+import "../../utils/Constants.sol";
 import "../Storage.sol";
 
 /// @title LibDiamond
@@ -19,15 +23,33 @@ library LibDiamond {
                                                   INTERNAL FUNCTIONS                                                
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Checks whether `admin` has the governor role
-    function isGovernor(address admin) internal view returns (bool) {
-        return s.diamondStorage().accessControlManager.isGovernor(admin);
+    function isGovernor(address caller) internal view returns (bool) {
+        (bool isMember, ) = s.diamondStorage().accessManager.hasRole(GOVERNOR_ROLE, caller);
+        return isMember;
     }
-
-    /// @notice Checks whether `admin` has the guardian role
-    function isGovernorOrGuardian(address admin) internal view returns (bool) {
-        return s.diamondStorage().accessControlManager.isGovernorOrGuardian(admin);
+    
+    /// @notice Checks whether `caller` can call `data` on `this`
+    function checkCanCall(address caller, bytes calldata data) internal returns (bool) {
+        IAccessManager accessManager = s.diamondStorage().accessManager;
+        (bool immediate, uint32 delay) = AuthorityUtils.canCallWithDelay(
+            address(accessManager),
+            caller,
+            address(this),
+            bytes4(data[0:4])
+        );
+        if (!immediate) {
+            if (delay > 0) {
+                TransmuterStorage storage ts = s.transmuterStorage();
+                ts.consumingSchedule = true;
+                accessManager.consumeScheduledOp(caller, data);
+                ts.consumingSchedule = false;
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
+    
 
     /// @notice Internal function version of `diamondCut`
     function diamondCut(FacetCut[] memory _diamondCut, address _init, bytes memory _calldata) internal {

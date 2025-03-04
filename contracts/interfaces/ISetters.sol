@@ -12,8 +12,8 @@ interface ISettersGovernor {
     /// @notice Recovers `amount` of `token` from the Transmuter contract
     function recoverERC20(address collateral, IERC20 token, address to, uint256 amount) external;
 
-    /// @notice Sets a new access control manager address
-    function setAccessControlManager(address _newAccessControlManager) external;
+    /// @notice Sets a new access manager address
+    function setAccessManager(address _newAccessManager) external;
 
     /// @notice Sets (or unsets) a collateral manager  `collateral`
     function setCollateralManager(address collateral, ManagerStorage memory managerData) external;

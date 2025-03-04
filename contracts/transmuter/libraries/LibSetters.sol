@@ -38,12 +38,12 @@ library LibSetters {
                                                  ONLY GOVERNOR ACTIONS                                              
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-    /// @notice Internal version of `setAccessControlManager`
-    function setAccessControlManager(IAccessControlManager _newAccessControlManager) internal {
+    /// @notice Internal version of `setAccessManager`
+    function setAccessManager(IAccessManager _newAccessManager) internal {
         DiamondStorage storage ds = s.diamondStorage();
-        IAccessControlManager previousAccessControlManager = ds.accessControlManager;
-        ds.accessControlManager = _newAccessControlManager;
-        emit OwnershipTransferred(address(previousAccessControlManager), address(_newAccessControlManager));
+        IAccessManager previousAccessManager = ds.accessManager;
+        ds.accessManager = _newAccessManager;
+        emit OwnershipTransferred(address(previousAccessManager), address(_newAccessManager));
     }
 
     /// @notice Internal version of `setCollateralManager`

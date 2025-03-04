@@ -10,7 +10,7 @@ contract MockAccessControlManager {
         return governors[admin];
     }
 
-    function isGovernorOrGuardian(address admin) external view returns (bool) {
+    function isGuardian(address admin) external view returns (bool) {
         return guardians[admin] || governors[admin];
     }
 

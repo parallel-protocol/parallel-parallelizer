@@ -27,7 +27,6 @@ import { ConfigAccessManager } from "./utils/ConfigAccessManager.sol";
 
 
 contract Fixture is Transmuter, ConfigAccessManager {
-    IAccessControlManager public accessControlManager;
 
     IAgToken public agToken;
 
@@ -45,8 +44,8 @@ contract Fixture is Transmuter, ConfigAccessManager {
     uint256 internal constant _MAX_SUB_COLLATERALS = 10;
 
     address public guardian;
-    address public angle;
     address public governor;
+    address public governorAndGuardian;
 
     address public alice;
     address public bob;
@@ -62,22 +61,18 @@ contract Fixture is Transmuter, ConfigAccessManager {
         sweeper = address(uint160(uint256(keccak256(abi.encodePacked("sweeper")))));
         governor = address(uint160(uint256(keccak256(abi.encodePacked("governor")))));
         guardian = address(uint160(uint256(keccak256(abi.encodePacked("guardian")))));
+        governorAndGuardian = address(uint160(uint256(keccak256(abi.encodePacked("governorAndGuardian")))));    
 
         vm.label(governor, "Governor");
         vm.label(guardian, "Guardian");
+        vm.label(governorAndGuardian, "GovernorAndGuardian");
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");
         vm.label(charlie, "Charlie");
         vm.label(dylan, "Dylan");
         vm.label(sweeper, "Sweeper");
 
-        deployAccessManager(governor, governor, guardian);
-
-        // Access Control
-        accessControlManager = IAccessControlManager(address(new MockAccessControlManager()));
-        MockAccessControlManager(address(accessControlManager)).toggleGovernor(governor);
-        MockAccessControlManager(address(accessControlManager)).toggleGuardian(guardian);
-
+        deployAccessManager(governor, governor, guardian, governorAndGuardian);
 
         // agToken
         agToken = IAgToken(address(new MockTokenPermit("agEUR", "agEUR", 18)));
@@ -109,7 +104,7 @@ contract Fixture is Transmuter, ConfigAccessManager {
             config,
             abi.encodeWithSelector(
                 Test.initialize.selector,
-                accessControlManager,
+                address(accessManager),
                 agToken,
                 CollateralSetup(address(eurA), address(oracleA)),
                 CollateralSetup(address(eurB), address(oracleB)),
@@ -117,11 +112,17 @@ contract Fixture is Transmuter, ConfigAccessManager {
             )
         );
 
+
         vm.label(address(agToken), "AgToken");
         vm.label(address(transmuter), "Transmuter");
         vm.label(address(eurA), "eurA");
         vm.label(address(eurB), "eurB");
         vm.label(address(eurY), "eurY");
+
+        vm.startPrank(governor);
+        accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGovernorSelectorAccess(), GOVERNOR_ROLE);
+        accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGuardianSelectorAccess(), GUARDIAN_ROLE);
+        vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

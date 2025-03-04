@@ -28,7 +28,7 @@ contract RewardHandler is IRewardHandler {
     /// transaction to 1inch router for the token to be swapped
     function sellRewards(uint256 minAmountOut, bytes memory payload) external returns (uint256 amountOut) {
         TransmuterStorage storage ts = s.transmuterStorage();
-        if (!LibDiamond.isGovernorOrGuardian(msg.sender) && ts.isSellerTrusted[msg.sender] == 0) revert NotTrusted();
+        if (!LibDiamond.checkCanCall(msg.sender, msg.data) && ts.isSellerTrusted[msg.sender] == 0) revert NotTrusted();
         address[] memory list = ts.collateralList;
         uint256 listLength = list.length;
         uint256[] memory balances = new uint256[](listLength);

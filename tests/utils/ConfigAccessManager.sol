@@ -15,22 +15,25 @@ import { MultiBlockHarvester } from "contracts/helpers/MultiBlockHarvester.sol";
 import { GenericHarvester } from "contracts/helpers/GenericHarvester.sol";
 import { SettersGuardian } from "contracts/transmuter/facets/SettersGuardian.sol";
 import { SettersGovernor } from "contracts/transmuter/facets/SettersGovernor.sol";
+import { DiamondEtherscan } from "contracts/transmuter/facets/DiamondEtherscan.sol";
+import "contracts/utils/Constants.sol";
 import "./Helper.sol";
+
 
 import "@forge-std/console.sol";
 abstract contract ConfigAccessManager is Helper {
     AccessManager public accessManager;
 
-    uint64 public constant GUARDIAN_ROLE = 2;
-    uint64 public constant GOVERNOR_ROLE = 1;
 
-    function deployAccessManager(address _initialAdmin, address _governor, address _guardian) internal {
+    function deployAccessManager(address _initialAdmin, address _governor, address _guardian, address _governorAndGuardian) internal {
         accessManager = new AccessManager(_initialAdmin);
         vm.label({ account: address(accessManager), newLabel: "AccessManager" });
         // Set the roles
         vm.startPrank(_initialAdmin);
         accessManager.grantRole(GOVERNOR_ROLE, _governor, 0);
         accessManager.grantRole(GUARDIAN_ROLE, _guardian, 0);
+        accessManager.grantRole(GOVERNOR_ROLE, _governorAndGuardian, 0);
+        accessManager.grantRole(GUARDIAN_ROLE, _governorAndGuardian, 0);
         vm.stopPrank();
     }
 
@@ -74,19 +77,20 @@ abstract contract ConfigAccessManager is Helper {
     }
 
     function getTransmuterGuardianSelectorAccess() internal pure returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](5);
+        bytes4[] memory selectors = new bytes4[](6);
         selectors[0] = SettersGuardian.togglePause.selector;
         selectors[1] = SettersGuardian.setFees.selector;
         selectors[2] = SettersGuardian.setRedemptionCurveParams.selector;
         selectors[3] = SettersGuardian.toggleWhitelist.selector;
         selectors[4] = SettersGuardian.setStablecoinCap.selector;
+        selectors[5] = DiamondEtherscan.setDummyImplementation.selector;
         return selectors;
     }
 
     function getTransmuterGovernorSelectorAccess() internal pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](11);
         selectors[0] = SettersGovernor.recoverERC20.selector;
-        selectors[1] = SettersGovernor.setAccessControlManager.selector;
+        selectors[1] = SettersGovernor.setAccessManager.selector;
         selectors[2] = SettersGovernor.setCollateralManager.selector;
         selectors[3] = SettersGovernor.changeAllowance.selector;
         selectors[4] = SettersGovernor.toggleTrusted.selector;

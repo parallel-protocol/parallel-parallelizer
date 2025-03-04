@@ -35,8 +35,8 @@ contract Test_Layout is Fixture {
         transmuter.toggleTrusted(alice, TrustedType.Updater);
         hoax(governor);
         transmuter.toggleTrusted(alice, TrustedType.Seller);
-        address accessControlManager = address(transmuter.accessControlManager());
-        hoax(governor);
+        address accessManager = transmuter.accessManager();
+        hoax(guardian);
         transmuter.setDummyImplementation(address(alice));
         address implementation = transmuter.implementation();
 
@@ -87,7 +87,7 @@ contract Test_Layout is Fixture {
             assertEq(layout.selectors(selectorPosition), selectors[i]);
         }
 
-        assertEq(layout.accessControlManager(), accessControlManager);
+        assertEq(layout.accessManager(), accessManager);
         assertEq(layout.implementation(), implementation);
     }
 

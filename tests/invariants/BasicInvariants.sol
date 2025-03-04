@@ -40,13 +40,18 @@ contract BasicInvariants is Fixture {
             config,
             abi.encodeWithSelector(
                 Test.initialize.selector,
-                accessControlManager,
+                accessManager,
                 agToken,
                 CollateralSetup(address(eurA), address(oracleA)),
                 CollateralSetup(address(eurB), address(oracleB)),
                 CollateralSetup(address(eurY), address(oracleY))
             )
         );
+        
+        vm.startPrank(governor);
+        accessManager.setTargetFunctionRole(address(transmuterSplit), getTransmuterGovernorSelectorAccess(), GOVERNOR_ROLE);
+        accessManager.setTargetFunctionRole(address(transmuterSplit), getTransmuterGuardianSelectorAccess(), GUARDIAN_ROLE);
+        vm.stopPrank();
 
         {
             // set redemption fees
@@ -60,7 +65,7 @@ contract BasicInvariants is Fixture {
             yFeeRedemption[1] = int64(int256(1e9));
             yFeeRedemption[2] = int64(int256((1e9 * 9) / 10));
             yFeeRedemption[3] = int64(int256(1e9));
-            vm.startPrank(governor);
+            vm.startPrank(guardian);
             transmuter.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
             transmuterSplit.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
             vm.stopPrank();
@@ -79,8 +84,13 @@ contract BasicInvariants is Fixture {
         _traderHandler = new Trader(transmuter, transmuterSplit, _collaterals, _oracles, _NUM_TRADER);
         _arbitragerHandler = new Arbitrager(transmuter, transmuterSplit, _collaterals, _oracles, _NUM_ARB);
         _governanceHandler = new Governance(transmuter, transmuterSplit, _collaterals, _oracles);
-        MockAccessControlManager(address(accessControlManager)).toggleGovernor(_governanceHandler.actors(0));
 
+        vm.startPrank(governor);
+        accessManager.grantRole(GOVERNOR_ROLE, _governanceHandler.actors(0), 0);
+        accessManager.grantRole(GUARDIAN_ROLE, _governanceHandler.actors(0), 0);
+        vm.stopPrank();
+
+        vm.startPrank(guardian);
         // Label newly created addresses
         vm.label(address(transmuterSplit), "TransmuterSplit");
         for (uint256 i; i < _NUM_ARB; i++)

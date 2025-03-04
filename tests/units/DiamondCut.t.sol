@@ -38,8 +38,7 @@ contract Test_DiamondCut is Fixture {
             functionSelectors: selectors
         });
 
-        vm.expectRevert(Errors.NotGovernor.selector);
-
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
         transmuter.diamondCut(facetCut, address(0x0), "");
     }

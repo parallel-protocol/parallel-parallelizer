@@ -25,6 +25,7 @@ contract Layout {
     address public agToken;                                                             // slot 1
     uint8 public isRedemptionLive;                                                      // slot 1
     uint8 public nonReentrant;                                                          // slot 1
+    bool public consumingSchedule;                                                      // slot 1
     uint128 public normalizedStables;                                                   // slot 2
     uint128 public normalizer;                                                          // slot 2
     address[] public collateralList;                                                    // slot 3
@@ -38,5 +39,5 @@ contract Layout {
     uint256[3183375284495168307942345002138838670162164004951576664793207874081895365205] private __gap3;
     bytes4[] public selectors;                                                          // slot 1
     mapping(bytes4 => FacetInfo) public selectorInfo;                                   // slot 2
-    address public accessControlManager;                                                // slot 3
+    address public accessManager;                                                       // slot 3
 }

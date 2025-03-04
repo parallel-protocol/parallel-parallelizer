@@ -7,20 +7,16 @@ import { LibStorage as s, TransmuterStorage } from "../libraries/LibStorage.sol"
 import "../../utils/Errors.sol";
 import "../../utils/Constants.sol";
 
-/// @title AccessControlModifiers
+/// @title AccessManagedModifiers
 /// @author Angle Labs, Inc.
-contract AccessControlModifiers {
-    /// @notice Checks whether the `msg.sender` has the governor role
-    modifier onlyGovernor() {
-        if (!LibDiamond.isGovernor(msg.sender)) revert NotGovernor();
+contract AccessManagedModifiers {
+    
+    /// @notice Checks whether the `msg.sender` can call a function with a given selector
+    modifier restricted() {
+        if(!LibDiamond.checkCanCall(msg.sender, msg.data)) revert AccessManagedUnauthorized(msg.sender);
         _;
     }
-
-    /// @notice Checks whether the `msg.sender` has the guardian role
-    modifier onlyGuardian() {
-        if (!LibDiamond.isGovernorOrGuardian(msg.sender)) revert NotGovernorOrGuardian();
-        _;
-    }
+    
 
     /// @notice Prevents a contract from calling itself, directly or indirectly
     /// @dev This implementation is an adaptation of the OpenZepellin `ReentrancyGuard` for the purpose of this

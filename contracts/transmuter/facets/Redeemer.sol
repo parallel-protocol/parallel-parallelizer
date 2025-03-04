@@ -10,7 +10,7 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IAgToken } from "interfaces/IAgToken.sol";
 import { IRedeemer } from "interfaces/IRedeemer.sol";
 
-import { AccessControlModifiers } from "./AccessControlModifiers.sol";
+import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
 import { LibDiamond } from "../libraries/LibDiamond.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibGetters } from "../libraries/LibGetters.sol";
@@ -24,7 +24,7 @@ import "../Storage.sol";
 
 /// @title Redeemer
 /// @author Angle Labs, Inc.
-contract Redeemer is IRedeemer, AccessControlModifiers {
+contract Redeemer is IRedeemer, AccessManagedModifiers {
     using SafeERC20 for IERC20;
     using Math for uint256;
     using SafeCast for uint256;
@@ -84,7 +84,7 @@ contract Redeemer is IRedeemer, AccessControlModifiers {
     /// @dev This function may be called by trusted addresses: these could be for instance savings contract
     /// minting stablecoins when they notice a profit
     function updateNormalizer(uint256 amount, bool increase) external returns (uint256) {
-        if (!LibDiamond.isGovernor(msg.sender) && s.transmuterStorage().isTrusted[msg.sender] == 0) revert NotTrusted();
+        if (!LibDiamond.checkCanCall(msg.sender, msg.data) && s.transmuterStorage().isTrusted[msg.sender] == 0) revert NotTrusted();
         return _updateNormalizer(amount, increase);
     }
 

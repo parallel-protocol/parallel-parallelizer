@@ -3,7 +3,7 @@
 pragma solidity ^0.8.19;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
+import { IAccessManager } from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import { IAgToken } from "interfaces/IAgToken.sol";
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ struct FacetInfo {
 struct DiamondStorage {
     bytes4[] selectors; // List of all available selectors
     mapping(bytes4 => FacetInfo) selectorInfo; // Selector to (address, position in list)
-    IAccessControlManager accessControlManager; // Contract handling access control
+    IAccessManager accessManager; // Contract handling access management
 }
 
 struct ImplementationStorage {
@@ -123,6 +123,7 @@ struct TransmuterStorage {
     IAgToken agToken; // agToken handled by the system
     uint8 isRedemptionLive; // If redemption is unpaused
     uint8 statusReentrant; // If call is reentrant or not
+    bool consumingSchedule; // If the contract is consuming a scheduled operation
     uint128 normalizedStables; // Normalized amount of stablecoins issued by the system
     uint128 normalizer; // To reconcile `normalizedStables` values with the actual amount
     address[] collateralList; // List of collateral assets supported by the system

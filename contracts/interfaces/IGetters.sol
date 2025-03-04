@@ -2,7 +2,6 @@
 
 pragma solidity >=0.5.0;
 
-import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
 import { IAgToken } from "interfaces/IAgToken.sol";
 
 import "../transmuter/Storage.sol";
@@ -13,9 +12,6 @@ interface IGetters {
     /// @notice Checks whether a given `selector` is actually a valid selector corresponding to a function in one of the
     /// facets of the proxy
     function isValidSelector(bytes4 selector) external view returns (bool);
-
-    /// @notice Reference to the `accessControlManager` contract of the system
-    function accessControlManager() external view returns (IAccessControlManager);
 
     /// @notice Stablecoin minted by transmuter
     function agToken() external view returns (IAgToken);
@@ -117,4 +113,12 @@ interface IGetters {
 
     /// @notice Returns the stablecoin cap for `collateral`
     function getStablecoinCap(address collateral) external view returns (uint256);
+    
+    /// @notice Returns the address of the `accessManager` contract
+    function accessManager() external view returns (address);
+
+    /// @notice Returns if the contract is consuming a scheduled operation
+    /// @dev This is used by the AccessManager to consume scheduled operations
+    function getConsumingSchedule() external view returns (bool);
+
 }

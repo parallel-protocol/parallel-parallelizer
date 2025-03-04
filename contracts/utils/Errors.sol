@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.19;
 
+error AccessManagedUnauthorized(address caller);
 error AlreadyAdded();
 error CannotAddFunctionToDiamondThatAlreadyExists(bytes4 _selector);
 error CannotAddSelectorsToZeroAddress(bytes4[] _selectors);
@@ -29,7 +30,7 @@ error NoSelectorsProvidedForFacetForCut(address _facetAddress);
 error NotAllowed();
 error NotCollateral();
 error NotGovernor();
-error NotGovernorOrGuardian();
+error NotGuardian();
 error NotTrusted();
 error NotTrustedOrGuardian();
 error NotWhitelisted();

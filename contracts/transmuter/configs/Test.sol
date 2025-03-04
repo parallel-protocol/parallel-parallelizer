@@ -19,13 +19,13 @@ struct CollateralSetup {
 /// @dev This contract is used only once to initialize the diamond proxy.
 contract Test {
     function initialize(
-        IAccessControlManager _accessControlManager,
+        IAccessManager _accessManager,
         address _agToken,
         CollateralSetup calldata eurA,
         CollateralSetup calldata eurB,
         CollateralSetup calldata eurY
     ) external {
-        LibSetters.setAccessControlManager(_accessControlManager);
+        LibSetters.setAccessManager(_accessManager);
 
         TransmuterStorage storage ts = s.transmuterStorage();
         ts.statusReentrant = NOT_ENTERED;

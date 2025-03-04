@@ -12,7 +12,7 @@ import { LibManager } from "../libraries/LibManager.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
 import { LibSetters } from "../libraries/LibSetters.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
-import { AccessControlModifiers } from "./AccessControlModifiers.sol";
+import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
 
 import "../../utils/Constants.sol";
 import "../../utils/Errors.sol";
@@ -20,7 +20,7 @@ import "../Storage.sol";
 
 /// @title SettersGovernor
 /// @author Angle Labs, Inc.
-contract SettersGovernor is AccessControlModifiers, ISettersGovernor {
+contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
     using SafeERC20 for IERC20;
 
     event Recovered(address indexed token, address indexed to, uint256 amount);
@@ -29,7 +29,7 @@ contract SettersGovernor is AccessControlModifiers, ISettersGovernor {
     /// @dev No check is made on the collateral that is redeemed: this function could typically be used by a
     /// governance during a manual rebalance of the reserves of the system
     /// @dev `collateral` is different from `token` only in the case of a managed collateral
-    function recoverERC20(address collateral, IERC20 token, address to, uint256 amount) external onlyGovernor {
+    function recoverERC20(address collateral, IERC20 token, address to, uint256 amount) external restricted {
         Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
         if (collatInfo.isManaged > 0) LibManager.release(address(token), to, amount, collatInfo.managerData.config);
         else token.safeTransfer(to, amount);
@@ -37,20 +37,20 @@ contract SettersGovernor is AccessControlModifiers, ISettersGovernor {
     }
 
     /// @inheritdoc ISettersGovernor
-    function setAccessControlManager(address _newAccessControlManager) external onlyGovernor {
-        LibSetters.setAccessControlManager(IAccessControlManager(_newAccessControlManager));
+    function setAccessManager(address _newAccessManager) external restricted {
+        LibSetters.setAccessManager(IAccessManager(_newAccessManager));
     }
 
     /// @inheritdoc ISettersGovernor
     /// @dev Funds need to have been withdrawn from the eventual previous manager prior to this call
-    function setCollateralManager(address collateral, ManagerStorage memory managerData) external onlyGovernor {
+    function setCollateralManager(address collateral, ManagerStorage memory managerData) external restricted {
         LibSetters.setCollateralManager(collateral, managerData);
     }
 
     /// @inheritdoc ISettersGovernor
     /// @dev This function can typically be used to grant allowance to a newly added manager for it to pull the
     /// funds associated to the collateral it corresponds to
-    function changeAllowance(IERC20 token, address spender, uint256 amount) external onlyGovernor {
+    function changeAllowance(IERC20 token, address spender, uint256 amount) external restricted {
         uint256 currentAllowance = token.allowance(address(this), spender);
         if (currentAllowance < amount) {
             token.safeIncreaseAllowance(spender, amount - currentAllowance);
@@ -60,19 +60,19 @@ contract SettersGovernor is AccessControlModifiers, ISettersGovernor {
     }
 
     /// @inheritdoc ISettersGovernor
-    function toggleTrusted(address sender, TrustedType t) external onlyGovernor {
+    function toggleTrusted(address sender, TrustedType t) external restricted {
         LibSetters.toggleTrusted(sender, t);
     }
 
     /// @inheritdoc ISettersGovernor
     /// @dev Collateral assets with a fee on transfer are not supported by the system
-    function addCollateral(address collateral) external onlyGovernor {
+    function addCollateral(address collateral) external restricted {
         LibSetters.addCollateral(collateral);
     }
 
     /// @inheritdoc ISettersGovernor
     /// @dev The amount passed here must be an absolute amount
-    function adjustStablecoins(address collateral, uint128 amount, bool increase) external onlyGovernor {
+    function adjustStablecoins(address collateral, uint128 amount, bool increase) external restricted {
         LibSetters.adjustStablecoins(collateral, amount, increase);
     }
 
@@ -82,12 +82,12 @@ contract SettersGovernor is AccessControlModifiers, ISettersGovernor {
     /// @dev The system may still have a non null balance of the collateral that is revoked: this should later
     /// be handled through a recoverERC20 call
     /// @dev Funds needs to have been withdrew from the manager prior to this call
-    function revokeCollateral(address collateral) external onlyGovernor {
+    function revokeCollateral(address collateral) external restricted {
         LibSetters.revokeCollateral(collateral);
     }
 
     /// @inheritdoc ISettersGovernor
-    function setOracle(address collateral, bytes memory oracleConfig) external onlyGovernor {
+    function setOracle(address collateral, bytes memory oracleConfig) external restricted {
         LibSetters.setOracle(collateral, oracleConfig);
     }
 
@@ -101,7 +101,7 @@ contract SettersGovernor is AccessControlModifiers, ISettersGovernor {
         address collateral,
         uint8 whitelistStatus,
         bytes memory whitelistData
-    ) external onlyGovernor {
+    ) external restricted {
         LibSetters.setWhitelistStatus(collateral, whitelistStatus, whitelistData);
     }
 }

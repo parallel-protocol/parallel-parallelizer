@@ -32,7 +32,7 @@ contract StablecoinCapTest is Fixture {
         uint256 stablecoinCap = 1 ether;
         address collateral = address(eurA);
 
-        vm.prank(governor);
+        vm.prank(guardian);
         transmuter.setStablecoinCap(collateral, stablecoinCap);
 
         deal(collateral, bob, amount);
@@ -48,7 +48,7 @@ contract StablecoinCapTest is Fixture {
         uint256 stablecoinCap = 1 ether;
         address collateral = address(eurA);
 
-        vm.prank(governor);
+        vm.prank(guardian);
         transmuter.setStablecoinCap(collateral, stablecoinCap);
 
         deal(collateral, bob, amount);
@@ -64,7 +64,7 @@ contract StablecoinCapTest is Fixture {
         uint256 stablecoinCap = 1 ether;
         address collateral = address(eurA);
 
-        vm.prank(governor);
+        vm.prank(guardian);
         transmuter.setStablecoinCap(collateral, stablecoinCap);
 
         deal(collateral, bob, amount);

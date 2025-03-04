@@ -17,22 +17,22 @@ import "contracts/utils/Errors.sol" as Errors;
 import { Fixture } from "../Fixture.sol";
 
 contract Test_Setters_TogglePause is Fixture {
-    function test_RevertWhen_NonGovernorOrGuardian() public {
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+    function test_RevertWhen_NotGuardian() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,governor));
+        hoax(governor);
         transmuter.togglePause(address(eurA), ActionType.Mint);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.togglePause(address(eurA), ActionType.Mint);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,bob));
         hoax(bob);
         transmuter.togglePause(address(eurA), ActionType.Mint);
     }
 
     function test_RevertWhen_NotCollateral() public {
         vm.expectRevert(Errors.NotCollateral.selector);
-
         hoax(guardian);
         transmuter.togglePause(address(agToken), ActionType.Mint);
     }
@@ -87,18 +87,20 @@ contract Test_Setters_TogglePause is Fixture {
 }
 
 contract Test_Setters_SetFees is Fixture {
-    function test_RevertWhen_NonGovernorOrGuardian() public {
+    function test_RevertWhen_NotGuardian() public {
         uint64[] memory xFee = new uint64[](3);
         int64[] memory yFee = new int64[](3);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,governor));
+        hoax(governor);
         transmuter.setFees(address(eurA), xFee, yFee, true);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.setFees(address(eurA), xFee, yFee, true);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,bob));
         hoax(bob);
         transmuter.setFees(address(eurA), xFee, yFee, true);
     }
@@ -184,7 +186,7 @@ contract Test_Setters_SetFees is Fixture {
         transmuter.setFees(address(eurA), xFee, yFee, true);
     }
 
-    function test_RevertWhen_OnlyGovernorNegativeFees() public {
+    function test_RevertWhen_OnlyGovernorWithGuardianRoleNegativeFees() public {
         uint64[] memory xFee = new uint64[](3);
         int64[] memory yFee = new int64[](3);
 
@@ -196,7 +198,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[1] = int64(1);
         yFee[2] = int64(uint64(BASE_9 / 10));
 
-        hoax(governor);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurB), xFee, yFee, false);
 
         xFee[0] = 0;
@@ -207,8 +209,12 @@ contract Test_Setters_SetFees is Fixture {
         yFee[1] = int64(uint64(BASE_9 / 10));
         yFee[2] = int64(uint64((2 * BASE_9) / 10));
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        hoax(governor);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,governor));
+        transmuter.setFees(address(eurA), xFee, yFee, true);
+
         hoax(guardian);
+        vm.expectRevert(abi.encodeWithSelector(Errors.NotGovernor.selector));
         transmuter.setFees(address(eurA), xFee, yFee, true);
     }
 
@@ -224,7 +230,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[1] = int64(1);
         yFee[2] = int64(uint64(BASE_9 / 10));
 
-        hoax(governor);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurB), xFee, yFee, false);
 
         xFee[0] = 0;
@@ -236,7 +242,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[2] = int64(uint64((2 * BASE_9) / 10));
 
         vm.expectRevert(Errors.InvalidNegativeFees.selector);
-        hoax(governor);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurA), xFee, yFee, true);
     }
 
@@ -253,7 +259,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[2] = int64(uint64(BASE_9 / 10));
 
         vm.expectRevert(Errors.InvalidParams.selector);
-        hoax(guardian);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurA), xFee, yFee, false);
 
         xFee[0] = uint64(BASE_9);
@@ -265,7 +271,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[2] = int64(uint64(BASE_9 + 1)); // yFee[n - 1] > int256(BASE_9)
 
         vm.expectRevert(Errors.InvalidParams.selector);
-        hoax(guardian);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurA), xFee, yFee, false);
 
         xFee[0] = uint64(BASE_9);
@@ -277,7 +283,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[2] = int64(uint64(BASE_9 / 10));
 
         vm.expectRevert(Errors.InvalidParams.selector);
-        hoax(guardian);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurA), xFee, yFee, false);
     }
 
@@ -294,7 +300,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[2] = int64(uint64(BASE_9 / 10));
 
         vm.expectRevert(Errors.InvalidParams.selector);
-        hoax(guardian);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurA), xFee, yFee, false);
 
         xFee[0] = uint64(BASE_9);
@@ -306,7 +312,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[2] = int64(1); // Not increasing
 
         vm.expectRevert(Errors.InvalidParams.selector);
-        hoax(guardian);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurA), xFee, yFee, false);
     }
 
@@ -322,7 +328,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[1] = int64(uint64(BASE_9 / 10));
         yFee[2] = int64(uint64((2 * BASE_9) / 10));
 
-        hoax(governor);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurB), xFee, yFee, true);
 
         xFee[0] = uint64(BASE_9);
@@ -334,7 +340,7 @@ contract Test_Setters_SetFees is Fixture {
         yFee[2] = int64(2);
 
         vm.expectRevert(Errors.InvalidNegativeFees.selector);
-        hoax(governor);
+        hoax(governorAndGuardian);
         transmuter.setFees(address(eurA), xFee, yFee, false);
     }
 
@@ -392,18 +398,19 @@ contract Test_Setters_SetFees is Fixture {
 contract Test_Setters_SetRedemptionCurveParams is Fixture {
     event RedemptionCurveParamsSet(uint64[] xFee, int64[] yFee);
 
-    function test_RevertWhen_NonGovernorOrGuardian() public {
+    function test_RevertWhen_NotGuardian() public {
         uint64[] memory xFee = new uint64[](3);
         int64[] memory yFee = new int64[](3);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,governor));
+        hoax(governor);
         transmuter.setRedemptionCurveParams(xFee, yFee);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.setRedemptionCurveParams(xFee, yFee);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,bob));
         hoax(bob);
         transmuter.setRedemptionCurveParams(xFee, yFee);
     }
@@ -495,15 +502,12 @@ contract Test_Setters_SetRedemptionCurveParams is Fixture {
 contract Test_Setters_RecoverERC20 is Fixture {
     event Transfer(address from, address to, uint256 value);
 
-    function test_RevertWhen_NonGovernor() public {
-        vm.expectRevert(Errors.NotGovernor.selector);
-        transmuter.recoverERC20(address(agToken), agToken, alice, 1 ether);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
+    function test_RevertWhen_NotGovernor() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.recoverERC20(address(agToken), agToken, alice, 1 ether);
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
         transmuter.recoverERC20(address(agToken), agToken, alice, 1 ether);
     }
@@ -547,47 +551,42 @@ contract Test_Setters_RecoverERC20 is Fixture {
     }
 }
 
-contract Test_Setters_SetAccessControlManager is Fixture {
+contract Test_Setters_SetAccessManager is Fixture {
     function test_RevertWhen_NonGovernor() public {
-        vm.expectRevert(Errors.NotGovernor.selector);
-        transmuter.setAccessControlManager(alice);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
-        transmuter.setAccessControlManager(alice);
+        transmuter.setAccessManager(alice);
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
-        transmuter.setAccessControlManager(alice);
+        transmuter.setAccessManager(alice);
     }
 
     function test_Success() public {
-        address oldAccessControlManager = address(transmuter.accessControlManager());
+        address oldAccessManager = address(transmuter.accessManager());
 
         vm.expectEmit(address(transmuter));
-        emit LibSetters.OwnershipTransferred(oldAccessControlManager, alice);
+        emit LibSetters.OwnershipTransferred(oldAccessManager, alice);
 
         hoax(governor);
-        transmuter.setAccessControlManager(alice);
+        transmuter.setAccessManager(alice);
 
-        assertEq(address(transmuter.accessControlManager()), alice);
+        assertEq(transmuter.accessManager(), alice);
     }
 }
 
 contract Test_Setters_ToggleTrusted is Fixture {
     event TrustedToggled(address indexed sender, bool isTrusted, TrustedType trustedType);
 
-    function test_RevertWhen_NonGovernor() public {
-        vm.expectRevert(Errors.NotGovernor.selector);
+    function test_RevertWhen_NotGovernor() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
+        hoax(guardian);
         transmuter.toggleTrusted(alice, TrustedType.Seller);
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.toggleTrusted(alice, TrustedType.Seller);
 
-        vm.expectRevert(Errors.NotGovernor.selector);
-        hoax(guardian);
-        transmuter.toggleTrusted(alice, TrustedType.Seller);
     }
 
     function test_Seller() public {
@@ -628,18 +627,15 @@ contract Test_Setters_ToggleTrusted is Fixture {
 }
 
 contract Test_Setters_SetWhitelistStatus is Fixture {
-    function test_RevertWhen_NonGovernor() public {
+    function test_RevertWhen_NotGovernor() public {
         bytes memory emptyData;
         bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
-        vm.expectRevert(Errors.NotGovernor.selector);
-        transmuter.setWhitelistStatus(address(eurA), 1, whitelistData);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
-        hoax(alice);
-        transmuter.setWhitelistStatus(address(eurA), 1, whitelistData);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
+        transmuter.setWhitelistStatus(address(eurA), 1, whitelistData);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
+        hoax(alice);
         transmuter.setWhitelistStatus(address(eurA), 1, whitelistData);
     }
 
@@ -734,10 +730,7 @@ contract Test_Setters_ToggleWhitelist is Fixture {
     event WhitelistStatusToggled(WhitelistType whitelistType, address indexed who, uint256 whitelistStatus);
 
     function test_RevertWhen_NonGuardian() public {
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
-        transmuter.toggleWhitelist(WhitelistType.BACKED, address(alice));
-
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.toggleWhitelist(WhitelistType.BACKED, address(alice));
     }
@@ -940,15 +933,12 @@ contract Test_Setters_SetCollateralManager is Fixture {
     function test_RevertWhen_NotGovernor() public {
         ManagerStorage memory data = ManagerStorage(new IERC20[](0), abi.encode(ManagerType.EXTERNAL, address(0)));
 
-        vm.expectRevert(Errors.NotGovernor.selector);
-        transmuter.setCollateralManager(address(eurA), data);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
-        hoax(alice);
-        transmuter.setCollateralManager(address(eurA), data);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
+        transmuter.setCollateralManager(address(eurA), data);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
+        hoax(alice);
         transmuter.setCollateralManager(address(eurA), data);
     }
 
@@ -1036,14 +1026,15 @@ contract Test_Setters_ChangeAllowance is Fixture {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
     function test_RevertWhen_NotGovernor() public {
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
+        hoax(guardian);
         transmuter.changeAllowance(eurA, alice, 1 ether);
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.changeAllowance(eurA, alice, 1 ether);
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
         transmuter.changeAllowance(eurA, alice, 1 ether);
     }
@@ -1089,15 +1080,16 @@ contract Test_Setters_ChangeAllowance is Fixture {
 contract Test_Setters_AddCollateral is Fixture {
     event CollateralAdded(address indexed collateral);
 
-    function test_RevertWhen_NonGovernor() public {
-        vm.expectRevert(Errors.NotGovernor.selector);
+    function test_RevertWhen_NotGovernor() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
+        hoax(guardian);
         transmuter.addCollateral(address(eurA));
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.addCollateral(address(eurA));
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
         transmuter.addCollateral(address(eurA));
     }
@@ -1127,16 +1119,13 @@ contract Test_Setters_AddCollateral is Fixture {
 contract Test_Setters_AdjustNormalizedStablecoins is Fixture {
     event ReservesAdjusted(address indexed collateral, uint256 amount, bool increase);
 
-    function test_RevertWhen_NonGovernor() public {
-        vm.expectRevert(Errors.NotGovernor.selector);
-        transmuter.adjustStablecoins(address(eurA), 1 ether, true);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
-        hoax(alice);
-        transmuter.adjustStablecoins(address(eurA), 1 ether, true);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
+    function test_RevertWhen_NotGovernor() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
+        transmuter.adjustStablecoins(address(eurA), 1 ether, true);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
+        hoax(alice);
         transmuter.adjustStablecoins(address(eurA), 1 ether, true);
     }
 
@@ -1200,15 +1189,12 @@ contract Test_Setters_AdjustNormalizedStablecoins is Fixture {
 contract Test_Setters_RevokeCollateral is Fixture {
     event CollateralRevoked(address indexed collateral);
 
-    function test_RevertWhen_NonGovernor() public {
-        vm.expectRevert(Errors.NotGovernor.selector);
-        transmuter.adjustStablecoins(address(eurA), 1 ether, true);
-
-        vm.expectRevert(Errors.NotGovernor.selector);
+    function test_RevertWhen_NotGovernor() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.adjustStablecoins(address(eurA), 1 ether, true);
 
-        vm.expectRevert(Errors.NotGovernor.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,guardian));
         hoax(guardian);
         transmuter.adjustStablecoins(address(eurA), 1 ether, true);
     }
@@ -1332,24 +1318,19 @@ contract Test_Setters_DiamondEtherscan is Fixture {
     event Upgraded(address indexed implementation);
 
     function test_RevertWhen_NotGuardian() public {
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,governor));
+        hoax(governor);
         transmuter.setDummyImplementation(address(bob));
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.setDummyImplementation(address(bob));
 
-        hoax(governor);
+        hoax(guardian);
         vm.expectEmit(address(transmuter));
         emit Upgraded(address(bob));
         transmuter.setDummyImplementation(address(bob));
         assertEq(transmuter.implementation(), address(bob));
-
-        hoax(governor);
-        vm.expectEmit(address(transmuter));
-        emit Upgraded(address(alice));
-        transmuter.setDummyImplementation(address(alice));
-        assertEq(transmuter.implementation(), address(alice));
     }
 }
 
@@ -1357,20 +1338,23 @@ contract Test_Setters_SetStablecoinCap is Fixture {
     event StablecoinCapSet(address indexed collateral, uint256 stablecoinCap);
 
     function test_RevertWhen_NotGuardian() public {
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        hoax(governor);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,governor));
         transmuter.setStablecoinCap(address(eurA), 1 ether);
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        hoax(governor);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,governor));
         transmuter.setStablecoinCap(address(eurB), 1 ether);
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        hoax(governor);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,governor));
         transmuter.setStablecoinCap(address(eurY), 1 ether);
 
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.setStablecoinCap(address(eurA), 1 ether);
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.setStablecoinCap(address(eurB), 1 ether);
-        vm.expectRevert(Errors.NotGovernorOrGuardian.selector);
+        vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector,alice));
         hoax(alice);
         transmuter.setStablecoinCap(address(eurY), 1 ether);
     }
@@ -1388,7 +1372,7 @@ contract Test_Setters_SetStablecoinCap is Fixture {
     function test_SetStablecoinCap_Success() public {
         hoax(guardian);
         transmuter.setStablecoinCap(address(eurA), 1 ether);
-        hoax(governor);
+        hoax(guardian);
         transmuter.setStablecoinCap(address(eurB), 1 ether);
         hoax(guardian);
         transmuter.setStablecoinCap(address(eurY), 1 ether);

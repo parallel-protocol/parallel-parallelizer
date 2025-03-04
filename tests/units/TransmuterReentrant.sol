@@ -5,6 +5,7 @@ pragma solidity ^0.8.19;
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { AccessManager, IAccessManaged } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 
 import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
 import { IAgToken } from "interfaces/IAgToken.sol";
@@ -23,11 +24,12 @@ import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol" as Errors;
 
 import { ITransmuter, Transmuter } from "../utils/Transmuter.sol";
+import { ConfigAccessManager } from "../utils/ConfigAccessManager.sol";
 
-contract TransmuterReentrantTest is Transmuter {
+
+contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
     using SafeERC20 for IERC20;
 
-    IAccessControlManager public accessControlManager;
     IAgToken public agToken;
 
     IERC20 public eurA;
@@ -44,9 +46,10 @@ contract TransmuterReentrantTest is Transmuter {
     uint256 internal constant _MAX_PERCENTAGE_DEVIATION = 1e12;
     uint256 internal constant _MAX_SUB_COLLATERALS = 10;
 
-    address public constant governor = 0xdC4e6DFe07EFCa50a197DF15D9200883eF4Eb1c8;
-    address public constant guardian = 0x0C2553e4B9dFA9f83b1A6D3EAB96c4bAaB42d430;
-    address public constant angle = 0x31429d1856aD1377A8A0079410B297e1a9e214c2;
+    address public guardian;
+
+    address public governor;
+    address public governorAndGuardian;
 
     address public alice;
     address public bob;
@@ -66,9 +69,13 @@ contract TransmuterReentrantTest is Transmuter {
         charlie = vm.addr(3);
         dylan = vm.addr(4);
 
+        governor = address(uint160(uint256(keccak256(abi.encodePacked("governor")))));
+        guardian = address(uint160(uint256(keccak256(abi.encodePacked("guardian")))));
+        governorAndGuardian = address(uint160(uint256(keccak256(abi.encodePacked("governorAndGuardian")))));    
+
+
         vm.label(governor, "Governor");
         vm.label(guardian, "Guardian");
-        vm.label(angle, "ANGLE");
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");
         vm.label(charlie, "Charlie");
@@ -85,10 +92,8 @@ contract TransmuterReentrantTest is Transmuter {
             )
         );
 
-        // Access Control
-        accessControlManager = IAccessControlManager(address(new MockAccessControlManager()));
-        MockAccessControlManager(address(accessControlManager)).toggleGovernor(governor);
-        MockAccessControlManager(address(accessControlManager)).toggleGuardian(guardian);
+        deployAccessManager(governor, governor, guardian, governorAndGuardian);
+
 
         // agToken
         agToken = IAgToken(address(new MockTokenPermit("agEUR", "agEUR", 18)));
@@ -112,13 +117,17 @@ contract TransmuterReentrantTest is Transmuter {
             config,
             abi.encodeWithSelector(
                 Test.initialize.selector,
-                accessControlManager,
+                accessManager,
                 agToken,
                 CollateralSetup(address(eurA), address(oracleA)),
                 CollateralSetup(address(eurB), address(oracleB)),
                 CollateralSetup(address(eurY), address(oracleY))
             )
         );
+        vm.startPrank(governor);
+        accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGovernorSelectorAccess(), GOVERNOR_ROLE);
+        accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGuardianSelectorAccess(), GUARDIAN_ROLE);
+        vm.stopPrank();
 
         vm.label(address(agToken), "AgToken");
         vm.label(address(transmuter), "Transmuter");
@@ -135,7 +144,7 @@ contract TransmuterReentrantTest is Transmuter {
         yFee[0] = 0;
         int64[] memory yFeeRedemption = new int64[](1);
         yFeeRedemption[0] = int64(int256(BASE_9));
-        vm.startPrank(governor);
+        vm.startPrank(guardian);
         transmuter.setFees(address(eurA), xFeeMint, yFee, true);
         transmuter.setFees(address(eurA), xFeeBurn, yFee, false);
         transmuter.setFees(address(eurB), xFeeMint, yFee, true);

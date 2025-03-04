@@ -13,7 +13,7 @@ import { ISwapper } from "interfaces/ISwapper.sol";
 import { IPermit2, PermitTransferFrom } from "interfaces/external/permit2/IPermit2.sol";
 import { SignatureTransferDetails, TokenPermissions } from "interfaces/external/permit2/IPermit2.sol";
 
-import { AccessControlModifiers } from "./AccessControlModifiers.sol";
+import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibManager } from "../libraries/LibManager.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
@@ -49,7 +49,7 @@ struct LocalVariables {
 /// @dev In case of a burn again, the swap functions will revert if the call concerns a collateral that requires a
 /// whitelist but the `to` address does not have it. The quote functions will not revert in this case.
 /// @dev Calling one of the swap functions in a burn case does not require any prior token approval
-contract Swapper is ISwapper, AccessControlModifiers {
+contract Swapper is ISwapper, AccessManagedModifiers {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using Address for address;

@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.19;
 
-import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
 import { IGetters } from "interfaces/IGetters.sol";
 
 import { LibOracle } from "../libraries/LibOracle.sol";
@@ -21,11 +20,6 @@ contract Getters is IGetters {
     /// @inheritdoc IGetters
     function isValidSelector(bytes4 selector) external view returns (bool) {
         return s.diamondStorage().selectorInfo[selector].facetAddress != address(0);
-    }
-
-    /// @inheritdoc IGetters
-    function accessControlManager() external view returns (IAccessControlManager) {
-        return s.diamondStorage().accessControlManager;
     }
 
     /// @inheritdoc IGetters
@@ -193,5 +187,15 @@ contract Getters is IGetters {
     /// @inheritdoc IGetters
     function getStablecoinCap(address collateral) external view returns (uint256) {
         return s.transmuterStorage().collaterals[collateral].stablecoinCap;
+    }
+
+    /// @inheritdoc IGetters
+    function accessManager() external view returns (address) {
+        return address(s.diamondStorage().accessManager);
+    }
+
+    /// @inheritdoc IGetters
+    function getConsumingSchedule() external view returns (bool) {
+        return s.transmuterStorage().consumingSchedule;
     }
 }

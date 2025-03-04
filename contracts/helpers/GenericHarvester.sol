@@ -14,7 +14,7 @@ import { ITransmuter } from "interfaces/ITransmuter.sol";
 import { IAgToken } from "interfaces/IAgToken.sol";
 import { IERC4626 } from "interfaces/external/IERC4626.sol";
 
-import { IAccessControlManager } from "utils/AccessControl.sol";
+
 import "utils/Constants.sol";
 import "utils/Errors.sol";
 

@@ -296,7 +296,7 @@ contract CommonUtils is CommonBase, JsonReader {
 
         // define delimiters
         strings.slice memory rowDelim = "\n".toSlice();
-        strings.slice memory partDelim = "|".toSlice();
+        // strings.slice memory partDelim = "|".toSlice();
         strings.slice memory spaceDelim = " ".toSlice();
 
         // remove first line
