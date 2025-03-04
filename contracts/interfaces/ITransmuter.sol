@@ -33,7 +33,7 @@
               ▓▓▓        ▓▓      ▓▓▓    ▓▓▓       ▓▓▓▓▓▓▓▓▓▓        ▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓▓▓          
 */
 
-pragma solidity >=0.5.0;
+pragma solidity 0.8.28;
 
 import { IDiamondCut } from "./IDiamondCut.sol";
 import { IDiamondEtherscan } from "./IDiamondEtherscan.sol";
@@ -47,15 +47,13 @@ import { ISwapper } from "./ISwapper.sol";
 /// @title ITransmuter
 /// @author Angle Labs, Inc.
 interface ITransmuter is
-    IDiamondCut,
-    IDiamondEtherscan,
-    IDiamondLoupe,
-    IGetters,
-    IRedeemer,
-    IRewardHandler,
-    ISettersGovernor,
-    ISettersGuardian,
-    ISwapper
-{
-
-}
+  IDiamondCut,
+  IDiamondEtherscan,
+  IDiamondLoupe,
+  IGetters,
+  IRedeemer,
+  IRewardHandler,
+  ISettersGovernor,
+  ISettersGuardian,
+  ISwapper
+{ }

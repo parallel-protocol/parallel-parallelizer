@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity >=0.5.0;
+pragma solidity 0.8.28;
 
-import { ICbETH } from "interfaces/external/coinbase/ICbETH.sol";
-import { ISfrxETH } from "interfaces/external/frax/ISfrxETH.sol";
-import { IStETH } from "interfaces/external/lido/IStETH.sol";
-import { IRETH } from "interfaces/external/rocketPool/IRETH.sol";
+import { ICbETH } from "../interfaces/external/coinbase/ICbETH.sol";
+import { ISfrxETH } from "../interfaces/external/frax/ISfrxETH.sol";
+import { IStETH } from "../interfaces/external/lido/IStETH.sol";
+import { IRETH } from "../interfaces/external/rocketPool/IRETH.sol";
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                  STORAGE SLOTS                                                  
@@ -50,6 +50,14 @@ uint256 constant MAX_MINT_FEE = BASE_12 - 1;
 // increase the likelihood of the full refund coming into effect.
 uint8 constant NOT_ENTERED = 1;
 uint8 constant ENTERED = 2;
+
+/*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                     REENTRANT                                                      
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+// Role IDs for the AccessManager
+uint64 constant GOVERNOR_ROLE = 10;
+uint64 constant GUARDIAN_ROLE = 20;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                COMMON ADDRESSES                                                 

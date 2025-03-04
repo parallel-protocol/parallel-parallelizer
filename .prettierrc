@@ -1,19 +1,9 @@
 {
-  "arrowParens": "avoid",
-  "jsxSingleQuote": true,
-  "singleQuote": true,
+  "bracketSpacing": true,
   "printWidth": 120,
-  "semi": true,
+  "tabWidth": 2,
+  "proseWrap": "always",
+  "singleQuote": false,
   "trailingComma": "all",
-  "useTabs": false,
-  "overrides": [
-    {
-      "files": "*.sol",
-      "options": {
-        "printWidth": 120,
-        "singleQuote": false,
-        "bracketSpacing": true
-      }
-    }
-  ]
+  "useTabs": false
 }

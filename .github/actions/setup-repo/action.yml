@@ -1,35 +1,31 @@
 name: Setup repo
 description: Runs all steps to setup the repo (install node_modules, build, etc...)
-inputs:
-  registry-token:
-    description: "PAT to access registries"
+
 runs:
   using: "composite"
   steps:
-    - name: Get yarn cache directory path
-      id: yarn-cache-dir-path
+    - name: Get bun cache directory path
+      id: bun-cache-dir-path
       shell: bash
       run: |
-        echo "::set-output name=dir::$(yarn cache dir)"
-        echo "::set-output name=version::$(yarn -v)"
+        echo "::set-output name=dir::$(bun cache dir)"
+        echo "::set-output name=version::$(bun -v)"
 
-    - uses: actions/setup-node@v3
+    - uses: oven-sh/setup-bun@v2
       with:
-        node-version: "20"
+        bun-version: 1.0.26
 
-    - uses: actions/cache@v2
-      id: yarn-cache
+    - uses: actions/cache@v4
+      id: bun-cache
       with:
         path: |
           **/node_modules
-          ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          ${{ steps.bun-cache-dir-path.outputs.dir }}
 
-        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-
+          ${{ runner.os }}-bun-
 
     - name: Install dependencies
       shell: bash
-      run: echo "//npm.pkg.github.com/:_authToken=$SDK_READ_ACCESS_TOKEN" >> .npmrc && yarn install --frozen-lockfile --verbose  && rm -f .npmrc
-      env:
-        SDK_READ_ACCESS_TOKEN: ${{ inputs.registry-token }}
+      run: bun install

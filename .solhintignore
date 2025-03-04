@@ -11,4 +11,5 @@ out
 # Doesn't need to lint utils
 contracts/transmuter/Storage.sol
 contracts/transmuter/Layout.sol
+tests/mocks/*
 external
