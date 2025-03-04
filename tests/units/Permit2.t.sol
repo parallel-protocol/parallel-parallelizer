@@ -278,8 +278,9 @@ contract Permit2Test is Fixture, FunctionUtils {
 
   bytes32 public constant _TOKEN_PERMISSIONS_TYPEHASH = keccak256("TokenPermissions(address token,uint256 amount)");
 
+  //
   bytes32 public constant _PERMIT_TRANSFER_FROM_TYPEHASH = keccak256(
-    "PermitTransferFrom(TokenPermissions permitted,address spender,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)"
+    "PermitTransferFrom(TokenPermissions permitted,address spender,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)" // solhint-disable-line
   );
 
   /// @notice Forked from https://github.com/Uniswap/permit2/blob/main/test/utils/PermitSignature.sol

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity 0.8.28;
 
 /// @title SignatureTransfer
 /// @notice Handles ERC20 token transfers through signature based actions
@@ -662,21 +662,25 @@ library PermitHash {
     keccak256("PermitDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)");
 
   bytes32 public constant _PERMIT_SINGLE_TYPEHASH = keccak256(
-    "PermitSingle(PermitDetails details,address spender,uint256 sigDeadline)PermitDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)"
+    "PermitSingle(PermitDetails details,address spender,uint256 sigDeadline)PermitDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)" // solhint-disable-line
+      // max-line-length
   );
 
   bytes32 public constant _PERMIT_BATCH_TYPEHASH = keccak256(
-    "PermitBatch(PermitDetails[] details,address spender,uint256 sigDeadline)PermitDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)"
+    "PermitBatch(PermitDetails[] details,address spender,uint256 sigDeadline)PermitDetails(address token,uint160 amount,uint48 expiration,uint48 nonce)" // solhint-disable-line
+      // max-line-length
   );
 
   bytes32 public constant _TOKEN_PERMISSIONS_TYPEHASH = keccak256("TokenPermissions(address token,uint256 amount)");
 
   bytes32 public constant _PERMIT_TRANSFER_FROM_TYPEHASH = keccak256(
-    "PermitTransferFrom(TokenPermissions permitted,address spender,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)"
+    "PermitTransferFrom(TokenPermissions permitted,address spender,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)" // solhint-disable-line
+      // max-line-length
   );
 
   bytes32 public constant _PERMIT_BATCH_TRANSFER_FROM_TYPEHASH = keccak256(
-    "PermitBatchTransferFrom(TokenPermissions[] permitted,address spender,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)"
+    "PermitBatchTransferFrom(TokenPermissions[] permitted,address spender,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)" // solhint-disable-line
+      // max-line-length
   );
 
   string public constant _TOKEN_PERMISSIONS_TYPESTRING = "TokenPermissions(address token,uint256 amount)";
