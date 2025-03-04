@@ -33,7 +33,7 @@
               ▓▓▓        ▓▓      ▓▓▓    ▓▓▓       ▓▓▓▓▓▓▓▓▓▓        ▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓▓▓          
 */
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.28;
 
 import { ERC4626Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 import { ERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -46,7 +46,6 @@ import { IAgToken } from "contracts/interfaces/IAgToken.sol";
 
 import { AccessManagedUpgradeable, IAccessManager } from "../utils/AccessManagedUpgradeable.sol";
 
-
 import "../utils/Constants.sol";
 import "../utils/Errors.sol";
 
@@ -57,20 +56,19 @@ import "../utils/Errors.sol";
 /// @dev These contracts are functional within the Transmuter system if they have mint right on `asset` and
 /// if they are trusted by the Transmuter contract
 /// @dev Implementations assume that `asset` is safe to interact with, on which there cannot be reentrancy attacks
-/// @dev The ERC4626 interface does not allow users to specify a slippage protection parameter for the main entry points
+/// @dev The ERC4626 interface does not allow users to specify a slippage protection parameter for the main entry
+/// points
 /// (like `deposit`, `mint`, `redeem` or `withdraw`). Even though there should be no specific sandwiching
 /// issue with current implementations, it is still recommended to interact with Angle Savings contracts
 /// through a router that can implement such a protection.
 abstract contract BaseSavings is Initializable, AccessManagedUpgradeable, ERC4626Upgradeable, UUPSUpgradeable {
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-
-    /// @notice Upgrade the implementation of the contract
-    /// @dev This function can only be called by the governor only
-    /// @param newImplementation The address of the new implementation
-    function _authorizeUpgrade(address newImplementation) internal override restricted { }
+  /// @notice Upgrade the implementation of the contract
+  /// @dev This function can only be called by the governor only
+  /// @param newImplementation The address of the new implementation
+  function _authorizeUpgrade(address newImplementation) internal override restricted { }
 }

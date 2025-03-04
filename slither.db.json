@@ -20571,8 +20571,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/savings/BaseSavings.sol#36) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/savings/BaseSavings.sol#L36) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/savings/BaseSavings.sol#36) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/savings/BaseSavings.sol#L36) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/savings/BaseSavings.sol#L36",
     "id": "f862e950df2513dc0d0051b7296cbe087141bc803464ee454aef83cad1c5e0b8",
     "check": "solc-version",
@@ -20598,8 +20598,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/savings/Savings.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/savings/Savings.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/savings/Savings.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/savings/Savings.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/savings/Savings.sol#L3",
     "id": "694987970252ee06fb36f5fee56641f9304faff5a60ab8b085d89982ac457992",
     "check": "solc-version",
@@ -20625,8 +20625,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/savings/SavingsVest.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/savings/SavingsVest.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/savings/SavingsVest.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/savings/SavingsVest.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/savings/SavingsVest.sol#L3",
     "id": "1e209e697fc8a73160ccf38a9f4ecbb012ae34b9749175a5e25fd6206e82c529",
     "check": "solc-version",
@@ -20652,8 +20652,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/DiamondProxy.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/DiamondProxy.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/DiamondProxy.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/DiamondProxy.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/DiamondProxy.sol#L3",
     "id": "78e957343fae2e3185beda3eecb831565d3128c42a7eddc3c7a5bedb4c408e35",
     "check": "solc-version",
@@ -20679,8 +20679,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/Layout.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/Layout.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/Layout.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/Layout.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/Layout.sol#L3",
     "id": "61c88bdc4eee1b016bd06ae6790a10722f2850e8c92285e1709195fc70ea2a75",
     "check": "solc-version",
@@ -20706,8 +20706,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/Storage.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/Storage.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/Storage.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/Storage.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/Storage.sol#L3",
     "id": "f5dc60d1cb41804a5b64fc4de1c22eb69e89c4265df4214bba46839a0c19b17f",
     "check": "solc-version",
@@ -20733,8 +20733,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/configs/FakeGnosis.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/configs/FakeGnosis.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/configs/FakeGnosis.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/configs/FakeGnosis.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/configs/FakeGnosis.sol#L3",
     "id": "19f05488b1341d719100abf4d8ad5441c4fb1f0f3faeb2a828699b374e0794f2",
     "check": "solc-version",
@@ -20760,8 +20760,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/configs/Production.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/configs/Production.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/configs/Production.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/configs/Production.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/configs/Production.sol#L3",
     "id": "7e2d307e5ea707a119026319abf200657945097866d0577b626c21c69266022f",
     "check": "solc-version",
@@ -20787,8 +20787,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/configs/Test.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/configs/Test.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/configs/Test.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/configs/Test.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/configs/Test.sol#L3",
     "id": "2ed15c33ac5cea47cf45e4da60dd15534b1402054df3e55caf84be4b59440076",
     "check": "solc-version",
@@ -20814,8 +20814,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/AccessControlModifiers.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/AccessControlModifiers.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/AccessControlModifiers.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/AccessControlModifiers.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/AccessControlModifiers.sol#L3",
     "id": "44aa62b46d913d622605fd5ea73ab0db371eacb030db45d50dcf50931489ff64",
     "check": "solc-version",
@@ -20841,8 +20841,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/DiamondCut.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/DiamondCut.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/DiamondCut.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/DiamondCut.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/DiamondCut.sol#L3",
     "id": "2493c834e90322f289c64b0e8389af6ab8fa501f87cb18517c1896deed8f97c5",
     "check": "solc-version",
@@ -20868,8 +20868,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/DiamondEtherscan.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/DiamondEtherscan.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/DiamondEtherscan.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/DiamondEtherscan.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/DiamondEtherscan.sol#L3",
     "id": "4f2268d75ec816f6b3320b7f1625e121030d74fac7feff3019537c4ec34929f4",
     "check": "solc-version",
@@ -20895,8 +20895,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/DiamondLoupe.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/DiamondLoupe.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/DiamondLoupe.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/DiamondLoupe.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/DiamondLoupe.sol#L3",
     "id": "9e0c32cea327c3e5aea17948f0b8b578f2a1f60d01133a0f8b519e3541aee16c",
     "check": "solc-version",
@@ -20922,8 +20922,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/Getters.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/Getters.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/Getters.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/Getters.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/Getters.sol#L3",
     "id": "6326972ab8211da3c19e1ab1fac35afb0e84e31392834af4ca32046b304165ff",
     "check": "solc-version",
@@ -20949,8 +20949,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/Redeemer.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/Redeemer.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/Redeemer.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/Redeemer.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/Redeemer.sol#L3",
     "id": "bbafc44dd289944597e9f181dba9c8ea4bc0d393f219ce7b77b5f46b360393ce",
     "check": "solc-version",
@@ -20976,8 +20976,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/RewardHandler.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/RewardHandler.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/RewardHandler.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/RewardHandler.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/RewardHandler.sol#L3",
     "id": "381dbb543a0407ae4e60d8ac5780d19da701f66c77d4f0563386bfc37d562dec",
     "check": "solc-version",
@@ -21003,8 +21003,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/SettersGovernor.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/SettersGovernor.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/SettersGovernor.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/SettersGovernor.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/SettersGovernor.sol#L3",
     "id": "97552597d0450d1d0b3b1fea80154f090104153f87f97c19f00e8dc251549c1d",
     "check": "solc-version",
@@ -21030,8 +21030,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/SettersGuardian.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/SettersGuardian.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/SettersGuardian.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/SettersGuardian.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/SettersGuardian.sol#L3",
     "id": "51d1e98e8a5018c777bde6bdae0220f2a3940500cf2aa7ab3ba45df8e37b3caa",
     "check": "solc-version",
@@ -21057,8 +21057,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/Swapper.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/Swapper.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/facets/Swapper.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/facets/Swapper.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/facets/Swapper.sol#L3",
     "id": "b79b968e9e7eca7bf8ebb3b0d7a7e4ec170361521b77cc7b6539f55f426a7a4b",
     "check": "solc-version",
@@ -21111,8 +21111,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibDiamondEtherscan.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibDiamondEtherscan.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibDiamondEtherscan.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibDiamondEtherscan.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/libraries/LibDiamondEtherscan.sol#L3",
     "id": "5242fb47a65f4158e66a81cb7f2951a88ca8d4c7482f379c01569a7a4f4a9c20",
     "check": "solc-version",
@@ -21138,8 +21138,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibGetters.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibGetters.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibGetters.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibGetters.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/libraries/LibGetters.sol#L3",
     "id": "2929edd4a73ae9c69da30b1656b69605faf9b6a8c842ab4f90967ffcc07e42b6",
     "check": "solc-version",
@@ -21165,8 +21165,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibHelpers.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibHelpers.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibHelpers.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibHelpers.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/libraries/LibHelpers.sol#L3",
     "id": "b5057b820ff5750c6121049df4c9f87bb47d1ad8c2ad54dc9a5f8acb51271933",
     "check": "solc-version",
@@ -21192,8 +21192,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibManager.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibManager.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibManager.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibManager.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/libraries/LibManager.sol#L3",
     "id": "5e646a65c3dd3fa9307ebb07323adb4cffa9b1412c79071ed9af2e941545327d",
     "check": "solc-version",
@@ -21219,8 +21219,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibOracle.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibOracle.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibOracle.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibOracle.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/libraries/LibOracle.sol#L3",
     "id": "360b5dfd6399e68f07104e43a72d0eafab54436c4de66aac62fd8df9f75855d8",
     "check": "solc-version",
@@ -21246,8 +21246,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibSetters.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibSetters.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibSetters.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibSetters.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/libraries/LibSetters.sol#L3",
     "id": "8e0b0574acb5e3a59adc549781a8ef4c2f2b4faebb819e8ad8ac7183dcbdc1fa",
     "check": "solc-version",
@@ -21273,8 +21273,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibStorage.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibStorage.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibStorage.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibStorage.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/libraries/LibStorage.sol#L3",
     "id": "1ce859666d0da230794383be53568e5b97db283848bb82a95d9f32c511f23d11",
     "check": "solc-version",
@@ -21300,8 +21300,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibWhitelist.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibWhitelist.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/transmuter/libraries/LibWhitelist.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/transmuter/libraries/LibWhitelist.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/transmuter/libraries/LibWhitelist.sol#L3",
     "id": "8b8b023e3c39e6e437ebb5bb507b1c20278507b657ba5e71af9c9a8e7b97254c",
     "check": "solc-version",
@@ -21327,8 +21327,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/utils/AccessControl.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/utils/AccessControl.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/utils/AccessControl.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/utils/AccessControl.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/utils/AccessControl.sol#L3",
     "id": "6b00be8a36bb9d35c485b650508fd261388ec8b5c2a1c876d7b1cb538482cc4e",
     "check": "solc-version",
@@ -21381,8 +21381,8 @@
         "type_specific_fields": { "directive": ["solidity", "^", "0.8", ".19"] }
       }
     ],
-    "description": "Pragma version^0.8.19 (contracts/utils/Errors.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
-    "markdown": "Pragma version[^0.8.19](contracts/utils/Errors.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.\n",
+    "description": "Pragma version^0.8.19 (contracts/utils/Errors.sol#3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
+    "markdown": "Pragma version[^0.8.19](contracts/utils/Errors.sol#L3) necessitates a version too recent to be trusted. Consider deploying with 0.8.19.\n",
     "first_markdown_element": "contracts/utils/Errors.sol#L3",
     "id": "67f7a2a8fd9779863f8171e9bcf16b4fad8c771c151fb8a5d9901cfe9f846d43",
     "check": "solc-version",

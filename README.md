@@ -7,26 +7,39 @@
 
 Transmuter is an autonomous and modular price stability module for decentralized stablecoin protocols.
 
-- It is conceived as a basket of different assets (normally stablecoins) backing a stablecoin and comes with guarantees on the maximum exposure the stablecoin can have to each asset in the basket.
-- A stablecoin issued through the Transmuter system can be minted at oracle value from any of the assets with adaptive fees, and it can be burnt for any of the assets in the backing with variable fees as well. It can also be redeemed at any time against a proportional amount of each asset in the backing.
+- It is conceived as a basket of different assets (normally stablecoins) backing a stablecoin and comes with guarantees
+  on the maximum exposure the stablecoin can have to each asset in the basket.
+- A stablecoin issued through the Transmuter system can be minted at oracle value from any of the assets with adaptive
+  fees, and it can be burnt for any of the assets in the backing with variable fees as well. It can also be redeemed at
+  any time against a proportional amount of each asset in the backing.
 
-Transmuter is compatible with other common mechanisms often used to issue stablecoins like collateralized-debt position models. It is notably used as a standalone module within the Angle Protocol for EURA in parallel with the Borrowing module.
+Transmuter is compatible with other common mechanisms often used to issue stablecoins like collateralized-debt position
+models. It is notably used as a standalone module within the Angle Protocol for EURA in parallel with the Borrowing
+module.
 
 ---
 
 ## Contracts Architecture 🏘️
 
-The Transmuter system relies on a [diamond proxy pattern](https://eips.ethereum.org/EIPS/eip-2535). There is as such only one main contract (the `Transmuter` contract) which delegates calls to different facets each with their own implementation. The main facets of the system are:
+The Transmuter system relies on a [diamond proxy pattern](https://eips.ethereum.org/EIPS/eip-2535). There is as such
+only one main contract (the `Transmuter` contract) which delegates calls to different facets each with their own
+implementation. The main facets of the system are:
 
-- the [`Swapper`](./contracts/transmuter/facets/Swapper.sol) facet with the logic associated to the mint and burn functionalities of the system
+- the [`Swapper`](./contracts/transmuter/facets/Swapper.sol) facet with the logic associated to the mint and burn
+  functionalities of the system
 - the [`Redeemer`](./contracts/transmuter/facets/Redeemer.sol) facet for redemptions
-- the [`Getters`](./contracts/transmuter/facets/Getters.sol) facet with external getters for UIs and contracts built on top of `Transmuter`
-- the [`SettersGovernor`](./contracts/transmuter/facets/SettersGovernor.sol) facet protocols' governance can use to update system parameters.
-- the [`SettersGuardian`](./contracts/transmuter/facets/SettersGuardian.sol) facet protocols' guardian can use to update system parameters.
+- the [`Getters`](./contracts/transmuter/facets/Getters.sol) facet with external getters for UIs and contracts built on
+  top of `Transmuter`
+- the [`SettersGovernor`](./contracts/transmuter/facets/SettersGovernor.sol) facet protocols' governance can use to
+  update system parameters.
+- the [`SettersGuardian`](./contracts/transmuter/facets/SettersGuardian.sol) facet protocols' guardian can use to update
+  system parameters.
 
 The storage parameters of the system are defined in the [`Storage`](./contracts/transmuter/Storage.sol) file.
 
-The Transmuter system can come with optional [ERC4626](https://eips.ethereum.org/EIPS/eip-4626) [savings contracts](./contracts/savings/) which can be used to distribute a yield to the holders of the stablecoin issued through the Transmuter.
+The Transmuter system can come with optional [ERC4626](https://eips.ethereum.org/EIPS/eip-4626)
+[savings contracts](./contracts/savings/) which can be used to distribute a yield to the holders of the stablecoin
+issued through the Transmuter.
 
 ---
 
@@ -42,35 +55,46 @@ The Transmuter system can come with optional [ERC4626](https://eips.ethereum.org
 
 ### Trust assumptions of the Transmuter system
 
-The governor role, which will be a multisig or an onchain governance, has all rights, including upgrading contracts, removing funds, changing the code, etc.
+The governor role, which will be a multisig or an onchain governance, has all rights, including upgrading contracts,
+removing funds, changing the code, etc.
 
-The guardian role, which will be a multisig, has the right to: freeze assets, and potentially impact transient funds. The idea is that any malicious behavior of the guardian should be fixable by the governor, and that the guardian shouldn't be able to extract funds from the system.
+The guardian role, which will be a multisig, has the right to: freeze assets, and potentially impact transient funds.
+The idea is that any malicious behavior of the guardian should be fixable by the governor, and that the guardian
+shouldn't be able to extract funds from the system.
 
 ### Known Issues
 
 - Lack of support for ERC165
 - At initialization, fees need to be < 100% for 100% exposure because the first exposures will be ~100%
 - If at some point there are 0 funds in the system it’ll break as `amountToNextBreakPoint` will be 0
-- In the burn, if there is one asset which is making 99% of the basket, and another one 1%: if the one making 1% depegs, it still impacts the burn for the asset that makes the majority of the funds
-- The whitelist function for burns and redemptions are somehow breaking the fairness of the system as whitelisted actors will redeem more value
-- The `getCollateralRatio` function may overflow and revert if the amount of stablecoins issued is really small (1 billion x smaller) than the value of the collateral in the system.
+- In the burn, if there is one asset which is making 99% of the basket, and another one 1%: if the one making 1% depegs,
+  it still impacts the burn for the asset that makes the majority of the funds
+- The whitelist function for burns and redemptions are somehow breaking the fairness of the system as whitelisted actors
+  will redeem more value
+- The `getCollateralRatio` function may overflow and revert if the amount of stablecoins issued is really small (1
+  billion x smaller) than the value of the collateral in the system.
 
 ### Audits
 
-The Transmuter and savings smart contracts have been audited by Code4rena, find the audit report [here](https://code4rena.com/reports/2023-06-angle).
+The Transmuter and savings smart contracts have been audited by Code4rena, find the audit report
+[here](https://code4rena.com/reports/2023-06-angle).
 
 ---
 
 ### Bug Bounty
 
-For contracts deployed for the Angle Protocol, a bug bounty is open on [Immunefi](https://immunefi.com) and [Hats Finance](https://hats.finance). The rewards and scope of the Angle Immunefi are defined [here](https://immunefi.com/bounty/angleprotocol/).
+For contracts deployed for the Angle Protocol, a bug bounty is open on [Immunefi](https://immunefi.com) and
+[Hats Finance](https://hats.finance). The rewards and scope of the Angle Immunefi are defined
+[here](https://immunefi.com/bounty/angleprotocol/).
 
 ---
 
 ## Deployment Addresses 🚦
 
-- Transmuter for EURA on Ethereum: [0x00253582b2a3FE112feEC532221d9708c64cEFAb](https://etherscan.io/address/0x00253582b2a3FE112feEC532221d9708c64cEFAb)
-- Transmuter for USDA on Ethereum: [0x222222fD79264BBE280b4986F6FEfBC3524d0137](https://etherscan.io/address/0x222222fD79264BBE280b4986F6FEfBC3524d0137)
+- Transmuter for EURA on Ethereum:
+  [0x00253582b2a3FE112feEC532221d9708c64cEFAb](https://etherscan.io/address/0x00253582b2a3FE112feEC532221d9708c64cEFAb)
+- Transmuter for USDA on Ethereum:
+  [0x222222fD79264BBE280b4986F6FEfBC3524d0137](https://etherscan.io/address/0x222222fD79264BBE280b4986F6FEfBC3524d0137)
 
 ---
 
@@ -116,7 +140,8 @@ forge i
 
 ### Warning
 
-This repository uses [`ffi`](https://book.getfoundry.sh/cheatcodes/ffi) in its test suite. Beware as a malicious actor forking this repo could add malicious commands using this.
+This repository uses [`ffi`](https://book.getfoundry.sh/cheatcodes/ffi) in its test suite. Beware as a malicious actor
+forking this repo could add malicious commands using this.
 
 #### Create `.env` file
 
@@ -131,7 +156,8 @@ For additional keys, you can check the [`.env.example`](/.env.example) file.
 Warning:
 
 - always keep your confidential information safe
-- this repository uses [`ffi`](https://book.getfoundry.sh/cheatcodes/ffi) in its test suite. Beware as a malicious actor forking this repo may execute malicious commands on your machine
+- this repository uses [`ffi`](https://book.getfoundry.sh/cheatcodes/ffi) in its test suite. Beware as a malicious actor
+  forking this repo may execute malicious commands on your machine
 
 ---
 
@@ -139,7 +165,8 @@ Warning:
 
 Compilation of production contracts will be done using the via-ir pipeline.
 
-However, tests do not compile with via-ir, and to run coverage the optimizer needs to be off. Therefore for development and test purposes you can compile without optimizer.
+However, tests do not compile with via-ir, and to run coverage the optimizer needs to be off. Therefore for development
+and test purposes you can compile without optimizer.
 
 ```bash
 yarn compile # with via-ir but without compiling tests files
@@ -221,16 +248,22 @@ yarn gas
 
 ### Etherscan Verification ✅
 
-To facilitate the interactions with the Diamond Proxy contract on Etherscan, one solution introduced [here](https://github.com/zdenham/diamond-etherscan/blob/main/README.md) is to deploy the system with a dummy facet that is in fact a noop mock of the whole diamond.
+To facilitate the interactions with the Diamond Proxy contract on Etherscan, one solution introduced
+[here](https://github.com/zdenham/diamond-etherscan/blob/main/README.md) is to deploy the system with a dummy facet that
+is in fact a noop mock of the whole diamond.
 
 To get the dummy implementation, solution is to:
 
 - download the [repo](https://github.com/zdenham/diamond-etherscan/blob/main/README.md) and follow the instructions
 - upload the dummy implementation [here](./scripts/generated/DummyDiamondImplementation.sol)
-- if the address used has ownership on the Transmuter contracts, run [this script](./scripts/gnosis/VerifyProxyEtherscan.s.sol) to deploy the new dummy facet and add it to the whole Transmuter system
+- if the address used has ownership on the Transmuter contracts, run
+  [this script](./scripts/gnosis/VerifyProxyEtherscan.s.sol) to deploy the new dummy facet and add it to the whole
+  Transmuter system
 - go to Etherscan and point the `DiamondProxy` to the `DiamondEtherscanFacet` contract
 
-Every time a facet is updated with a new function or a change in interface, a new dummy implementation should be deployed and governance should call `DiamondEtherscan.setDummyImplementation()` with the newly deployed dummy implementation.
+Every time a facet is updated with a new function or a change in interface, a new dummy implementation should be
+deployed and governance should call `DiamondEtherscan.setDummyImplementation()` with the newly deployed dummy
+implementation.
 
 ---
 
@@ -250,13 +283,15 @@ If you're interested in contributing, please see our [contributions guidelines](
 
 ## Questions & Feedback
 
-For any question or feedback you can send an email to [contact@angle.money](mailto:contact@angle.money). Don't hesitate to reach out on [Twitter](https://twitter.com/AngleProtocol)🐦 as well.
+For any question or feedback you can send an email to [contact@angle.money](mailto:contact@angle.money). Don't hesitate
+to reach out on [Twitter](https://twitter.com/AngleProtocol)🐦 as well.
 
 ---
 
 ## Licensing
 
-The primary license for this repository is the Business Source License 1.1 (`BUSL-1.1`). See [`LICENSE`](./LICENSE). Minus the following exceptions:
+The primary license for this repository is the Business Source License 1.1 (`BUSL-1.1`). See [`LICENSE`](./LICENSE).
+Minus the following exceptions:
 
 - [Interfaces](contracts/interfaces/) have a General Public License
 - [Some libraries](contracts/transmuter/libraries/LibHelpers.sol) have a General Public License

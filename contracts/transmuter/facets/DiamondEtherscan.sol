@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.28;
 
 import { IDiamondEtherscan } from "interfaces/IDiamondEtherscan.sol";
 
@@ -11,13 +11,13 @@ import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
 /// @author Forked from:
 /// https://github.com/zdenham/diamond-etherscan/blob/main/contracts/libraries/LibDiamondEtherscan.sol
 contract DiamondEtherscan is IDiamondEtherscan, AccessManagedModifiers {
-    /// @inheritdoc IDiamondEtherscan
-    function setDummyImplementation(address _implementation) external restricted {
-        LibDiamondEtherscan.setDummyImplementation(_implementation);
-    }
+  /// @inheritdoc IDiamondEtherscan
+  function setDummyImplementation(address _implementation) external restricted {
+    LibDiamondEtherscan.setDummyImplementation(_implementation);
+  }
 
-    /// @inheritdoc IDiamondEtherscan
-    function implementation() external view returns (address) {
-        return LibDiamondEtherscan.dummyImplementation();
-    }
+  /// @inheritdoc IDiamondEtherscan
+  function implementation() external view returns (address) {
+    return LibDiamondEtherscan.dummyImplementation();
+  }
 }

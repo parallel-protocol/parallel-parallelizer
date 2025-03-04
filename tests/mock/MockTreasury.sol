@@ -3,13 +3,13 @@
 pragma solidity ^0.8.12;
 
 interface IStablecoin {
-    function addMinter(address minter) external;
+  function addMinter(address minter) external;
 }
 
 contract MockTreasury {
-    uint256 public counter;
+  uint256 public counter;
 
-    function addMinter(address) external {
-        counter += 1;
-    }
+  function addMinter(address) external {
+    counter += 1;
+  }
 }

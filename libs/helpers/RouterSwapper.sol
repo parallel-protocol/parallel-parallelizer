@@ -114,7 +114,7 @@ abstract contract RouterSwapper {
 
         if (!success) {
             if (retData.length != 0) {
-                assembly {
+                assembly("memory-safe") {
                     revert(add(32, retData), mload(retData))
                 }
             }

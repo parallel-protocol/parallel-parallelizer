@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-
-pragma solidity ^0.8.19;
+pragma solidity 0.8.28;
 
 import { ITransmuter } from "interfaces/ITransmuter.sol";
 
@@ -19,80 +18,84 @@ import "contracts/utils/Errors.sol";
 import { DummyDiamondImplementation } from "scripts/generated/DummyDiamondImplementation.sol";
 
 import "./Helper.sol";
-import {console} from "@forge-std/console.sol";
+import { console } from "@forge-std/console.sol";
 
 abstract contract Transmuter is Helper {
-    // Diamond
-    ITransmuter transmuter;
+  // Diamond
+  ITransmuter transmuter;
 
-    string[] facetNames;
-    address[] facetAddressList;
+  string[] facetNames;
+  address[] facetAddressList;
 
-    // @dev Deploys diamond and connects facets
-    function deployTransmuter(address _init, bytes memory _calldata) public virtual {
-        // Deploy every facet
-        facetNames.push("DiamondCut");
-        facetAddressList.push(address(new DiamondCut()));
+  // @dev Deploys diamond and connects facets
+  function deployTransmuter(address _init, bytes memory _calldata) public virtual {
+    // Deploy every facet
+    facetNames.push("DiamondCut");
+    facetAddressList.push(address(new DiamondCut()));
 
-        facetNames.push("DiamondEtherscan");
-        facetAddressList.push(address(new DiamondEtherscan()));
+    facetNames.push("DiamondEtherscan");
+    facetAddressList.push(address(new DiamondEtherscan()));
 
-        facetNames.push("DiamondLoupe");
-        facetAddressList.push(address(new DiamondLoupe()));
+    facetNames.push("DiamondLoupe");
+    facetAddressList.push(address(new DiamondLoupe()));
 
-        facetNames.push("Getters");
-        facetAddressList.push(address(new Getters()));
+    facetNames.push("Getters");
+    facetAddressList.push(address(new Getters()));
 
-        facetNames.push("Redeemer");
-        facetAddressList.push(address(new Redeemer()));
+    facetNames.push("Redeemer");
+    facetAddressList.push(address(new Redeemer()));
 
-        facetNames.push("RewardHandler");
-        facetAddressList.push(address(new RewardHandler()));
+    facetNames.push("RewardHandler");
+    facetAddressList.push(address(new RewardHandler()));
 
-        facetNames.push("SettersGovernor");
-        facetAddressList.push(address(new SettersGovernor()));
+    facetNames.push("SettersGovernor");
+    facetAddressList.push(address(new SettersGovernor()));
 
-        facetNames.push("SettersGuardian");
-        facetAddressList.push(address(new SettersGuardian()));
+    facetNames.push("SettersGuardian");
+    facetAddressList.push(address(new SettersGuardian()));
 
-        facetNames.push("Swapper");
-        facetAddressList.push(address(new Swapper()));
+    facetNames.push("Swapper");
+    facetAddressList.push(address(new Swapper()));
 
-        // Build appropriate payload
-        uint256 n = facetNames.length;
-        FacetCut[] memory cut = new FacetCut[](n);
+    // Build appropriate payload
+    uint256 n = facetNames.length;
+    FacetCut[] memory cut = new FacetCut[](n);
 
-        for (uint256 i = 0; i < n; ++i) {
-            cut[i] = FacetCut({
-                facetAddress: facetAddressList[i],
-                action: FacetCutAction.Add,
-                functionSelectors: _generateSelectors(facetNames[i])
-            });
-        }
-
-        // Deploy diamond
-        transmuter = ITransmuter(address(new DiamondProxy(cut, _init, _calldata)));
+    for (uint256 i = 0; i < n; ++i) {
+      cut[i] = FacetCut({
+        facetAddress: facetAddressList[i],
+        action: FacetCutAction.Add,
+        functionSelectors: _generateSelectors(facetNames[i])
+      });
     }
 
-    // @dev Deploys diamond and connects facets
-    function deployReplicaTransmuter(
-        address _init,
-        bytes memory _calldata
-    ) public virtual returns (ITransmuter _transmuter) {
-        // Build appropriate payload
-        uint256 n = facetNames.length;
-        FacetCut[] memory cut = new FacetCut[](n);
-        for (uint256 i = 0; i < n; ++i) {
-            cut[i] = FacetCut({
-                facetAddress: facetAddressList[i],
-                action: FacetCutAction.Add,
-                functionSelectors: _generateSelectors(facetNames[i])
-            });
-        }
+    // Deploy diamond
+    transmuter = ITransmuter(address(new DiamondProxy(cut, _init, _calldata)));
+  }
 
-        // Deploy diamond
-        _transmuter = ITransmuter(address(new DiamondProxy(cut, _init, _calldata)));
-
-        return _transmuter;
+  // @dev Deploys diamond and connects facets
+  function deployReplicaTransmuter(
+    address _init,
+    bytes memory _calldata
+  )
+    public
+    virtual
+    returns (ITransmuter _transmuter)
+  {
+    // Build appropriate payload
+    uint256 n = facetNames.length;
+    FacetCut[] memory cut = new FacetCut[](n);
+    for (uint256 i = 0; i < n; ++i) {
+      cut[i] = FacetCut({
+        facetAddress: facetAddressList[i],
+        action: FacetCutAction.Add,
+        functionSelectors: _generateSelectors(facetNames[i])
+      });
     }
+
+    // Deploy diamond
+    _transmuter = ITransmuter(address(new DiamondProxy(cut, _init, _calldata)));
+
+    return _transmuter;
+  }
 }

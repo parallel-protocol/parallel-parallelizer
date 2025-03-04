@@ -150,7 +150,7 @@ contract JsonReader is Script {
     function bytesToAddress(
         bytes memory bys
     ) private pure returns (address addr) {
-        assembly {
+        assembly("memory-safe") {
             addr := mload(add(bys, 32))
         }
     }

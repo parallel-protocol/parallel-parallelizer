@@ -13,6 +13,4 @@ import "contracts/transmuter/DiamondProxy.sol";
 import "contracts/transmuter/Storage.sol";
 
 // Workaround to have only 1 file to run slither on
-contract Mock {
-
-}
+contract Mock { }

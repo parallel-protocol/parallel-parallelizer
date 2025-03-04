@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity >=0.5.0;
+pragma solidity 0.8.28;
 
 import { ICbETH } from "../interfaces/external/coinbase/ICbETH.sol";
 import { ISfrxETH } from "../interfaces/external/frax/ISfrxETH.sol";
@@ -58,7 +58,6 @@ uint8 constant ENTERED = 2;
 // Role IDs for the AccessManager
 uint64 constant GOVERNOR_ROLE = 10;
 uint64 constant GUARDIAN_ROLE = 20;
-
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                COMMON ADDRESSES                                                 

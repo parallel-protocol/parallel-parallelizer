@@ -1,24 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-import {CommonBase, VmSafe} from "@forge-std/Base.sol";
-import {Test} from "@forge-std/Test.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import { CommonBase, VmSafe } from "@forge-std/Base.sol";
+import { Test } from "@forge-std/Test.sol";
+import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-import {JsonReader} from "./JsonReader.sol";
-import {strings} from "@stringutils/strings.sol";
-import {ContractType, Constants} from "@helpers/Constants.sol";
+import { JsonReader } from "./JsonReader.sol";
+import { strings } from "@stringutils/strings.sol";
+import { ContractType, Constants } from "@helpers/Constants.sol";
 
 contract CommonUtils is CommonBase, JsonReader {
     using strings for *;
+
     bytes32 private constant EUR_HASH = keccak256(abi.encodePacked("EUR"));
     bytes32 private constant USD_HASH = keccak256(abi.encodePacked("USD"));
 
-    
-
-    function _getAllContracts(
-        uint256 chainId
-    ) internal view returns (address[] memory) {
+    function _getAllContracts(uint256 chainId) internal view returns (address[] memory) {
         string memory json = readJsonFile(getPath());
 
         // Get all keys at the chain level (these are the contract categories)
@@ -41,24 +38,16 @@ contract CommonUtils is CommonBase, JsonReader {
                 }
             } catch {
                 // If not a direct address, try to parse nested objects
-                try vm.parseJsonKeys(json, fullPath) returns (
-                    string[] memory subKeys
-                ) {
+                try vm.parseJsonKeys(json, fullPath) returns (string[] memory subKeys) {
                     for (uint256 j = 0; j < subKeys.length; j++) {
-                        string memory subPath = string.concat(
-                            fullPath,
-                            ".",
-                            subKeys[j]
-                        );
-                        try vm.parseJsonAddress(json, subPath) returns (
-                            address addr
-                        ) {
+                        string memory subPath = string.concat(fullPath, ".", subKeys[j]);
+                        try vm.parseJsonAddress(json, subPath) returns (address addr) {
                             if (addr != address(0)) {
                                 addresses[count++] = addr;
                             }
-                        } catch {}
+                        } catch { }
                     }
-                } catch {}
+                } catch { }
             }
         }
 
@@ -71,9 +60,7 @@ contract CommonUtils is CommonBase, JsonReader {
         return result;
     }
 
-    function _getConnectedChains(
-        string memory token
-    ) internal returns (uint256[] memory, address[] memory) {
+    function _getConnectedChains(string memory token) internal returns (uint256[] memory, address[] memory) {
         uint256[] memory allChainIds = _getChainIds();
         uint256[] memory chainIds = new uint256[](0);
         address[] memory contracts = new address[](0);
@@ -81,31 +68,24 @@ contract CommonUtils is CommonBase, JsonReader {
         for (uint256 i = 0; i < allChainIds.length; i++) {
             address addr;
             if (keccak256(abi.encodePacked(token)) == EUR_HASH) {
-                try
-                    this.chainToContract(allChainIds[i], ContractType.LZEURp)
-                returns (address _addr) {
+                try this.chainToContract(allChainIds[i], ContractType.LZEURp) returns (address _addr) {
                     addr = _addr;
-                } catch {}
+                } catch { }
             } else if (keccak256(abi.encodePacked(token)) == USD_HASH) {
-                try
-                    this.chainToContract(allChainIds[i], ContractType.LZUSDp)
-                returns (address _addr) {
+                try this.chainToContract(allChainIds[i], ContractType.LZUSDp) returns (address _addr) {
                     addr = _addr;
-                } catch {}
-            } 
+                } catch { }
+            }
 
             if (addr != address(0)) {
-                assembly {
+                assembly ("memory-safe") {
                     // Get the current length of the arrays
                     let oldLen := mload(chainIds)
                     let newLen := add(oldLen, 1)
 
                     // Calculate new memory locations
                     let newChainIds := add(mload(0x40), 0x20)
-                    let newContracts := add(
-                        newChainIds,
-                        mul(add(newLen, 1), 0x20)
-                    )
+                    let newContracts := add(newChainIds, mul(add(newLen, 1), 0x20))
 
                     // Store lengths
                     mstore(newChainIds, newLen)
@@ -114,36 +94,19 @@ contract CommonUtils is CommonBase, JsonReader {
                     // Copy existing chainIds
                     let srcChainIds := add(chainIds, 0x20)
                     let destChainIds := add(newChainIds, 0x20)
-                    for {
-                        let j := 0
-                    } lt(j, oldLen) {
-                        j := add(j, 1)
-                    } {
-                        mstore(
-                            add(destChainIds, mul(j, 0x20)),
-                            mload(add(srcChainIds, mul(j, 0x20)))
-                        )
+                    for { let j := 0 } lt(j, oldLen) { j := add(j, 1) } {
+                        mstore(add(destChainIds, mul(j, 0x20)), mload(add(srcChainIds, mul(j, 0x20))))
                     }
 
                     // Copy existing contracts
                     let srcContracts := add(contracts, 0x20)
                     let destContracts := add(newContracts, 0x20)
-                    for {
-                        let j := 0
-                    } lt(j, oldLen) {
-                        j := add(j, 1)
-                    } {
-                        mstore(
-                            add(destContracts, mul(j, 0x20)),
-                            mload(add(srcContracts, mul(j, 0x20)))
-                        )
+                    for { let j := 0 } lt(j, oldLen) { j := add(j, 1) } {
+                        mstore(add(destContracts, mul(j, 0x20)), mload(add(srcContracts, mul(j, 0x20))))
                     }
 
                     // Add new elements
-                    mstore(
-                        add(destChainIds, mul(oldLen, 0x20)),
-                        mload(add(allChainIds, add(0x20, mul(i, 0x20))))
-                    )
+                    mstore(add(destChainIds, mul(oldLen, 0x20)), mload(add(allChainIds, add(0x20, mul(i, 0x20)))))
                     mstore(add(destContracts, mul(oldLen, 0x20)), addr)
 
                     // Update free memory pointer
@@ -177,9 +140,11 @@ contract CommonUtils is CommonBase, JsonReader {
     }
 
     /// @notice Get all chains where a specific contract type is deployed
-    function _getChainIdsWithDeployedContract(
-        ContractType contractType
-    ) internal view returns (uint256[] memory deployedChains) {
+    function _getChainIdsWithDeployedContract(ContractType contractType)
+        internal
+        view
+        returns (uint256[] memory deployedChains)
+    {
         string memory json = readJsonFile(getPath());
         string[] memory chainIds = vm.parseJsonKeys(json, ".");
 
@@ -206,57 +171,70 @@ contract CommonUtils is CommonBase, JsonReader {
         }
     }
 
-    function chainToContract(
-        uint256 chainId,
-        ContractType name
-    ) external view returns (address) {
+    function chainToContract(uint256 chainId, ContractType name) external view returns (address) {
         return _chainToContract(chainId, name);
     }
 
-    function _chainToContract(
-        uint256 chainId,
-        ContractType name
-    ) internal view returns (address) {
+    function _chainToContract(uint256 chainId, ContractType name) internal view returns (address) {
         return this.readAddress(chainId, _getContractPath(name));
     }
 
     /// @dev Helper function to get the JSON path for a contract type
-    function _getContractPath(
-        ContractType name
-    ) internal pure returns (string memory) {
-        if (name == ContractType.EURp) return "EUR.token";
-        else if (name == ContractType.USDp) return "USD.token";
-        else if (name == ContractType.LZEURp) return "EUR.lzToken";
-        else if (name == ContractType.LZUSDp) return "USD.lzToken";
-        else if (name == ContractType.PRL) return "PRL";
-        else if (name == ContractType.sEURp) return "EUR.Savings";
-        else if (name == ContractType.sUSDp) return "USD.Savings";
-        else if (name == ContractType.Timelock) return "Timelock";
-        else if (name == ContractType.TransmuterEURp) return "EUR.Transmuter";
-        else if (name == ContractType.TransmuterUSDp) return "USD.Transmuter";
-        else if (name == ContractType.TreasuryEURp) return "EUR.Treasury";
-        else if (name == ContractType.TreasuryUSDp) return "USD.Treasury";
-        else if (name == ContractType.FlashLoan) return "FlashLoan";
-        else if (name == ContractType.MultiBlockHarvester)
+    function _getContractPath(ContractType name) internal pure returns (string memory) {
+        if (name == ContractType.EURp) {
+            return "EUR.token";
+        } else if (name == ContractType.USDp) {
+            return "USD.token";
+        } else if (name == ContractType.LZEURp) {
+            return "EUR.lzToken";
+        } else if (name == ContractType.LZUSDp) {
+            return "USD.lzToken";
+        } else if (name == ContractType.PRL) {
+            return "PRL";
+        } else if (name == ContractType.sEURp) {
+            return "EUR.Savings";
+        } else if (name == ContractType.sUSDp) {
+            return "USD.Savings";
+        } else if (name == ContractType.Timelock) {
+            return "Timelock";
+        } else if (name == ContractType.TransmuterEURp) {
+            return "EUR.Transmuter";
+        } else if (name == ContractType.TransmuterUSDp) {
+            return "USD.Transmuter";
+        } else if (name == ContractType.TreasuryEURp) {
+            return "EUR.Treasury";
+        } else if (name == ContractType.TreasuryUSDp) {
+            return "USD.Treasury";
+        } else if (name == ContractType.FlashLoan) {
+            return "FlashLoan";
+        } else if (name == ContractType.MultiBlockHarvester) {
             return "USD.MultiBlockHarvester";
-        else if (name == ContractType.GenericHarvester)
+        } else if (name == ContractType.GenericHarvester) {
             return "USD.GenericHarvester";
-        else if (name == ContractType.Harvester) return "USD.Harvester";
-        else if (name == ContractType.Rebalancer) return "USD.Rebalancer";
-        else if (name == ContractType.MulticallWithFailure)
+        } else if (name == ContractType.Harvester) {
+            return "USD.Harvester";
+        } else if (name == ContractType.Rebalancer) {
+            return "USD.Rebalancer";
+        } else if (name == ContractType.MulticallWithFailure) {
             return "MulticallWithFailure";
-        else if (name == ContractType.OracleNativeUSD) return "OracleNativeUSD";
-        else if (name == ContractType.Swapper) return "Swapper";
-        else if (name == ContractType.ProxyAdmin) return "ProxyAdmin";
-        else if (name == ContractType.DaoMultisig) return "DaoMultisig";
-        else if (name == ContractType.GuardianMultisig) return "GuardianMultisig";
-
-        else revert("contract not supported");
+        } else if (name == ContractType.OracleNativeUSD) {
+            return "OracleNativeUSD";
+        } else if (name == ContractType.Swapper) {
+            return "Swapper";
+        } else if (name == ContractType.ProxyAdmin) {
+            return "ProxyAdmin";
+        } else if (name == ContractType.DaoMultisig) {
+            return "DaoMultisig";
+        } else if (name == ContractType.GuardianMultisig) {
+            return "GuardianMultisig";
+        } else {
+            revert("contract not supported");
+        }
     }
 
-    function _stringToUint(string memory s) internal pure returns (uint) {
+    function _stringToUint(string memory s) internal pure returns (uint256) {
         bytes memory b = bytes(s);
-        uint result = 0;
+        uint256 result = 0;
         for (uint256 i = 0; i < b.length; i++) {
             uint256 c = uint256(uint8(b[i]));
             if (c >= 48 && c <= 57) {
@@ -266,17 +244,17 @@ contract CommonUtils is CommonBase, JsonReader {
         return result;
     }
 
-
-    function _generateSelectors(
-        string memory _facetName
-    ) internal returns (bytes4[] memory selectors) {
+    function _generateSelectors(string memory _facetName) internal returns (bytes4[] memory selectors) {
         return _generateSelectors(_facetName, 3);
     }
 
     function _generateSelectors(
         string memory _facetName,
         uint256 retries
-    ) internal returns (bytes4[] memory selectors) {
+    )
+        internal
+        returns (bytes4[] memory selectors)
+    {
         //get string of contract methods
         string[] memory cmd = new string[](4);
         cmd[0] = "forge";
@@ -301,16 +279,16 @@ contract CommonUtils is CommonBase, JsonReader {
 
         // remove first line
         s.split(rowDelim);
-        
+
         // determine number of methods
         uint256 count = s.count(rowDelim);
-        count = count > 2 ? (count - 1 )/2 : count;
+        count = count > 2 ? (count - 1) / 2 : count;
         selectors = new bytes4[](count);
         // remove column headers and separator lines
         s.split(rowDelim);
         s.split(rowDelim);
 
-        for (uint i = 0; i < selectors.length; ++i) {
+        for (uint256 i = 0; i < selectors.length; ++i) {
             strings.slice memory currentLine = s.split(rowDelim);
             // isolate method by removing space around it
             currentLine.split(spaceDelim);
@@ -319,6 +297,4 @@ contract CommonUtils is CommonBase, JsonReader {
         }
         return selectors;
     }
-
-
 }

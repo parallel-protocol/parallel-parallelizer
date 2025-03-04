@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
@@ -21,56 +21,56 @@ import "contracts/utils/Errors.sol" as Errors;
 import { Fixture } from "../Fixture.sol";
 
 contract StablecoinCapTest is Fixture {
-    function test_GetStablecoinCap_Init_Success() public {
-        assertEq(transmuter.getStablecoinCap(address(eurA)), type(uint256).max);
-        assertEq(transmuter.getStablecoinCap(address(eurB)), type(uint256).max);
-        assertEq(transmuter.getStablecoinCap(address(eurY)), type(uint256).max);
-    }
+  function test_GetStablecoinCap_Init_Success() public {
+    assertEq(transmuter.getStablecoinCap(address(eurA)), type(uint256).max);
+    assertEq(transmuter.getStablecoinCap(address(eurB)), type(uint256).max);
+    assertEq(transmuter.getStablecoinCap(address(eurY)), type(uint256).max);
+  }
 
-    function test_RevertWhen_SetStablecoinCap_TooLargeMint() public {
-        uint256 amount = 2 ether;
-        uint256 stablecoinCap = 1 ether;
-        address collateral = address(eurA);
+  function test_RevertWhen_SetStablecoinCap_TooLargeMint() public {
+    uint256 amount = 2 ether;
+    uint256 stablecoinCap = 1 ether;
+    address collateral = address(eurA);
 
-        vm.prank(guardian);
-        transmuter.setStablecoinCap(collateral, stablecoinCap);
+    vm.prank(guardian);
+    transmuter.setStablecoinCap(collateral, stablecoinCap);
 
-        deal(collateral, bob, amount);
-        startHoax(bob);
-        IERC20(collateral).approve(address(transmuter), amount);
-        vm.expectRevert(Errors.InvalidSwap.selector);
-        startHoax(bob);
-        transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
-    }
+    deal(collateral, bob, amount);
+    startHoax(bob);
+    IERC20(collateral).approve(address(transmuter), amount);
+    vm.expectRevert(Errors.InvalidSwap.selector);
+    startHoax(bob);
+    transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
+  }
 
-    function test_RevertWhen_SetStablecoinCap_SlightlyLargeMint() public {
-        uint256 amount = 1.0000000000001 ether;
-        uint256 stablecoinCap = 1 ether;
-        address collateral = address(eurA);
+  function test_RevertWhen_SetStablecoinCap_SlightlyLargeMint() public {
+    uint256 amount = 1.0000000000001 ether;
+    uint256 stablecoinCap = 1 ether;
+    address collateral = address(eurA);
 
-        vm.prank(guardian);
-        transmuter.setStablecoinCap(collateral, stablecoinCap);
+    vm.prank(guardian);
+    transmuter.setStablecoinCap(collateral, stablecoinCap);
 
-        deal(collateral, bob, amount);
-        startHoax(bob);
-        IERC20(collateral).approve(address(transmuter), amount);
-        vm.expectRevert(Errors.InvalidSwap.selector);
-        startHoax(bob);
-        transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
-    }
+    deal(collateral, bob, amount);
+    startHoax(bob);
+    IERC20(collateral).approve(address(transmuter), amount);
+    vm.expectRevert(Errors.InvalidSwap.selector);
+    startHoax(bob);
+    transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
+  }
 
-    function test_SetStablecoinCap_Success() public {
-        uint256 amount = 0.99 ether;
-        uint256 stablecoinCap = 1 ether;
-        address collateral = address(eurA);
+  function test_SetStablecoinCap_Success() public {
+    uint256 amount = 0.99 ether;
+    uint256 stablecoinCap = 1 ether;
+    address collateral = address(eurA);
 
-        vm.prank(guardian);
-        transmuter.setStablecoinCap(collateral, stablecoinCap);
+    vm.prank(guardian);
+    transmuter.setStablecoinCap(collateral, stablecoinCap);
 
-        deal(collateral, bob, amount);
-        startHoax(bob);
-        IERC20(collateral).approve(address(transmuter), amount);
-        startHoax(bob);
-        transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
-    }
+    deal(collateral, bob, amount);
+    startHoax(bob);
+    IERC20(collateral).approve(address(transmuter), amount);
+    startHoax(bob);
+    transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
+  }
 }
