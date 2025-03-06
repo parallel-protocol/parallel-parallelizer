@@ -1,49 +1,61 @@
-# <img src="logo.svg" alt="Transmuter" height="40px"> Angle - Transmuter
+# Parallel - Parallelizer
 
-[![Transmuter CI](https://github.com/AngleProtocol/angle-transmuter/actions/workflows/ci.yml/badge.svg)](https://github.com/AngleProtocol/angle-transmuter/actions)
-[![Coverage](https://codecov.io/gh/AngleProtocol/angle-transmuter/branch/main/graph/badge.svg)](https://codecov.io/gh/AngleProtocol/angle-transmuter)
+## What is Parallelizer?
 
-## What is Transmuter?
-
-Transmuter is an autonomous and modular price stability module for decentralized stablecoin protocols.
+**Parallelizer is friendly fork of Angle's Transmuter which is an autonomous and modular price stability module for
+decentralized stablecoin protocols.**
 
 - It is conceived as a basket of different assets (normally stablecoins) backing a stablecoin and comes with guarantees
   on the maximum exposure the stablecoin can have to each asset in the basket.
-- A stablecoin issued through the Transmuter system can be minted at oracle value from any of the assets with adaptive
+- A stablecoin issued through the Parallelizer system can be minted at oracle value from any of the assets with adaptive
   fees, and it can be burnt for any of the assets in the backing with variable fees as well. It can also be redeemed at
   any time against a proportional amount of each asset in the backing.
 
-Transmuter is compatible with other common mechanisms often used to issue stablecoins like collateralized-debt position
-models. It is notably used as a standalone module within the Angle Protocol for EURA in parallel with the Borrowing
-module.
+Parallelizer is compatible with other common mechanisms often used to issue stablecoins like collateralized-debt
+position models.
 
 ---
 
 ## Contracts Architecture 🏘️
 
-The Transmuter system relies on a [diamond proxy pattern](https://eips.ethereum.org/EIPS/eip-2535). There is as such
-only one main contract (the `Transmuter` contract) which delegates calls to different facets each with their own
+The Parallelizer system relies on a [diamond proxy pattern](https://eips.ethereum.org/EIPS/eip-2535). There is as such
+only one main contract (the `Parallelizer` contract) which delegates calls to different facets each with their own
 implementation. The main facets of the system are:
 
-- the [`Swapper`](./contracts/transmuter/facets/Swapper.sol) facet with the logic associated to the mint and burn
+- the [`Swapper`](./contracts/parallelizer/facets/Swapper.sol) facet with the logic associated to the mint and burn
   functionalities of the system
-- the [`Redeemer`](./contracts/transmuter/facets/Redeemer.sol) facet for redemptions
-- the [`Getters`](./contracts/transmuter/facets/Getters.sol) facet with external getters for UIs and contracts built on
-  top of `Transmuter`
-- the [`SettersGovernor`](./contracts/transmuter/facets/SettersGovernor.sol) facet protocols' governance can use to
+- the [`Redeemer`](./contracts/parallelizer/facets/Redeemer.sol) facet for redemptions
+- the [`Getters`](./contracts/parallelizer/facets/Getters.sol) facet with external getters for UIs and contracts built
+  on top of `Parallelizer`
+- the [`SettersGovernor`](./contracts/parallelizer/facets/SettersGovernor.sol) facet protocols' governance can use to
   update system parameters.
-- the [`SettersGuardian`](./contracts/transmuter/facets/SettersGuardian.sol) facet protocols' guardian can use to update
-  system parameters.
+- the [`SettersGuardian`](./contracts/parallelizer/facets/SettersGuardian.sol) facet protocols' guardian can use to
+  update system parameters.
 
-The storage parameters of the system are defined in the [`Storage`](./contracts/transmuter/Storage.sol) file.
+The storage parameters of the system are defined in the [`Storage`](./contracts/parallelizer/Storage.sol) file.
 
-The Transmuter system can come with optional [ERC4626](https://eips.ethereum.org/EIPS/eip-4626)
+The Parallelizer system can come with optional [ERC4626](https://eips.ethereum.org/EIPS/eip-4626)
 [savings contracts](./contracts/savings/) which can be used to distribute a yield to the holders of the stablecoin
-issued through the Transmuter.
+issued through the Parallelizer.
 
 ---
 
+## Changed with Angle's Transmuter
+
+Some changed has been made to the original Angle's Transmuter:
+
+- Move from foundry gitmodule to Js dependencies
+- Move from Yarn to Bun
+- Move from AccessControl logics to Openzeppelin's AccessManaged
+- Move from TransparentUpgradeableProxy to UUPSUpdgradeableProxy
+- Restrict function to only one role due to AccessManager/AccessManaged logic (that means that Governor must also got
+  Guardian role).
+- Remove files that will not be used by Parallel (`SavingsVest.sol`, some `Configs/`, etc.)
+- Renamed contracts (`AgToken` -> `TokenP`, `Transmuter` -> `Parallelizer`)
+
 ## Documentation 📚
+
+### Angle documentation
 
 - [Transmuter Whitepaper](https://docs.angle.money/overview/whitepapers)
 - [Angle Documentation](https://docs.angle.money)
@@ -53,7 +65,7 @@ issued through the Transmuter.
 
 ## Security ⛑️
 
-### Trust assumptions of the Transmuter system
+### Trust assumptions of the Parallelizer system
 
 The governor role, which will be a multisig or an onchain governance, has all rights, including upgrading contracts,
 removing funds, changing the code, etc.
@@ -76,25 +88,18 @@ shouldn't be able to extract funds from the system.
 
 ### Audits
 
-The Transmuter and savings smart contracts have been audited by Code4rena, find the audit report
+#### Angle audits
+
+The Angle's Transmuter and savings smart contracts have been audited by Code4rena, find the audit report
 [here](https://code4rena.com/reports/2023-06-angle).
 
 ---
 
 ### Bug Bounty
 
-For contracts deployed for the Angle Protocol, a bug bounty is open on [Immunefi](https://immunefi.com) and
-[Hats Finance](https://hats.finance). The rewards and scope of the Angle Immunefi are defined
-[here](https://immunefi.com/bounty/angleprotocol/).
-
 ---
 
 ## Deployment Addresses 🚦
-
-- Transmuter for EURA on Ethereum:
-  [0x00253582b2a3FE112feEC532221d9708c64cEFAb](https://etherscan.io/address/0x00253582b2a3FE112feEC532221d9708c64cEFAb)
-- Transmuter for USDA on Ethereum:
-  [0x222222fD79264BBE280b4986F6FEfBC3524d0137](https://etherscan.io/address/0x222222fD79264BBE280b4986F6FEfBC3524d0137)
 
 ---
 
@@ -117,25 +122,12 @@ source /root/.zshrc
 foundryup
 ```
 
-To install the standard library:
-
-```bash
-forge install foundry-rs/forge-std
-```
-
-To update libraries:
-
-```bash
-forge update
-```
-
 #### Install packages
 
 You can install all dependencies by running
 
 ```bash
-yarn
-forge i
+bun install
 ```
 
 ### Warning
@@ -169,8 +161,8 @@ However, tests do not compile with via-ir, and to run coverage the optimizer nee
 and test purposes you can compile without optimizer.
 
 ```bash
-yarn compile # with via-ir but without compiling tests files
-yarn compile:dev # without optimizer
+bun run compile # with via-ir but without compiling tests files
+bun run compile:dev # without optimizer
 ```
 
 ### Testing
@@ -178,7 +170,7 @@ yarn compile:dev # without optimizer
 Here are examples of how to run the test suite:
 
 ```bash
-yarn test
+bun run test
 FOUNDRY_PROFILE=dev forge test -vvv --watch # To watch changing files
 FOUNDRY_PROFILE=dev forge test -vvv --match-path test/fuzz/Redeemer.test.sol
 FOUNDRY_PROFILE=dev forge test -vvv --match-test "testAbc*"
@@ -199,29 +191,7 @@ FOUNDRY_PROFILE=dev forge test --list --json --match-test "testXXX*"
 There is an example script in the `scripts/foundry` folder. Then you can run:
 
 ```bash
-yarn deploy <FILE_NAME> --rpc-url <NETWORK_NAME>
-```
-
----
-
-### Fork
-
-If you first want to test your deployments/scripts in fork mode. You should run:
-
-```bash
-source .env
-```
-
-Then fork the network of your choice, by adding the associated script in the `package.json`
-
-```bash
-yarn fork:<CHAIN_NAME>
-```
-
-Finnaly run your script in fork mode:
-
-```bash
-yarn deploy:fork <FILE_NAME>
+bun run deploy <FILE_NAME> --rpc-url <NETWORK_NAME>
 ```
 
 ---
@@ -231,7 +201,7 @@ yarn deploy:fork <FILE_NAME>
 We recommend the use of this [vscode extension](ryanluker.vscode-coverage-gutters).
 
 ```bash
-yarn coverage
+bun run coverage
 ```
 
 You'll need to install lcov `brew install lcov` to visualize the coverage report.
@@ -241,7 +211,7 @@ You'll need to install lcov `brew install lcov` to visualize the coverage report
 ### Gas report ⛽️
 
 ```bash
-yarn gas
+bun run gas
 ```
 
 ---
@@ -256,9 +226,9 @@ To get the dummy implementation, solution is to:
 
 - download the [repo](https://github.com/zdenham/diamond-etherscan/blob/main/README.md) and follow the instructions
 - upload the dummy implementation [here](./scripts/generated/DummyDiamondImplementation.sol)
-- if the address used has ownership on the Transmuter contracts, run
+- if the address used has ownership on the Parallelizer contracts, run
   [this script](./scripts/gnosis/VerifyProxyEtherscan.s.sol) to deploy the new dummy facet and add it to the whole
-  Transmuter system
+  Parallelizer system
 - go to Etherscan and point the `DiamondProxy` to the `DiamondEtherscanFacet` contract
 
 Every time a facet is updated with a new function or a change in interface, a new dummy implementation should be
@@ -270,7 +240,7 @@ implementation.
 ### [Slither](https://github.com/crytic/slither)
 
 ```bash
-yarn slither
+bun run slither
 ```
 
 ---
@@ -294,6 +264,6 @@ The primary license for this repository is the Business Source License 1.1 (`BUS
 Minus the following exceptions:
 
 - [Interfaces](contracts/interfaces/) have a General Public License
-- [Some libraries](contracts/transmuter/libraries/LibHelpers.sol) have a General Public License
+- [Some libraries](contracts/parallelizer/libraries/LibHelpers.sol) have a General Public License
 
 Each of these files states their license type.
