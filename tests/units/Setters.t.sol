@@ -34,7 +34,7 @@ contract Test_Setters_TogglePause is Fixture {
   function test_RevertWhen_NotCollateral() public {
     vm.expectRevert(Errors.NotCollateral.selector);
     hoax(guardian);
-    transmuter.togglePause(address(agToken), ActionType.Mint);
+    transmuter.togglePause(address(tokenP), ActionType.Mint);
   }
 
   function test_PauseMint() public {
@@ -47,10 +47,10 @@ contract Test_Setters_TogglePause is Fixture {
     assert(transmuter.isPaused(address(eurA), ActionType.Mint));
 
     vm.expectRevert(Errors.Paused.selector);
-    transmuter.swapExactInput(1 ether, 1 ether, address(eurA), address(agToken), alice, block.timestamp + 10);
+    transmuter.swapExactInput(1 ether, 1 ether, address(eurA), address(tokenP), alice, block.timestamp + 10);
 
     vm.expectRevert(Errors.Paused.selector);
-    transmuter.swapExactOutput(1 ether, 1 ether, address(eurA), address(agToken), alice, block.timestamp + 10);
+    transmuter.swapExactOutput(1 ether, 1 ether, address(eurA), address(tokenP), alice, block.timestamp + 10);
   }
 
   function test_PauseBurn() public {
@@ -63,10 +63,10 @@ contract Test_Setters_TogglePause is Fixture {
     assert(transmuter.isPaused(address(eurA), ActionType.Burn));
 
     vm.expectRevert(Errors.Paused.selector);
-    transmuter.swapExactInput(1 ether, 1 ether, address(agToken), address(eurA), alice, block.timestamp + 10);
+    transmuter.swapExactInput(1 ether, 1 ether, address(tokenP), address(eurA), alice, block.timestamp + 10);
 
     vm.expectRevert(Errors.Paused.selector);
-    transmuter.swapExactOutput(1 ether, 1 ether, address(agToken), address(eurA), alice, block.timestamp + 10);
+    transmuter.swapExactOutput(1 ether, 1 ether, address(tokenP), address(eurA), alice, block.timestamp + 10);
   }
 
   function test_PauseRedeem() public {
@@ -110,7 +110,7 @@ contract Test_Setters_SetFees is Fixture {
 
     vm.expectRevert(Errors.NotCollateral.selector);
     hoax(guardian);
-    transmuter.setFees(address(agToken), xFee, yFee, true);
+    transmuter.setFees(address(tokenP), xFee, yFee, true);
   }
 
   function test_RevertWhen_InvalidParamsLength0() public {
@@ -504,11 +504,11 @@ contract Test_Setters_RecoverERC20 is Fixture {
   function test_RevertWhen_NotGovernor() public {
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, alice));
     hoax(alice);
-    transmuter.recoverERC20(address(agToken), agToken, alice, 1 ether);
+    transmuter.recoverERC20(address(tokenP), tokenP, alice, 1 ether);
 
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, guardian));
     hoax(guardian);
-    transmuter.recoverERC20(address(agToken), agToken, alice, 1 ether);
+    transmuter.recoverERC20(address(tokenP), tokenP, alice, 1 ether);
   }
 
   function test_Success() public {
@@ -1082,15 +1082,15 @@ contract Test_Setters_AddCollateral is Fixture {
     uint256 length = transmuter.getCollateralList().length;
 
     vm.expectEmit(address(transmuter));
-    emit CollateralAdded(address(agToken));
+    emit CollateralAdded(address(tokenP));
 
     hoax(governor);
-    transmuter.addCollateral(address(agToken));
+    transmuter.addCollateral(address(tokenP));
 
     address[] memory list = transmuter.getCollateralList();
     assertEq(list.length, length + 1);
-    assertEq(address(agToken), list[list.length - 1]);
-    assertEq(transmuter.getCollateralDecimals(address(agToken)), agToken.decimals());
+    assertEq(address(tokenP), list[list.length - 1]);
+    assertEq(transmuter.getCollateralDecimals(address(tokenP)), tokenP.decimals());
   }
 }
 
@@ -1330,7 +1330,7 @@ contract Test_Setters_SetStablecoinCap is Fixture {
   function test_RevertWhen_NotCollateral() public {
     vm.expectRevert(Errors.NotCollateral.selector);
     hoax(guardian);
-    transmuter.setStablecoinCap(address(agToken), 1 ether);
+    transmuter.setStablecoinCap(address(tokenP), 1 ether);
 
     vm.expectRevert(Errors.NotCollateral.selector);
     hoax(guardian);

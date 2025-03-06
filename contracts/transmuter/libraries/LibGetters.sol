@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,7 +14,10 @@ import "../../utils/Constants.sol";
 import "../Storage.sol";
 
 /// @title LibGetters
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This library is a friendly fork of Angle's `LibGetters` library
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibGetters.sol
 library LibGetters {
   using Math for uint256;
   using SafeCast for uint256;

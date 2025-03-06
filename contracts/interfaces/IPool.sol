@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
+/// @title IPool
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `IPool` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IPool.sol
 interface IPool {
   function deposit(uint256 assets, address lender) external returns (uint256 shares, uint256 transferInDayTimestamp);
 

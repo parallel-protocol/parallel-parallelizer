@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
 import { ISettersGovernor } from "interfaces/ISetters.sol";
 
 import { LibManager } from "../libraries/LibManager.sol";
@@ -19,7 +17,10 @@ import "../../utils/Errors.sol";
 import "../Storage.sol";
 
 /// @title SettersGovernor
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This contract is a friendly fork of Angle's `SettersGovernor` contract
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/SettersGovernor.sol
 contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
   using SafeERC20 for IERC20;
 

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -7,7 +6,7 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 import { IRedeemer } from "interfaces/IRedeemer.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
@@ -23,7 +22,10 @@ import "../../utils/Errors.sol";
 import "../Storage.sol";
 
 /// @title Redeemer
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This contract is a friendly fork of Angle's `Redeemer` contract
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Redeemer.sol
 contract Redeemer is IRedeemer, AccessManagedModifiers {
   using SafeERC20 for IERC20;
   using Math for uint256;
@@ -138,7 +140,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     // of stablecoins issued from each collateral without having to loop through each of them
     _updateNormalizer(amount, false);
 
-    IAgToken(ts.agToken).burnSelf(amount, msg.sender);
+    ITokenP(ts.tokenP).burnSelf(amount, msg.sender);
 
     address[] memory collateralListMem = ts.collateralList;
     uint256 indexCollateral;

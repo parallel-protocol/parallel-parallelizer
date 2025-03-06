@@ -6,7 +6,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 //solhint-disable
 
 import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 import { ITransmuter } from "interfaces/ITransmuter.sol";
 import { Test, stdMath, StdStorage, stdStorage } from "@forge-std/Test.sol";
 import "contracts/utils/Constants.sol";
@@ -38,7 +38,7 @@ contract BaseActor is Test {
   uint256 public nbrActor;
   address internal _currentActor;
 
-  IAgToken agToken;
+  ITokenP tokenP;
   ITransmuter internal _transmuter;
   ITransmuter internal _transmuterSplit;
   address[] internal _collaterals;
@@ -72,7 +72,7 @@ contract BaseActor is Test {
     nbrActor = _nbrActor;
     _transmuter = transmuter;
     _transmuterSplit = transmuterSplit;
-    agToken = IAgToken(transmuter.agToken());
+    tokenP = ITokenP(transmuter.tokenP());
     _collaterals = collaterals;
     _oracles = oracles;
     _maxTokenAmount.push(_maxAmountWithoutDecimals * 10 ** IERC20Metadata(_collaterals[0]).decimals());

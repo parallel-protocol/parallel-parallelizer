@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import "./ProductionTypes.sol";
@@ -8,10 +7,10 @@ import "./ProductionTypes.sol";
 contract ProductionUSD {
   // address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
-  function initialize(IAccessManager _accessManager, address _agToken, address dummyImplementation) external {
+  function initialize(IAccessManager _accessManager, address _tokenP, address dummyImplementation) external {
     /*
         require(address(_accessControlManager) == 0x5bc6BEf80DA563EBf6Df6D6913513fa9A7ec89BE);
-        require(address(_agToken) == 0x0000206329b97DB379d5E1Bf586BbDB969C63274);
+        require(address(_tokenP) == 0x0000206329b97DB379d5E1Bf586BbDB969C63274);
         */
 
     // Set Collaterals
@@ -64,7 +63,7 @@ contract ProductionUSD {
     TransmuterStorage storage ts = s.transmuterStorage();
     ts.statusReentrant = NOT_ENTERED;
     ts.normalizer = uint128(BASE_27);
-    ts.agToken = IAgToken(_agToken);
+    ts.tokenP = ITokenP(_tokenP);
 
     // Setup each collateral
     uint256 collateralsLength = collaterals.length;

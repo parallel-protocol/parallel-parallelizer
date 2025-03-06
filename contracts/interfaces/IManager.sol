@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 /// @title IManager
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `IManager` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IManager.sol
 interface IManager {
   /// @notice Returns the amount of collateral managed by the Manager
   /// @return balances Balances of all the subCollaterals handled by the manager
@@ -16,7 +18,7 @@ interface IManager {
   function invest(uint256 amount) external;
 
   /// @notice Sends `amount` of `collateral` to the `to` address
-  /// @dev Called when `agToken` are burnt and during redemptions
+  /// @dev Called when `tokenP` are burnt and during redemptions
   //  @dev MUST revert if there are not funds enough available
   /// @dev MUST be callable only by the transmuter
   function release(address asset, address to, uint256 amount) external;

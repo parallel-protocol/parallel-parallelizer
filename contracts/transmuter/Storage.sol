@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IAccessManager } from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                         ENUMS                                                      
@@ -120,7 +119,7 @@ struct Collateral {
 }
 
 struct TransmuterStorage {
-  IAgToken agToken; // agToken handled by the system
+  ITokenP tokenP; // tokenP handled by the system
   uint8 isRedemptionLive; // If redemption is unpaused
   uint8 statusReentrant; // If call is reentrant or not
   bool consumingSchedule; // If the contract is consuming a scheduled operation

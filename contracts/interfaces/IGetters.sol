@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 
 import "../transmuter/Storage.sol";
 
 /// @title IGetters
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `IGetters` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IGetters.sol
 interface IGetters {
   /// @notice Checks whether a given `selector` is actually a valid selector corresponding to a function in one of
   /// the
@@ -15,7 +17,7 @@ interface IGetters {
   function isValidSelector(bytes4 selector) external view returns (bool);
 
   /// @notice Stablecoin minted by transmuter
-  function agToken() external view returns (IAgToken);
+  function tokenP() external view returns (ITokenP);
 
   /// @notice Returns the list of collateral assets supported by the system
   function getCollateralList() external view returns (address[] memory);

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -7,7 +6,10 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import "../Storage.sol";
 
 /// @title LibHelpers
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This library is a friendly fork of Angle's `LibHelpers` library
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibHelpers.sol
 library LibHelpers {
   /// @notice Rebases the units of `amount` from `fromDecimals` to `toDecimals`
   function convertDecimalTo(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {

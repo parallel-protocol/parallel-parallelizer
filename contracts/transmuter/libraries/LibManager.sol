@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { IManager } from "interfaces/IManager.sol";
@@ -7,10 +6,13 @@ import { IManager } from "interfaces/IManager.sol";
 import "../Storage.sol";
 
 /// @title LibManager
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @dev Managed collateral assets may be handled through external smart contracts or directly through this library
 /// @dev There is no implementation at this point for a managed collateral handled through this library, and
 /// a new specific `ManagerType` would need to be added in this case
+/// @dev This library is a friendly fork of Angle's `LibManager` library
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibManager.sol
 library LibManager {
   /// @notice Checks to which address managed funds must be transferred
   function transferRecipient(bytes memory config) internal view returns (address recipient) {

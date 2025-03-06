@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import "interfaces/external/chainlink/AggregatorV3Interface.sol";
@@ -20,7 +19,7 @@ struct CollateralSetup {
 contract Test {
   function initialize(
     IAccessManager _accessManager,
-    address _agToken,
+    address _tokenP,
     CollateralSetup calldata eurA,
     CollateralSetup calldata eurB,
     CollateralSetup calldata eurY
@@ -32,7 +31,7 @@ contract Test {
     TransmuterStorage storage ts = s.transmuterStorage();
     ts.statusReentrant = NOT_ENTERED;
     ts.normalizer = uint128(BASE_27);
-    ts.agToken = IAgToken(_agToken);
+    ts.tokenP = ITokenP(_tokenP);
 
     // Setup first collateral
     LibSetters.addCollateral(eurA.collateral);

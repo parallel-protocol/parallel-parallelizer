@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.28;
 
 import { LibStorage as s } from "./LibStorage.sol";
@@ -11,7 +10,8 @@ import "../../utils/Constants.sol";
 import "../Storage.sol";
 
 /// @title LibDiamond
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @notice Helper library to deal with diamond proxies.
 /// @dev Reference: EIP-2535 Diamonds
 /// @dev Forked from https://github.com/mudgen/diamond-3/blob/master/contracts/libraries/LibDiamond.sol by mudgen

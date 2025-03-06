@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { LibDiamond } from "../libraries/LibDiamond.sol";
@@ -8,7 +7,11 @@ import "../../utils/Errors.sol";
 import "../../utils/Constants.sol";
 
 /// @title AccessManagedModifiers
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This contract is a friendly fork of Angle's `AccessControlModifiers` contract
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/AccessControlModifiers.sol
+/// update access logic to use OpenZeppelin's `AccessManaged` logic
 contract AccessManagedModifiers {
   /// @notice Checks whether the `msg.sender` can call a function with a given selector
   modifier restricted() {

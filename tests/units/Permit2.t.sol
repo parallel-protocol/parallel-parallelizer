@@ -168,7 +168,7 @@ contract Permit2Test is Fixture, FunctionUtils {
     startHoax(alice);
     transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
 
-    assertEq(agToken.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
+    assertEq(tokenP.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
     assertEq(eurA.balanceOf(alice), 0);
     assertEq(eurA.balanceOf(address(transmuter)), BASE_6);
   }
@@ -194,7 +194,7 @@ contract Permit2Test is Fixture, FunctionUtils {
       amountOut, amountInMax, address(eurA), alice, deadline, abi.encode(nonce, sig)
     );
 
-    assertEq(agToken.balanceOf(alice), BASE_18);
+    assertEq(tokenP.balanceOf(alice), BASE_18);
     assertEq(eurA.balanceOf(alice), amountInMax - amountIn);
     assertEq(eurA.balanceOf(address(transmuter)), amountIn);
   }
@@ -228,7 +228,7 @@ contract Permit2Test is Fixture, FunctionUtils {
     startHoax(alice);
     transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
 
-    assertEq(agToken.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
+    assertEq(tokenP.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
     assertEq(eurA.balanceOf(alice), 0);
     assertEq(eurA.balanceOf(address(manager)), BASE_6);
   }
@@ -267,7 +267,7 @@ contract Permit2Test is Fixture, FunctionUtils {
       amountOut, amountInMax, address(eurA), alice, deadline, abi.encode(nonce, sig)
     );
 
-    assertEq(agToken.balanceOf(alice), BASE_18);
+    assertEq(tokenP.balanceOf(alice), BASE_18);
     assertEq(eurA.balanceOf(alice), amountInMax - amountIn);
     assertEq(eurA.balanceOf(address(manager)), amountIn);
   }

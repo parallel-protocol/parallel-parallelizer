@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.28;
 
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 
 import { console } from "@forge-std/console.sol";
 
@@ -25,7 +25,7 @@ contract Test_Layout is Fixture {
   }
 
   function test_Layout() public {
-    address agToken = address(transmuter.agToken());
+    address tokenP = address(transmuter.tokenP());
     uint8 isRedemptionLive = transmuter.isPaused(address(0), ActionType.Redeem) ? 0 : 1;
     uint256 stablecoinsIssued = transmuter.getTotalIssued();
     address[] memory collateralList = transmuter.getCollateralList();
@@ -42,7 +42,7 @@ contract Test_Layout is Fixture {
 
     _etch();
 
-    assertEq(layout.agToken(), agToken);
+    assertEq(layout.tokenP(), tokenP);
     assertEq(layout.isRedemptionLive(), isRedemptionLive);
     assertEq((layout.normalizedStables() * layout.normalizer()) / BASE_27, stablecoinsIssued);
     for (uint256 i; i < collateralList.length; i++) {

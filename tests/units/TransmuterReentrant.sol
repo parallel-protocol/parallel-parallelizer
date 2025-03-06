@@ -7,8 +7,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { AccessManager, IAccessManaged } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 
-import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
 
 import { MockAccessControlManager } from "../mock/MockAccessControlManager.sol";
@@ -29,7 +28,7 @@ import { ConfigAccessManager } from "../utils/ConfigAccessManager.sol";
 contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
   using SafeERC20 for IERC20;
 
-  IAgToken public agToken;
+  ITokenP public tokenP;
 
   IERC20 public eurA;
   AggregatorV3Interface public oracleA;
@@ -93,8 +92,8 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
 
     deployAccessManager(governor, governor, guardian, governorAndGuardian);
 
-    // agToken
-    agToken = IAgToken(address(new MockTokenPermit("agEUR", "agEUR", 18)));
+    // tokenP
+    tokenP = ITokenP(address(new MockTokenPermit("agEUR", "agEUR", 18)));
 
     // Collaterals
     eurA = IERC20(address(new MockERC777("EUR_A", "EUR_A", 18)));
@@ -116,7 +115,7 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
       abi.encodeWithSelector(
         Test.initialize.selector,
         accessManager,
-        agToken,
+        tokenP,
         CollateralSetup(address(eurA), address(oracleA)),
         CollateralSetup(address(eurB), address(oracleB)),
         CollateralSetup(address(eurY), address(oracleY))
@@ -127,7 +126,7 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
     accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGuardianSelectorAccess(), GUARDIAN_ROLE);
     vm.stopPrank();
 
-    vm.label(address(agToken), "AgToken");
+    vm.label(address(tokenP), "tokenP");
     vm.label(address(transmuter), "Transmuter");
     vm.label(address(eurA), "eurA");
     vm.label(address(eurB), "eurB");
@@ -171,7 +170,7 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
     contractReentrantRedeemSwap = new ReentrantRedeemSwap(
       ITransmuter(address(transmuter)),
       IERC1820Registry(address(registry)),
-      IERC20(address(agToken)),
+      IERC20(address(tokenP)),
       IERC20(address(eurB))
     );
     contractReentrantRedeemSwap.setInterfaceImplementer();
@@ -183,11 +182,11 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
     if (mintedStables == 0) return;
 
     vm.startPrank(alice);
-    uint256 amountBurnt = agToken.balanceOf(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
     (, uint256[] memory quoteAmounts) = transmuter.quoteRedemptionCurve(amountBurnt);
     if (quoteAmounts[0] == 0) return;
 
-    agToken.transfer(address(contractReentrantRedeemGetCollateralRatio), amountBurnt);
+    tokenP.transfer(address(contractReentrantRedeemGetCollateralRatio), amountBurnt);
     vm.expectRevert(Errors.ReentrantCall.selector);
     contractReentrantRedeemGetCollateralRatio.testERC777Reentrancy(amountBurnt);
     vm.stopPrank();
@@ -199,11 +198,11 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
     if (mintedStables == 0) return;
 
     vm.startPrank(alice);
-    uint256 amountBurnt = agToken.balanceOf(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
     (, uint256[] memory quoteAmounts) = transmuter.quoteRedemptionCurve(amountBurnt);
     if (quoteAmounts[0] == 0) return;
 
-    agToken.transfer(address(contractReentrantRedeemSwap), amountBurnt);
+    tokenP.transfer(address(contractReentrantRedeemSwap), amountBurnt);
     vm.expectRevert(Errors.ReentrantCall.selector);
     contractReentrantRedeemSwap.testERC777Reentrancy(amountBurnt);
     vm.stopPrank();
@@ -229,13 +228,13 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
       IERC20(_collaterals[i]).approve(address(transmuter), initialAmounts[i]);
 
       collateralMintedStables[i] =
-        transmuter.swapExactInput(initialAmounts[i], 0, _collaterals[i], address(agToken), alice, block.timestamp * 2);
+        transmuter.swapExactInput(initialAmounts[i], 0, _collaterals[i], address(tokenP), alice, block.timestamp * 2);
       mintedStables += collateralMintedStables[i];
     }
 
     // Send a proportion of these to another account user just to complexify the case
     transferProportion = bound(transferProportion, 0, BASE_9);
-    agToken.transfer(bob, (mintedStables * transferProportion) / BASE_9);
+    tokenP.transfer(bob, (mintedStables * transferProportion) / BASE_9);
     vm.stopPrank();
   }
 }

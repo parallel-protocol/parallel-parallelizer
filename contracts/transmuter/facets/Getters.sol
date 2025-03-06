@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { IGetters } from "interfaces/IGetters.sol";
@@ -14,8 +13,11 @@ import "../../utils/Errors.sol";
 import "../Storage.sol";
 
 /// @title Getters
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @dev There may be duplicates in the info provided by the getters defined here
+/// @dev This contract is a friendly fork of Angle's `Getters` contract
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Getters.sol
 contract Getters is IGetters {
   /// @inheritdoc IGetters
   function isValidSelector(bytes4 selector) external view returns (bool) {
@@ -23,8 +25,8 @@ contract Getters is IGetters {
   }
 
   /// @inheritdoc IGetters
-  function agToken() external view returns (IAgToken) {
-    return s.transmuterStorage().agToken;
+  function tokenP() external view returns (ITokenP) {
+    return s.transmuterStorage().tokenP;
   }
 
   /// @inheritdoc IGetters

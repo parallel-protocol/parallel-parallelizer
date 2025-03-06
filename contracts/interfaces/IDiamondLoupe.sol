@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.28;
 
 import "../transmuter/Storage.sol";
 
 /// @notice IDiamondLoupe
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @dev Reference: EIP-2535 Diamonds
 /// @dev Forked from https://github.com/mudgen/diamond-3/blob/master/contracts/interfaces/IDiamondLoupe.sol by mudgen
-
 interface IDiamondLoupe {
   /// @notice Gets all facet addresses and their four byte function selectors.
   /// @return facets_ Facet

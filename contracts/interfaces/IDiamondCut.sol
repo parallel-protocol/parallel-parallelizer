@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.28;
 
 import "../transmuter/Storage.sol";
 
 /// @title IDiamondCut
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @dev Reference: EIP-2535 Diamonds
 /// @dev Forked from https://github.com/mudgen/diamond-3/blob/master/contracts/interfaces/IDiamondCut.sol by mudgen
+/// @dev This interface is a friendly fork of Angle's `IDiamondCut` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IDiamondCut.sol
 interface IDiamondCut {
   /// @notice Add/replace/remove any number of functions and optionally execute a function with delegatecall
   /// @param _diamondCut Contains the facet addresses and function selectors

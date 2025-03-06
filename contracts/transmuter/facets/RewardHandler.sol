@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { IRewardHandler } from "interfaces/IRewardHandler.sol";
@@ -15,7 +14,10 @@ import "../../utils/Errors.sol";
 import "../Storage.sol";
 
 /// @title RewardHandler
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This contract is a friendly fork of Angle's `RewardHandler` contract
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/RewardHandler.sol
 contract RewardHandler is IRewardHandler {
   using SafeERC20 for IERC20;
 

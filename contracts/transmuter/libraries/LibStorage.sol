@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import "../../utils/Constants.sol";
 import { DiamondStorage, ImplementationStorage, TransmuterStorage } from "../Storage.sol";
 
 /// @title LibStorage
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This library is a friendly fork of Angle's `LibStorage` library
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibStorage.sol
 library LibStorage {
   /// @notice Returns the storage struct stored at the `DIAMOND_STORAGE_POSITION` slot
   /// @dev This struct handles the logic of the different facets used in the diamond proxy

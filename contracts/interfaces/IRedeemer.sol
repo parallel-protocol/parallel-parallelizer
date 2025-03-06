@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 /// @title IRedeemer
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `IRedeemer` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IRedeemer.sol
 interface IRedeemer {
   /// @notice Redeems `amount` of stablecoins from the system
   /// @param receiver Address which should be receiving the output tokens

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import "../utils/Constants.sol";
@@ -24,7 +23,7 @@ contract Layout {
   // uint256(TRANSMUTER_STORAGE_POSITION) - 1 - uint256(IMPLEMENTATION_STORAGE_POSITION)
   uint256[63_285_583_310_056_702_947_905_333_115_721_520_886_117_326_369_500_905_343_566_708_717_130_208_881_920]
     private __gap2;
-  address public agToken; // slot 1
+  address public tokenP; // slot 1
   uint8 public isRedemptionLive; // slot 1
   uint8 public nonReentrant; // slot 1
   bool public consumingSchedule; // slot 1

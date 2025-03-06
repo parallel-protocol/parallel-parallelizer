@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.28;
 
 import { LibDiamond } from "./libraries/LibDiamond.sol";
@@ -9,7 +8,8 @@ import "../utils/Errors.sol";
 import "./Storage.sol";
 
 /// @title DiamondProxy
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @notice Implementation of a Diamond Proxy
 /// @dev Reference: EIP-2535 Diamonds
 /// @dev Forked from https://github.com/mudgen/diamond-3/blob/master/contracts/Diamond.sol by mudgen

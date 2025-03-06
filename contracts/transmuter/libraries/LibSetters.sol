@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -16,7 +15,10 @@ import "../../utils/Errors.sol";
 import "../Storage.sol";
 
 /// @title LibSetters
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This library is a friendly fork of Angle's `LibSetters` library
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibSetters.sol
 library LibSetters {
   using SafeCast for uint256;
 

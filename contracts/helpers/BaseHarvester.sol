@@ -5,7 +5,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { AccessManaged } from "../utils/AccessManaged.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITransmuter } from "../interfaces/ITransmuter.sol";
-import { IAgToken } from "../interfaces/IAgToken.sol";
+import { ITokenP } from "../interfaces/ITokenP.sol";
 
 import "../utils/Errors.sol";
 import "../interfaces/IHarvester.sol";
@@ -25,8 +25,11 @@ struct YieldBearingParams {
 }
 
 /// @title BaseHarvester
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @dev Abstract contract for a harvester that aims at rebalancing a Transmuter
+/// @dev This contract is a friendly fork of Angle's BaseHarvester contract:
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseHarvester.sol
 abstract contract BaseHarvester is IHarvester, AccessManaged {
   using SafeERC20 for IERC20;
 
@@ -60,8 +63,8 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
 
   /// @notice Reference to the `transmuter` implementation this contract aims at rebalancing
   ITransmuter public immutable transmuter;
-  /// @notice AgToken handled by the `transmuter` of interest
-  IAgToken public immutable agToken;
+  /// @notice TokenP handled by the `transmuter` of interest
+  ITokenP public immutable tokenP;
   /// @notice Max slippage when dealing with the Transmuter
   uint96 public maxSlippage;
   /// @notice Data associated to a yield bearing asset
@@ -83,13 +86,13 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   constructor(
     uint96 initialMaxSlippage,
     address initialAuthority,
-    IAgToken definitiveAgToken,
+    ITokenP definitiveTokenP,
     ITransmuter definitiveTransmuter
   )
     AccessManaged(initialAuthority)
   {
     _setMaxSlippage(initialMaxSlippage);
-    agToken = definitiveAgToken;
+    tokenP = definitiveTokenP;
     transmuter = definitiveTransmuter;
   }
 

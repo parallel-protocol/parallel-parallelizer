@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 /// @title ITransmuterOracle
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `ITransmuterOracle` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/ITransmuterOracle.sol
 interface ITransmuterOracle {
   /// @notice Reads the oracle value for asset to use in a redemption to compute the collateral ratio
   function readRedemption() external view returns (uint256);

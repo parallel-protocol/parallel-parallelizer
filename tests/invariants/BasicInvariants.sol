@@ -41,7 +41,7 @@ contract BasicInvariants is Fixture {
       abi.encodeWithSelector(
         Test.initialize.selector,
         accessManager,
-        agToken,
+        tokenP,
         CollateralSetup(address(eurA), address(oracleA)),
         CollateralSetup(address(eurB), address(oracleB)),
         CollateralSetup(address(eurY), address(oracleY))
@@ -166,10 +166,10 @@ contract BasicInvariants is Fixture {
 
     uint256 balance;
     for (uint256 i = 0; i < _traderHandler.nbrActor(); i++) {
-      balance += agToken.balanceOf(_traderHandler.actors(i));
+      balance += tokenP.balanceOf(_traderHandler.actors(i));
     }
     for (uint256 i = 0; i < _arbitragerHandler.nbrActor(); i++) {
-      balance += agToken.balanceOf(_arbitragerHandler.actors(i));
+      balance += tokenP.balanceOf(_arbitragerHandler.actors(i));
     }
 
     assertApproxEqAbs(stablecoinIssued + stablecoinIssuedSplit, balance, BASE_12);
@@ -211,8 +211,8 @@ contract BasicInvariants is Fixture {
       stableAmount = stablecoinIssued > BASE_18 ? (stablecoinIssued * multiplier) / 1e2 : BASE_18;
     }
     for (uint256 i; i < _collaterals.length; i++) {
-      uint256 amountIn = transmuter.quoteOut(stableAmount, _collaterals[i], address(agToken));
-      uint256 reflexiveStableAmount = transmuter.quoteIn(amountIn, _collaterals[i], address(agToken));
+      uint256 amountIn = transmuter.quoteOut(stableAmount, _collaterals[i], address(tokenP));
+      uint256 reflexiveStableAmount = transmuter.quoteIn(amountIn, _collaterals[i], address(tokenP));
       // If amountIn is small then do not check, as in the extreme case amountIn is null and
       // then reflexiveStableAmount is too
       if (amountIn < 10 ** (_decimals[i] - 2) || reflexiveStableAmount == 0) continue;
@@ -231,8 +231,8 @@ contract BasicInvariants is Fixture {
     }
     if (stableAmount < 10 * BASE_18) return;
     for (uint256 i; i < _collaterals.length; i++) {
-      try transmuter.quoteIn(stableAmount, address(agToken), _collaterals[i]) returns (uint256 amountOut) {
-        uint256 reflexiveStableAmount = transmuter.quoteOut(amountOut, address(agToken), _collaterals[i]);
+      try transmuter.quoteIn(stableAmount, address(tokenP), _collaterals[i]) returns (uint256 amountOut) {
+        uint256 reflexiveStableAmount = transmuter.quoteOut(amountOut, address(tokenP), _collaterals[i]);
         // If amountOut is small then do not check, as in the extreme case amountIn is null and
         // then reflexiveStableAmount is too
         if (amountOut < 10 ** (_decimals[i] - 2) || reflexiveStableAmount == 0) continue;

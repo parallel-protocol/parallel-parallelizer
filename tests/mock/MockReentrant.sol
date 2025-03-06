@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 import { ITransmuter, Transmuter } from "../utils/Transmuter.sol";
@@ -49,13 +48,13 @@ contract ReentrantRedeemSwap {
 
   ITransmuter transmuter;
   IERC1820Registry registry;
-  IERC20 agToken;
+  IERC20 tokenP;
   IERC20 collateral;
 
-  constructor(ITransmuter _transmuter, IERC1820Registry _registry, IERC20 _agToken, IERC20 _collateral) {
+  constructor(ITransmuter _transmuter, IERC1820Registry _registry, IERC20 _tokenP, IERC20 _collateral) {
     transmuter = _transmuter;
     registry = _registry;
-    agToken = _agToken;
+    tokenP = _tokenP;
     collateral = _collateral;
   }
 
@@ -77,7 +76,7 @@ contract ReentrantRedeemSwap {
     // reenter here
     if (from != address(0)) {
       // It should revert here
-      transmuter.swapExactInput(1e18, 0, address(collateral), address(agToken), address(this), block.timestamp * 2);
+      transmuter.swapExactInput(1e18, 0, address(collateral), address(tokenP), address(this), block.timestamp * 2);
     }
   }
 

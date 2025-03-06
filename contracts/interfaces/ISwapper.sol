@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 /// @title ISwapper
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `ISwapper` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/ISwapper.sol
 interface ISwapper {
   /// @notice Swaps (that is to say mints or burns) an exact amount of `tokenIn` for an amount of `tokenOut`
   /// @param amountIn Amount of `tokenIn` to bring

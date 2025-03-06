@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
@@ -8,7 +7,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 import { ISwapper } from "interfaces/ISwapper.sol";
 import { IPermit2, PermitTransferFrom } from "interfaces/external/permit2/IPermit2.sol";
 import { SignatureTransferDetails, TokenPermissions } from "interfaces/external/permit2/IPermit2.sol";
@@ -38,7 +37,8 @@ struct LocalVariables {
 }
 
 /// @title Swapper
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @dev In all the functions of this contract, one of `tokenIn` or `tokenOut` must be the stablecoin, and
 /// one of `tokenOut` or `tokenIn` must be an accepted collateral. Depending on the `tokenIn` or `tokenOut` given,
 /// the functions will either handle a mint or a burn operation
@@ -50,6 +50,8 @@ struct LocalVariables {
 /// @dev In case of a burn again, the swap functions will revert if the call concerns a collateral that requires a
 /// whitelist but the `to` address does not have it. The quote functions will not revert in this case.
 /// @dev Calling one of the swap functions in a burn case does not require any prior token approval
+/// @dev This contract is a friendly fork of Angle's `Swapper` contract
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Swapper.sol
 contract Swapper is ISwapper, AccessManagedModifiers {
   using SafeERC20 for IERC20;
   using SafeCast for uint256;
@@ -225,7 +227,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         if (collatInfo.isManaged > 0) {
           LibManager.invest(amountIn, collatInfo.managerData.config);
         }
-        IAgToken(tokenOut).mint(to, amountOut);
+        ITokenP(tokenOut).mint(to, amountOut);
       } else {
         if (collatInfo.onlyWhitelisted > 0 && !LibWhitelist.checkWhitelist(collatInfo.whitelistData, to)) {
           revert NotWhitelisted();
@@ -235,7 +237,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         // from this collateral
         collatInfo.normalizedStables = collatInfo.normalizedStables - uint216(changeAmount);
         ts.normalizedStables = ts.normalizedStables - changeAmount;
-        IAgToken(tokenIn).burnSelf(amountIn, msg.sender);
+        ITokenP(tokenIn).burnSelf(amountIn, msg.sender);
         if (collatInfo.isManaged > 0) {
           LibManager.release(tokenOut, to, amountOut, collatInfo.managerData.config);
         } else {
@@ -511,12 +513,12 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   {
     if (deadline != 0 && block.timestamp > deadline) revert TooLate();
     TransmuterStorage storage ts = s.transmuterStorage();
-    address _agToken = address(ts.agToken);
-    if (tokenIn == _agToken) {
+    address _tokenP = address(ts.tokenP);
+    if (tokenIn == _tokenP) {
       collatInfo = ts.collaterals[tokenOut];
       if (collatInfo.isBurnLive == 0) revert Paused();
       mint = false;
-    } else if (tokenOut == _agToken) {
+    } else if (tokenOut == _tokenP) {
       collatInfo = ts.collaterals[tokenIn];
       if (collatInfo.isMintLive == 0) revert Paused();
       mint = true;
@@ -538,7 +540,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     TransmuterStorage storage ts = s.transmuterStorage();
     collatInfo = ts.collaterals[tokenIn];
     if (collatInfo.isMintLive == 0) revert Paused();
-    tokenOut = address(ts.agToken);
+    tokenOut = address(ts.tokenP);
   }
 
   /// @notice Builds a permit2 `permitTransferFrom` payload for a `tokenIn` transfer

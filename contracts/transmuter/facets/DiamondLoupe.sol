@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.28;
 
 import { IDiamondLoupe } from "interfaces/IDiamondLoupe.sol";
@@ -9,7 +8,8 @@ import { LibStorage as s } from "../libraries/LibStorage.sol";
 import "../Storage.sol";
 
 /// @title DiamondLoupe
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @dev Reference: EIP-2535 Diamonds
 /// @dev Forked from https://github.com/mudgen/diamond-3/blob/master/contracts/facets/DiamondLoupeFacet.sol by mudgen
 contract DiamondLoupe is IDiamondLoupe {

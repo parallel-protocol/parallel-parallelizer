@@ -56,7 +56,7 @@ contract DummyDiamondImplementation {
 
   function accessControlManager() external view returns (address) { }
 
-  function agToken() external view returns (address) { }
+  function tokenP() external view returns (address) { }
 
   function getCollateralBurnFees(address collateral)
     external

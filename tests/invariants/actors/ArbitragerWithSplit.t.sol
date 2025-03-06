@@ -46,7 +46,7 @@ contract ArbitragerWithSplit is BaseActor {
 
     if (
       (quoteType == QuoteType.BurnExactInput || quoteType == QuoteType.BurnExactOutput)
-        && agToken.balanceOf(_currentActor) == 0
+        && tokenP.balanceOf(_currentActor) == 0
     ) return (0, 0);
 
     TestStorage memory testS;
@@ -57,30 +57,30 @@ contract ArbitragerWithSplit is BaseActor {
     if (quoteType == QuoteType.MintExactInput) {
       console.log("Mint - Input");
       testS.tokenIn = collateral;
-      testS.tokenOut = address(agToken);
+      testS.tokenOut = address(tokenP);
       testS.amountIn = amount * 10 ** IERC20Metadata(collateral).decimals();
       testS.amountOut = _transmuter.quoteIn(testS.amountIn, testS.tokenIn, testS.tokenOut);
     } else if (quoteType == QuoteType.BurnExactInput) {
       console.log("Burn - Input");
-      testS.tokenIn = address(agToken);
+      testS.tokenIn = address(tokenP);
       testS.tokenOut = collateral;
       // divided by 2 because we need to do for both the transmuter and the replica
-      testS.amountIn = bound(amount * BASE_18, 1, agToken.balanceOf(_currentActor) / 2);
+      testS.amountIn = bound(amount * BASE_18, 1, tokenP.balanceOf(_currentActor) / 2);
       testS.amountOut = _transmuter.quoteIn(testS.amountIn, testS.tokenIn, testS.tokenOut);
     } else if (quoteType == QuoteType.MintExactOutput) {
       console.log("Mint - Output");
       testS.tokenIn = collateral;
-      testS.tokenOut = address(agToken);
+      testS.tokenOut = address(tokenP);
       testS.amountOut = amount * BASE_18;
       testS.amountIn = _transmuter.quoteOut(testS.amountOut, testS.tokenIn, testS.tokenOut);
     } else if (quoteType == QuoteType.BurnExactOutput) {
       console.log("Burn - Output");
-      testS.tokenIn = address(agToken);
+      testS.tokenIn = address(tokenP);
       testS.tokenOut = collateral;
       testS.amountOut = amount * 10 ** IERC20Metadata(collateral).decimals();
       testS.amountIn = _transmuter.quoteOut(testS.amountOut, testS.tokenIn, testS.tokenOut);
       // divided by 2 because we need to do for both the transmuter and the replica
-      uint256 actorBalance = agToken.balanceOf(_currentActor) / 2;
+      uint256 actorBalance = tokenP.balanceOf(_currentActor) / 2;
       // we need to decrease the amountOut wanted
       if (actorBalance < testS.amountIn) {
         testS.amountIn = actorBalance;
@@ -157,7 +157,7 @@ contract ArbitragerWithSplit is BaseActor {
           // We can be missing either stablecoins or amountIn in the case of BurnExactOutput
           // and MintExactOutput respectively
           // Making revert the tx due to rounding errors. We increase balances have non reverting txs
-          uint256 actorBalance = agToken.balanceOf(_currentActor);
+          uint256 actorBalance = tokenP.balanceOf(_currentActor);
           if (quoteType == QuoteType.BurnExactOutput && actorBalance < testS.amountInSplit1) {
             testS.amountInSplit1 = actorBalance;
             testS.amountOutSplit1 = _transmuterSplit.quoteIn(testS.amountInSplit1, testS.tokenIn, testS.tokenOut);
@@ -181,7 +181,7 @@ contract ArbitragerWithSplit is BaseActor {
         testS.amountOutSplit2 = testS.amountOut - testS.amountOutSplit1;
         testS.amountInSplit2 = _transmuterSplit.quoteOut(testS.amountOutSplit2, testS.tokenIn, testS.tokenOut);
         {
-          uint256 actorBalance = agToken.balanceOf(_currentActor);
+          uint256 actorBalance = tokenP.balanceOf(_currentActor);
           if (quoteType == QuoteType.BurnExactOutput && actorBalance < testS.amountInSplit2) {
             testS.amountInSplit2 = actorBalance;
             testS.amountOutSplit2 = _transmuterSplit.quoteIn(testS.amountInSplit2, testS.tokenIn, testS.tokenOut);
@@ -217,8 +217,8 @@ contract ArbitragerWithSplit is BaseActor {
     useActor(actorIndex)
     countCall("redeem")
   {
-    uint256 balanceAgToken = agToken.balanceOf(_currentActor);
-    amount = bound(amount, 0, balanceAgToken / 2);
+    uint256 balancetokenP = tokenP.balanceOf(_currentActor);
+    amount = bound(amount, 0, balancetokenP / 2);
     splitProportion = bound(splitProportion, 1, BASE_9);
     if (amount == 0) return;
 
@@ -246,8 +246,8 @@ contract ArbitragerWithSplit is BaseActor {
       // if it is a burn it should always increase the collateral ratio
       (uint64 collateralRatio,) = _transmuter.getCollateralRatio();
       assertGe(collateralRatio, prevCollateralRatio);
-      assertEq(agToken.balanceOf(_currentActor), balanceAgToken - amount);
-      balanceAgToken -= amount;
+      assertEq(tokenP.balanceOf(_currentActor), balancetokenP - amount);
+      balancetokenP -= amount;
       for (uint256 i; i < balanceTokens.length; ++i) {
         if (!isForfeitTokens[i]) {
           assertEq(IERC20(_collaterals[i]).balanceOf(_currentActor), balanceTokens[i] + redeemAmounts[i]);
@@ -288,7 +288,7 @@ contract ArbitragerWithSplit is BaseActor {
       // if it is a burn it should always increase the collateral ratio
       (uint64 collateralRatio,) = _transmuterSplit.getCollateralRatio();
       assertGe(collateralRatio, prevCollateralRatio);
-      assertEq(agToken.balanceOf(_currentActor), balanceAgToken - amount);
+      assertEq(tokenP.balanceOf(_currentActor), balancetokenP - amount);
       for (uint256 i; i < balanceTokens.length; ++i) {
         if (!isForfeitTokens[i]) {
           assertEq(

@@ -4,8 +4,7 @@ pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
 
 import { MockAccessControlManager } from "tests/mock/MockAccessControlManager.sol";
@@ -66,7 +65,7 @@ contract TestTransmuter is Fixture {
   }
 
   function test_QuoteInScenario() public {
-    uint256 quote = (transmuter.quoteIn(BASE_6, address(eurA), address(agToken)));
+    uint256 quote = (transmuter.quoteIn(BASE_6, address(eurA), address(tokenP)));
     assertEq(quote, BASE_27 / (BASE_9 + BASE_9 / 99));
   }
 
@@ -75,9 +74,9 @@ contract TestTransmuter is Fixture {
 
     startHoax(alice);
     eurA.approve(address(transmuter), BASE_6);
-    transmuter.swapExactInput(BASE_6, 0, address(eurA), address(agToken), alice, block.timestamp + 1 hours);
+    transmuter.swapExactInput(BASE_6, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours);
 
-    assertEq(agToken.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
+    assertEq(tokenP.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
   }
 
   function test_QuoteCollateralRatio() public {

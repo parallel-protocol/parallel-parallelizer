@@ -41,7 +41,7 @@ contract PathIndeInvariants is Fixture {
       abi.encodeWithSelector(
         Test.initialize.selector,
         accessManager,
-        agToken,
+        tokenP,
         CollateralSetup(address(eurA), address(oracleA)),
         CollateralSetup(address(eurB), address(oracleB)),
         CollateralSetup(address(eurY), address(oracleY))
@@ -156,14 +156,14 @@ contract PathIndeInvariants is Fixture {
     uint256 stablecoinIssued = transmuter.getTotalIssued();
     uint256 stablecoinIssuedSplit = transmuterSplit.getTotalIssued();
 
-    uint256 balance = agToken.balanceOf(sweeper);
+    uint256 balance = tokenP.balanceOf(sweeper);
     uint256 traderActors = _traderHandler.nbrActor();
     uint256 arbitrageActors = _arbitragerHandler.nbrActor();
     for (uint256 i = 0; i < traderActors; i++) {
-      balance += agToken.balanceOf(_traderHandler.actors(i));
+      balance += tokenP.balanceOf(_traderHandler.actors(i));
     }
     for (uint256 i = 0; i < arbitrageActors; i++) {
-      balance += agToken.balanceOf(_arbitragerHandler.actors(i));
+      balance += tokenP.balanceOf(_arbitragerHandler.actors(i));
     }
 
     assertApproxEqAbs(stablecoinIssued + stablecoinIssuedSplit, balance, BASE_12);
