@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import { ITransmuterOracle } from "interfaces/ITransmuterOracle.sol";
+import { IParallelizerOracle } from "interfaces/IParallelizerOracle.sol";
 import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
 import { IMorphoOracle } from "interfaces/external/morpho/IMorphoOracle.sol";
 import { IPyth, PythStructs } from "interfaces/external/pyth/IPyth.sol";
@@ -16,7 +16,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is a friendly fork of Angle's `LibOracle` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibOracle.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibOracle.sol
 library LibOracle {
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ACTIONS SPECIFIC ORACLES                                             
@@ -28,7 +28,7 @@ library LibOracle {
     (OracleReadType oracleType, OracleReadType targetType, bytes memory oracleData, bytes memory targetData,) =
       _parseOracleConfig(oracleConfig);
     if (oracleType == OracleReadType.EXTERNAL) {
-      ITransmuterOracle externalOracle = abi.decode(oracleData, (ITransmuterOracle));
+      IParallelizerOracle externalOracle = abi.decode(oracleData, (IParallelizerOracle));
       return externalOracle.readRedemption();
     } else {
       (oracleValue,) = readSpotAndTarget(oracleType, targetType, oracleData, targetData, 0);
@@ -48,7 +48,7 @@ library LibOracle {
       bytes memory hyperparameters
     ) = _parseOracleConfig(oracleConfig);
     if (oracleType == OracleReadType.EXTERNAL) {
-      ITransmuterOracle externalOracle = abi.decode(oracleData, (ITransmuterOracle));
+      IParallelizerOracle externalOracle = abi.decode(oracleData, (IParallelizerOracle));
       return externalOracle.readMint();
     }
 
@@ -71,7 +71,7 @@ library LibOracle {
       bytes memory hyperparameters
     ) = _parseOracleConfig(oracleConfig);
     if (oracleType == OracleReadType.EXTERNAL) {
-      ITransmuterOracle externalOracle = abi.decode(oracleData, (ITransmuterOracle));
+      IParallelizerOracle externalOracle = abi.decode(oracleData, (IParallelizerOracle));
       return externalOracle.readBurn();
     }
     (uint128 userDeviation, uint128 burnRatioDeviation) = abi.decode(hyperparameters, (uint128, uint128));
@@ -112,7 +112,7 @@ library LibOracle {
     view
     returns (uint256 minRatio, uint256 oracleValue)
   {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     minRatio = BASE_18;
     address[] memory collateralList = ts.collateralList;
     uint256 length = collateralList.length;
@@ -277,7 +277,7 @@ library LibOracle {
   }
 
   function updateOracle(address collateral) internal {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     if (ts.collaterals[collateral].decimals == 0) revert NotCollateral();
 
     (

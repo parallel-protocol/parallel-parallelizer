@@ -20,8 +20,8 @@ import "../utils/Errors.sol";
 /// @custom:contact security@cooperlabs.xyz
 /// @notice Parallel Savings contracts are contracts where users can deposit an `asset` and earn a yield on this asset
 /// when it is distributed
-/// @dev These contracts are functional within the Transmuter system if they have mint right on `asset` and
-/// if they are trusted by the Transmuter contract
+/// @dev These contracts are functional within the Parallelizer system if they have mint right on `asset` and
+/// if they are trusted by the Parallelizer contract
 /// @dev Implementations assume that `asset` is safe to interact with, on which there cannot be reentrancy attacks
 /// @dev The ERC4626 interface does not allow users to specify a slippage protection parameter for the main entry
 /// points

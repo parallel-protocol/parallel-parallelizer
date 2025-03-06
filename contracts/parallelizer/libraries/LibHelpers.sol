@@ -9,7 +9,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is a friendly fork of Angle's `LibHelpers` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibHelpers.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibHelpers.sol
 library LibHelpers {
   /// @notice Rebases the units of `amount` from `fromDecimals` to `toDecimals`
   function convertDecimalTo(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {

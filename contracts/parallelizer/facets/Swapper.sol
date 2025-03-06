@@ -51,7 +51,7 @@ struct LocalVariables {
 /// whitelist but the `to` address does not have it. The quote functions will not revert in this case.
 /// @dev Calling one of the swap functions in a burn case does not require any prior token approval
 /// @dev This contract is a friendly fork of Angle's `Swapper` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Swapper.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Swapper.sol
 contract Swapper is ISwapper, AccessManagedModifiers {
   using SafeERC20 for IERC20;
   using SafeCast for uint256;
@@ -164,7 +164,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
 
   /// @inheritdoc ISwapper
   function quoteIn(uint256 amountIn, address tokenIn, address tokenOut) external view returns (uint256 amountOut) {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, 0);
     if (mint) {
       amountOut = _quoteMintExactInput(collatInfo, amountIn);
@@ -177,7 +177,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
 
   /// @inheritdoc ISwapper
   function quoteOut(uint256 amountOut, address tokenIn, address tokenOut) external view returns (uint256 amountIn) {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, 0);
     if (mint) {
       _checkHardCaps(collatInfo, amountOut, ts.normalizer);
@@ -207,7 +207,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     nonReentrant
   {
     if (amountIn > 0 && amountOut > 0) {
-      TransmuterStorage storage ts = s.transmuterStorage();
+      ParallelizerStorage storage ts = s.transmuterStorage();
       if (mint) {
         _checkHardCaps(collatInfo, amountOut, ts.normalizer);
         uint128 changeAmount = (amountOut.mulDiv(BASE_27, ts.normalizer, Math.Rounding.Ceil)).toUint128();
@@ -311,7 +311,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   }
 
   /// @notice Computes the fees to apply during a mint or burn operation
-  /// @dev This function leverages the mathematical computations of the appendix of the Transmuter whitepaper
+  /// @dev This function leverages the mathematical computations of the appendix of the Parallelizer whitepaper
   /// @dev Cost of the function is linear in the length of the `xFeeMint` or `xFeeBurn` array
   function _quoteFees(
     Collateral storage collatInfo,
@@ -329,7 +329,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
 
     uint256 currentExposure;
     {
-      TransmuterStorage storage ts = s.transmuterStorage();
+      ParallelizerStorage storage ts = s.transmuterStorage();
       uint256 normalizedStablesMem = ts.normalizedStables;
       // Handling the initialisation and constant fees
       if (normalizedStablesMem == 0 || n == 1) {
@@ -512,7 +512,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     returns (bool mint, Collateral storage collatInfo)
   {
     if (deadline != 0 && block.timestamp > deadline) revert TooLate();
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     address _tokenP = address(ts.tokenP);
     if (tokenIn == _tokenP) {
       collatInfo = ts.collaterals[tokenOut];
@@ -537,7 +537,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     returns (address tokenOut, Collateral storage collatInfo)
   {
     if (deadline != 0 && block.timestamp > deadline) revert TooLate();
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     collatInfo = ts.collaterals[tokenIn];
     if (collatInfo.isMintLive == 0) revert Paused();
     tokenOut = address(ts.tokenP);

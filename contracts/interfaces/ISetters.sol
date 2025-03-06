@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import "../transmuter/Storage.sol";
+import "../parallelizer/Storage.sol";
 
 /// @title ISettersGovernor
 /// @author Cooper Labs
@@ -11,7 +11,7 @@ import "../transmuter/Storage.sol";
 /// @dev This interface is a friendly fork of Angle's `ISettersGovernor` interface
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/ISetters.sol
 interface ISettersGovernor {
-  /// @notice Recovers `amount` of `token` from the Transmuter contract
+  /// @notice Recovers `amount` of `token` from the Parallelizer contract
   function recoverERC20(address collateral, IERC20 token, address to, uint256 amount) external;
 
   /// @notice Sets a new access manager address

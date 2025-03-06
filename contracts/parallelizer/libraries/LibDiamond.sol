@@ -34,7 +34,7 @@ library LibDiamond {
       AuthorityUtils.canCallWithDelay(address(accessManager), caller, address(this), bytes4(data[0:4]));
     if (!immediate) {
       if (delay > 0) {
-        TransmuterStorage storage ts = s.transmuterStorage();
+        ParallelizerStorage storage ts = s.transmuterStorage();
         ts.consumingSchedule = true;
         accessManager.consumeScheduledOp(caller, data);
         ts.consumingSchedule = false;

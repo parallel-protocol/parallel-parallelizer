@@ -201,10 +201,10 @@ contract CommonUtils is CommonBase, JsonReader {
       return "USD.Savings";
     } else if (name == ContractType.Timelock) {
       return "Timelock";
-    } else if (name == ContractType.TransmuterEURp) {
-      return "EUR.Transmuter";
-    } else if (name == ContractType.TransmuterUSDp) {
-      return "USD.Transmuter";
+    } else if (name == ContractType.ParallelizerEURp) {
+      return "EUR.Parallelizer";
+    } else if (name == ContractType.ParallelizerUSDp) {
+      return "USD.Parallelizer";
     } else if (name == ContractType.TreasuryEURp) {
       return "EUR.Treasury";
     } else if (name == ContractType.TreasuryUSDp) {

@@ -60,7 +60,7 @@ contract ProductionUSD {
 
     LibSetters.setAccessManager(_accessManager);
 
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     ts.statusReentrant = NOT_ENTERED;
     ts.normalizer = uint128(BASE_27);
     ts.tokenP = ITokenP(_tokenP);

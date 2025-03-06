@@ -18,7 +18,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is a friendly fork of Angle's `LibSetters` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibSetters.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibSetters.sol
 library LibSetters {
   using SafeCast for uint256;
 
@@ -72,7 +72,7 @@ library LibSetters {
 
   /// @notice Internal version of `toggleTrusted`
   function toggleTrusted(address sender, TrustedType t) internal {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     uint256 trustedStatus;
     if (t == TrustedType.Updater) {
       trustedStatus = 1 - ts.isTrusted[sender];
@@ -86,7 +86,7 @@ library LibSetters {
 
   /// @notice Internal version of `addCollateral`
   function addCollateral(address collateral) internal {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     Collateral storage collatInfo = ts.collaterals[collateral];
     if (collatInfo.decimals != 0) revert AlreadyAdded();
     collatInfo.decimals = uint8(IERC20Metadata(collateral).decimals());
@@ -96,7 +96,7 @@ library LibSetters {
 
   /// @notice Internal version of `adjustStablecoins`
   function adjustStablecoins(address collateral, uint128 amount, bool increase) internal {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     Collateral storage collatInfo = ts.collaterals[collateral];
     if (collatInfo.decimals == 0) revert NotCollateral();
     uint128 normalizedAmount = ((amount * BASE_27) / ts.normalizer).toUint128();
@@ -112,7 +112,7 @@ library LibSetters {
 
   /// @notice Internal version of `revokeCollateral`
   function revokeCollateral(address collateral) internal {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     Collateral storage collatInfo = ts.collaterals[collateral];
     if (collatInfo.decimals == 0 || collatInfo.normalizedStables > 0) revert NotCollateral();
     uint8 isManaged = collatInfo.isManaged;
@@ -174,7 +174,7 @@ library LibSetters {
         collatInfo.isBurnLive = isLive;
       }
     } else {
-      TransmuterStorage storage ts = s.transmuterStorage();
+      ParallelizerStorage storage ts = s.transmuterStorage();
       isLive = 1 - ts.isRedemptionLive;
       ts.isRedemptionLive = isLive;
     }
@@ -183,7 +183,7 @@ library LibSetters {
 
   /// @notice Internal version of `setFees`
   function setFees(address collateral, uint64[] memory xFee, int64[] memory yFee, bool mint) internal {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     Collateral storage collatInfo = ts.collaterals[collateral];
     if (collatInfo.decimals == 0) revert NotCollateral();
     checkFees(xFee, yFee, mint ? ActionType.Mint : ActionType.Burn);
@@ -199,7 +199,7 @@ library LibSetters {
 
   /// @notice Internal version of `setRedemptionCurveParams`
   function setRedemptionCurveParams(uint64[] memory xFee, int64[] memory yFee) internal {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     LibSetters.checkFees(xFee, yFee, ActionType.Redeem);
     ts.xRedemptionCurve = xFee;
     ts.yRedemptionCurve = yFee;
@@ -208,7 +208,7 @@ library LibSetters {
 
   /// @notice Internal version of `toggleWhitelist`
   function toggleWhitelist(WhitelistType whitelistType, address who) internal {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     uint256 whitelistStatus = 1 - ts.isWhitelistedForType[whitelistType][who];
     ts.isWhitelistedForType[whitelistType][who] = whitelistStatus;
     emit WhitelistStatusToggled(whitelistType, who, whitelistStatus);
@@ -261,7 +261,7 @@ library LibSetters {
     // (from any collateral) and then burning cannot get more than their initial value
     if (yFee[0] < 0) {
       if (!LibDiamond.isGovernor(msg.sender)) revert NotGovernor(); // Only governor can set negative fees
-      TransmuterStorage storage ts = s.transmuterStorage();
+      ParallelizerStorage storage ts = s.transmuterStorage();
       address[] memory collateralListMem = ts.collateralList;
       uint256 length = collateralListMem.length;
       if (action == ActionType.Mint) {

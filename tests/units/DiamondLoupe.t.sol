@@ -4,9 +4,9 @@ pragma solidity 0.8.28;
 
 import { IMockFacet, MockPureFacet } from "tests/mock/MockFacets.sol";
 
-import "contracts/transmuter/Storage.sol";
-import { Test } from "contracts/transmuter/configs/Test.sol";
-import { DiamondCut } from "contracts/transmuter/facets/DiamondCut.sol";
+import "contracts/parallelizer/Storage.sol";
+import { Test } from "contracts/parallelizer/configs/Test.sol";
+import { DiamondCut } from "contracts/parallelizer/facets/DiamondCut.sol";
 import "contracts/utils/Constants.sol";
 
 import { Fixture } from "../Fixture.sol";
@@ -15,7 +15,7 @@ contract Test_DiamondLoupe is Fixture {
   address pureFacet = address(new MockPureFacet());
 
   function test_Facets() public {
-    Facet[] memory facets = transmuter.facets();
+    Facet[] memory facets = parallelizer.facets();
 
     // DiamondCut, DiamondLoupe, Getters, Redeemer, RewardHandler, SettersGovernor, SettersGuardian , Swapper
     for (uint256 i; i < facetNames.length; ++i) {
@@ -42,9 +42,9 @@ contract Test_DiamondLoupe is Fixture {
       FacetCut({ facetAddress: address(pureFacet), action: FacetCutAction.Add, functionSelectors: auxSelectors });
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), ""); // Deploy only the first selector
+    parallelizer.diamondCut(facetCut, address(0), ""); // Deploy only the first selector
 
-    bytes4[] memory fetchedSelectors = transmuter.facetFunctionSelectors(pureFacet);
+    bytes4[] memory fetchedSelectors = parallelizer.facetFunctionSelectors(pureFacet);
 
     assertEq(fetchedSelectors.length, 1); // Check only the first selector is accessible
     assertEq(fetchedSelectors[0], selectors[0]);
@@ -54,9 +54,9 @@ contract Test_DiamondLoupe is Fixture {
       FacetCut({ facetAddress: address(pureFacet), action: FacetCutAction.Add, functionSelectors: auxSelectors });
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), ""); // Deploy the second selector
+    parallelizer.diamondCut(facetCut, address(0), ""); // Deploy the second selector
 
-    fetchedSelectors = transmuter.facetFunctionSelectors(pureFacet);
+    fetchedSelectors = parallelizer.facetFunctionSelectors(pureFacet);
 
     assertEq(fetchedSelectors.length, 2); // Check only the first selector is accessible
     assertEq(fetchedSelectors[0], selectors[0]);
@@ -64,7 +64,7 @@ contract Test_DiamondLoupe is Fixture {
   }
 
   function test_FacetAddresses() public {
-    address[] memory facetAddresses = transmuter.facetAddresses();
+    address[] memory facetAddresses = parallelizer.facetAddresses();
     for (uint256 i; i < facetAddresses.length; ++i) {
       assertEq(facetAddresses[i], facetAddressList[i]);
     }
@@ -75,7 +75,7 @@ contract Test_DiamondLoupe is Fixture {
       bytes4[] memory selectors = _generateSelectors(facetNames[i]);
 
       for (uint256 j; j < selectors.length; ++j) {
-        assertEq(transmuter.facetAddress(selectors[j]), facetAddressList[i]); // Check all selectors are
+        assertEq(parallelizer.facetAddress(selectors[j]), facetAddressList[i]); // Check all selectors are
           // present
       }
     }

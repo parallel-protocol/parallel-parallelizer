@@ -10,12 +10,12 @@ import { IRewardHandler } from "./IRewardHandler.sol";
 import { ISettersGovernor, ISettersGuardian } from "./ISetters.sol";
 import { ISwapper } from "./ISwapper.sol";
 
-/// @title ITransmuter
+/// @title IParallelizer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This interface is a friendly fork of Angle's `ITransmuter` interface
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/ITransmuter.sol
-interface ITransmuter is
+/// @dev This interface is a friendly fork of Angle's `IParallelizer` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IParallelizer.sol
+interface IParallelizer is
   IDiamondCut,
   IDiamondEtherscan,
   IDiamondLoupe,

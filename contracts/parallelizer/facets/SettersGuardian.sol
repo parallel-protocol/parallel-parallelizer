@@ -12,7 +12,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is a friendly fork of Angle's `SettersGuardian` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/SettersGuardian.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/SettersGuardian.sol
 contract SettersGuardian is AccessManagedModifiers, ISettersGuardian {
   /// @inheritdoc ISettersGuardian
   function togglePause(address collateral, ActionType pausedType) external restricted {

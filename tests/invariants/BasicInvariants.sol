@@ -9,7 +9,7 @@ import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV
 import { MockAccessControlManager } from "tests/mock/MockAccessControlManager.sol";
 
 import "contracts/utils/Constants.sol";
-import { CollateralSetup, Fixture, ITransmuter, Test } from "../Fixture.sol";
+import { CollateralSetup, Fixture, IParallelizer, Test } from "../Fixture.sol";
 import { Trader } from "./actors/Trader.t.sol";
 import { Arbitrager } from "./actors/Arbitrager.t.sol";
 import { Governance } from "./actors/Governance.t.sol";
@@ -21,7 +21,7 @@ contract BasicInvariants is Fixture {
   uint256 internal constant _NUM_TRADER = 2;
   uint256 internal constant _NUM_ARB = 2;
 
-  ITransmuter transmuterSplit;
+  IParallelizer transmuterSplit;
 
   Trader internal _traderHandler;
   Arbitrager internal _arbitragerHandler;
@@ -34,9 +34,9 @@ contract BasicInvariants is Fixture {
   function setUp() public virtual override {
     super.setUp();
 
-    // Deploy another transmuter to check the independant path property
+    // Deploy another parallelizer to check the independant path property
     config = address(new Test());
-    transmuterSplit = deployReplicaTransmuter(
+    transmuterSplit = deployReplicaParallelizer(
       config,
       abi.encodeWithSelector(
         Test.initialize.selector,
@@ -49,8 +49,12 @@ contract BasicInvariants is Fixture {
     );
 
     vm.startPrank(governor);
-    accessManager.setTargetFunctionRole(address(transmuterSplit), getTransmuterGovernorSelectorAccess(), GOVERNOR_ROLE);
-    accessManager.setTargetFunctionRole(address(transmuterSplit), getTransmuterGuardianSelectorAccess(), GUARDIAN_ROLE);
+    accessManager.setTargetFunctionRole(
+      address(transmuterSplit), getParallelizerGovernorSelectorAccess(), GOVERNOR_ROLE
+    );
+    accessManager.setTargetFunctionRole(
+      address(transmuterSplit), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE
+    );
     vm.stopPrank();
 
     {
@@ -66,7 +70,7 @@ contract BasicInvariants is Fixture {
       yFeeRedemption[2] = int64(int256((1e9 * 9) / 10));
       yFeeRedemption[3] = int64(int256(1e9));
       vm.startPrank(guardian);
-      transmuter.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
+      parallelizer.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
       transmuterSplit.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
       vm.stopPrank();
     }
@@ -81,9 +85,9 @@ contract BasicInvariants is Fixture {
     _oracles.push(oracleB);
     _oracles.push(oracleY);
 
-    _traderHandler = new Trader(transmuter, transmuterSplit, _collaterals, _oracles, _NUM_TRADER);
-    _arbitragerHandler = new Arbitrager(transmuter, transmuterSplit, _collaterals, _oracles, _NUM_ARB);
-    _governanceHandler = new Governance(transmuter, transmuterSplit, _collaterals, _oracles);
+    _traderHandler = new Trader(parallelizer, transmuterSplit, _collaterals, _oracles, _NUM_TRADER);
+    _arbitragerHandler = new Arbitrager(parallelizer, transmuterSplit, _collaterals, _oracles, _NUM_ARB);
+    _governanceHandler = new Governance(parallelizer, transmuterSplit, _collaterals, _oracles);
 
     vm.startPrank(governor);
     accessManager.grantRole(GOVERNOR_ROLE, _governanceHandler.actors(0), 0);
@@ -92,7 +96,7 @@ contract BasicInvariants is Fixture {
 
     vm.startPrank(guardian);
     // Label newly created addresses
-    vm.label(address(transmuterSplit), "TransmuterSplit");
+    vm.label(address(transmuterSplit), "ParallelizerSplit");
     for (uint256 i; i < _NUM_ARB; i++) {
       vm.label(_arbitragerHandler.actors(i), string.concat("Arbi ", Strings.toString(i)));
     }
@@ -144,9 +148,9 @@ contract BasicInvariants is Fixture {
     console.log("-------------------");
     console.log("");
 
-    (uint256 issuedA, uint256 issued) = transmuter.getIssuedByCollateral(address(eurA));
-    (uint256 issuedB,) = transmuter.getIssuedByCollateral(address(eurB));
-    (uint256 issuedY,) = transmuter.getIssuedByCollateral(address(eurY));
+    (uint256 issuedA, uint256 issued) = parallelizer.getIssuedByCollateral(address(eurA));
+    (uint256 issuedB,) = parallelizer.getIssuedByCollateral(address(eurB));
+    (uint256 issuedY,) = parallelizer.getIssuedByCollateral(address(eurY));
     console.log("Issued A: ", issuedA);
     console.log("Issued B: ", issuedB);
     console.log("Issued Y: ", issuedY);
@@ -154,14 +158,14 @@ contract BasicInvariants is Fixture {
   }
 
   function invariant_IssuedCoherent() public {
-    (uint256 issuedA, uint256 issued) = transmuter.getIssuedByCollateral(address(eurA));
-    (uint256 issuedB,) = transmuter.getIssuedByCollateral(address(eurB));
-    (uint256 issuedY,) = transmuter.getIssuedByCollateral(address(eurY));
+    (uint256 issuedA, uint256 issued) = parallelizer.getIssuedByCollateral(address(eurA));
+    (uint256 issuedB,) = parallelizer.getIssuedByCollateral(address(eurB));
+    (uint256 issuedY,) = parallelizer.getIssuedByCollateral(address(eurY));
     assertApproxEqAbs(issued, issuedA + issuedB + issuedY, 3 wei);
   }
 
   function invariant_Supply() public {
-    uint256 stablecoinIssued = transmuter.getTotalIssued();
+    uint256 stablecoinIssued = parallelizer.getTotalIssued();
     uint256 stablecoinIssuedSplit = transmuterSplit.getTotalIssued();
 
     uint256 balance;
@@ -177,7 +181,7 @@ contract BasicInvariants is Fixture {
 
   function invariant_CollateralRatio() public {
     uint256 storedCollatRatio = _governanceHandler.collateralRatio();
-    (uint64 collateralRatio,) = transmuter.getCollateralRatio();
+    (uint64 collateralRatio,) = parallelizer.getCollateralRatio();
     if (storedCollatRatio <= BASE_9) {
       assertGe(uint256(collateralRatio), storedCollatRatio);
     }
@@ -194,7 +198,7 @@ contract BasicInvariants is Fixture {
 
   function invariant_RedeemCollateralRatio() public {
     uint256 storedCollatRatio = _governanceHandler.collateralRatio();
-    (uint64 collateralRatio,) = transmuter.getCollateralRatio();
+    (uint64 collateralRatio,) = parallelizer.getCollateralRatio();
     if (storedCollatRatio <= BASE_9) assertGe(collateralRatio, storedCollatRatio);
     else assertGe(collateralRatio, BASE_9);
 
@@ -202,17 +206,17 @@ contract BasicInvariants is Fixture {
   }
 
   function invariant_MintReflexivity() public {
-    uint256 stablecoinIssued = transmuter.getTotalIssued();
+    uint256 stablecoinIssued = parallelizer.getTotalIssued();
     uint256 stableAmount;
     {
       // source of randomness
-      (uint64 collateralRatio,) = transmuter.getCollateralRatio();
+      (uint64 collateralRatio,) = parallelizer.getCollateralRatio();
       uint256 multiplier = bound(collateralRatio, 1, 1e4);
       stableAmount = stablecoinIssued > BASE_18 ? (stablecoinIssued * multiplier) / 1e2 : BASE_18;
     }
     for (uint256 i; i < _collaterals.length; i++) {
-      uint256 amountIn = transmuter.quoteOut(stableAmount, _collaterals[i], address(tokenP));
-      uint256 reflexiveStableAmount = transmuter.quoteIn(amountIn, _collaterals[i], address(tokenP));
+      uint256 amountIn = parallelizer.quoteOut(stableAmount, _collaterals[i], address(tokenP));
+      uint256 reflexiveStableAmount = parallelizer.quoteIn(amountIn, _collaterals[i], address(tokenP));
       // If amountIn is small then do not check, as in the extreme case amountIn is null and
       // then reflexiveStableAmount is too
       if (amountIn < 10 ** (_decimals[i] - 2) || reflexiveStableAmount == 0) continue;
@@ -221,18 +225,18 @@ contract BasicInvariants is Fixture {
   }
 
   function invariant_BurnReflexivity() public {
-    uint256 stablecoinIssued = transmuter.getTotalIssued();
+    uint256 stablecoinIssued = parallelizer.getTotalIssued();
     uint256 stableAmount;
     {
       // source of randomness
-      (uint64 collateralRatio,) = transmuter.getCollateralRatio();
+      (uint64 collateralRatio,) = parallelizer.getCollateralRatio();
       uint256 multiplier = bound(collateralRatio, 1, 1e2);
       stableAmount = (stablecoinIssued * multiplier) / 1e2;
     }
     if (stableAmount < 10 * BASE_18) return;
     for (uint256 i; i < _collaterals.length; i++) {
-      try transmuter.quoteIn(stableAmount, address(tokenP), _collaterals[i]) returns (uint256 amountOut) {
-        uint256 reflexiveStableAmount = transmuter.quoteOut(amountOut, address(tokenP), _collaterals[i]);
+      try parallelizer.quoteIn(stableAmount, address(tokenP), _collaterals[i]) returns (uint256 amountOut) {
+        uint256 reflexiveStableAmount = parallelizer.quoteOut(amountOut, address(tokenP), _collaterals[i]);
         // If amountOut is small then do not check, as in the extreme case amountIn is null and
         // then reflexiveStableAmount is too
         if (amountOut < 10 ** (_decimals[i] - 2) || reflexiveStableAmount == 0) continue;

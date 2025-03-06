@@ -1,34 +1,34 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import { ITransmuter } from "interfaces/ITransmuter.sol";
+import { IParallelizer } from "interfaces/IParallelizer.sol";
 
-import { DiamondProxy } from "contracts/transmuter/DiamondProxy.sol";
-import "contracts/transmuter/Storage.sol";
-import { DiamondCut } from "contracts/transmuter/facets/DiamondCut.sol";
-import { DiamondEtherscan } from "contracts/transmuter/facets/DiamondEtherscan.sol";
-import { DiamondLoupe } from "contracts/transmuter/facets/DiamondLoupe.sol";
-import { Getters } from "contracts/transmuter/facets/Getters.sol";
-import { Redeemer } from "contracts/transmuter/facets/Redeemer.sol";
-import { RewardHandler } from "contracts/transmuter/facets/RewardHandler.sol";
-import { SettersGovernor } from "contracts/transmuter/facets/SettersGovernor.sol";
-import { SettersGuardian } from "contracts/transmuter/facets/SettersGuardian.sol";
-import { Swapper } from "contracts/transmuter/facets/Swapper.sol";
+import { DiamondProxy } from "contracts/parallelizer/DiamondProxy.sol";
+import "contracts/parallelizer/Storage.sol";
+import { DiamondCut } from "contracts/parallelizer/facets/DiamondCut.sol";
+import { DiamondEtherscan } from "contracts/parallelizer/facets/DiamondEtherscan.sol";
+import { DiamondLoupe } from "contracts/parallelizer/facets/DiamondLoupe.sol";
+import { Getters } from "contracts/parallelizer/facets/Getters.sol";
+import { Redeemer } from "contracts/parallelizer/facets/Redeemer.sol";
+import { RewardHandler } from "contracts/parallelizer/facets/RewardHandler.sol";
+import { SettersGovernor } from "contracts/parallelizer/facets/SettersGovernor.sol";
+import { SettersGuardian } from "contracts/parallelizer/facets/SettersGuardian.sol";
+import { Swapper } from "contracts/parallelizer/facets/Swapper.sol";
 import "contracts/utils/Errors.sol";
 import { DummyDiamondImplementation } from "scripts/generated/DummyDiamondImplementation.sol";
 
 import "./Helper.sol";
 import { console } from "@forge-std/console.sol";
 
-abstract contract Transmuter is Helper {
+abstract contract Parallelizer is Helper {
   // Diamond
-  ITransmuter transmuter;
+  IParallelizer parallelizer;
 
   string[] facetNames;
   address[] facetAddressList;
 
   // @dev Deploys diamond and connects facets
-  function deployTransmuter(address _init, bytes memory _calldata) public virtual {
+  function deployParallelizer(address _init, bytes memory _calldata) public virtual {
     // Deploy every facet
     facetNames.push("DiamondCut");
     facetAddressList.push(address(new DiamondCut()));
@@ -70,17 +70,17 @@ abstract contract Transmuter is Helper {
     }
 
     // Deploy diamond
-    transmuter = ITransmuter(address(new DiamondProxy(cut, _init, _calldata)));
+    parallelizer = IParallelizer(address(new DiamondProxy(cut, _init, _calldata)));
   }
 
   // @dev Deploys diamond and connects facets
-  function deployReplicaTransmuter(
+  function deployReplicaParallelizer(
     address _init,
     bytes memory _calldata
   )
     public
     virtual
-    returns (ITransmuter _transmuter)
+    returns (IParallelizer _transmuter)
   {
     // Build appropriate payload
     uint256 n = facetNames.length;
@@ -94,7 +94,7 @@ abstract contract Transmuter is Helper {
     }
 
     // Deploy diamond
-    _transmuter = ITransmuter(address(new DiamondProxy(cut, _init, _calldata)));
+    _transmuter = IParallelizer(address(new DiamondProxy(cut, _init, _calldata)));
 
     return _transmuter;
   }

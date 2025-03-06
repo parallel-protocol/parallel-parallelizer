@@ -10,9 +10,9 @@ import { BaseSavings } from "contracts/savings/BaseSavings.sol";
 import { BaseHarvester } from "contracts/helpers/BaseHarvester.sol";
 import { MultiBlockHarvester } from "contracts/helpers/MultiBlockHarvester.sol";
 import { GenericHarvester } from "contracts/helpers/GenericHarvester.sol";
-import { SettersGuardian } from "contracts/transmuter/facets/SettersGuardian.sol";
-import { SettersGovernor } from "contracts/transmuter/facets/SettersGovernor.sol";
-import { DiamondEtherscan } from "contracts/transmuter/facets/DiamondEtherscan.sol";
+import { SettersGuardian } from "contracts/parallelizer/facets/SettersGuardian.sol";
+import { SettersGovernor } from "contracts/parallelizer/facets/SettersGovernor.sol";
+import { DiamondEtherscan } from "contracts/parallelizer/facets/DiamondEtherscan.sol";
 import "contracts/utils/Constants.sol";
 import "./Helper.sol";
 
@@ -79,7 +79,7 @@ abstract contract ConfigAccessManager is Helper {
     return selectors;
   }
 
-  function getTransmuterGuardianSelectorAccess() internal pure returns (bytes4[] memory) {
+  function getParallelizerGuardianSelectorAccess() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](6);
     selectors[0] = SettersGuardian.togglePause.selector;
     selectors[1] = SettersGuardian.setFees.selector;
@@ -90,7 +90,7 @@ abstract contract ConfigAccessManager is Helper {
     return selectors;
   }
 
-  function getTransmuterGovernorSelectorAccess() internal pure returns (bytes4[] memory) {
+  function getParallelizerGovernorSelectorAccess() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](11);
     selectors[0] = SettersGovernor.recoverERC20.selector;
     selectors[1] = SettersGovernor.setAccessManager.selector;

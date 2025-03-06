@@ -17,7 +17,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is a friendly fork of Angle's `LibGetters` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibGetters.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibGetters.sol
 library LibGetters {
   using Math for uint256;
   using SafeCast for uint256;
@@ -41,7 +41,7 @@ library LibGetters {
       uint256[] memory subCollateralsTracker
     )
   {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     uint256 totalCollateralization;
     address[] memory collateralList = ts.collateralList;
     uint256 collateralListLength = collateralList.length;

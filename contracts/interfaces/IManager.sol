@@ -20,7 +20,7 @@ interface IManager {
   /// @notice Sends `amount` of `collateral` to the `to` address
   /// @dev Called when `tokenP` are burnt and during redemptions
   //  @dev MUST revert if there are not funds enough available
-  /// @dev MUST be callable only by the transmuter
+  /// @dev MUST be callable only by the parallelizer
   function release(address asset, address to, uint256 amount) external;
 
   /// @notice Gives the maximum amount of collateral immediately available for a transfer

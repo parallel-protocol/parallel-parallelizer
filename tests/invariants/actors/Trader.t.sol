@@ -2,20 +2,22 @@
 pragma solidity 0.8.28;
 
 import "contracts/utils/Constants.sol";
-import { AggregatorV3Interface, BaseActor, IERC20, IERC20Metadata, ITransmuter, TestStorage } from "./BaseActor.t.sol";
-import { QuoteType } from "contracts/transmuter/Storage.sol";
+import {
+  AggregatorV3Interface, BaseActor, IERC20, IERC20Metadata, IParallelizer, TestStorage
+} from "./BaseActor.t.sol";
+import { QuoteType } from "contracts/parallelizer/Storage.sol";
 
 import { console } from "@forge-std/console.sol";
 
 contract Trader is BaseActor {
   constructor(
-    ITransmuter transmuter,
-    ITransmuter transmuterSplit,
+    IParallelizer parallelizer,
+    IParallelizer transmuterSplit,
     address[] memory collaterals,
     AggregatorV3Interface[] memory oracles,
     uint256 nbrTrader
   )
-    BaseActor(nbrTrader, "Trader", transmuter, transmuterSplit, collaterals, oracles)
+    BaseActor(nbrTrader, "Trader", parallelizer, transmuterSplit, collaterals, oracles)
   { }
 
   function swap(

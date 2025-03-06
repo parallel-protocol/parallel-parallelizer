@@ -2,20 +2,22 @@
 pragma solidity 0.8.28;
 
 import "contracts/utils/Constants.sol";
-import { AggregatorV3Interface, BaseActor, IERC20, IERC20Metadata, ITransmuter, TestStorage } from "./BaseActor.t.sol";
-import { QuoteType } from "contracts/transmuter/Storage.sol";
+import {
+  AggregatorV3Interface, BaseActor, IERC20, IERC20Metadata, IParallelizer, TestStorage
+} from "./BaseActor.t.sol";
+import { QuoteType } from "contracts/parallelizer/Storage.sol";
 
 import { console } from "@forge-std/console.sol";
 
 contract TraderWithSplit is BaseActor {
   constructor(
-    ITransmuter transmuter,
-    ITransmuter transmuterSplit,
+    IParallelizer parallelizer,
+    IParallelizer transmuterSplit,
     address[] memory collaterals,
     AggregatorV3Interface[] memory oracles,
     uint256 nbrTrader
   )
-    BaseActor(nbrTrader, "Trader", transmuter, transmuterSplit, collaterals, oracles)
+    BaseActor(nbrTrader, "Trader", parallelizer, transmuterSplit, collaterals, oracles)
   { }
 
   function swap(
@@ -63,7 +65,7 @@ contract TraderWithSplit is BaseActor {
       console.log("Burn - Input");
       testS.tokenIn = address(tokenP);
       testS.tokenOut = collateral;
-      // divided by 2 because we need to do for both the transmuter and the replica
+      // divided by 2 because we need to do for both the parallelizer and the replica
       testS.amountIn = bound(amount * BASE_18, 1, tokenP.balanceOf(_currentActor) / 2);
       testS.amountOut = _transmuter.quoteIn(testS.amountIn, testS.tokenIn, testS.tokenOut);
     } else if (quoteType == QuoteType.MintExactOutput) {
@@ -78,7 +80,7 @@ contract TraderWithSplit is BaseActor {
       testS.tokenOut = collateral;
       testS.amountOut = amount * 10 ** IERC20Metadata(collateral).decimals();
       testS.amountIn = _transmuter.quoteOut(testS.amountOut, testS.tokenIn, testS.tokenOut);
-      // divided by 2 because we need to do for both the transmuter and the replica
+      // divided by 2 because we need to do for both the parallelizer and the replica
       uint256 actorBalance = tokenP.balanceOf(_currentActor) / 2;
       // we need to decrease the amountOut wanted
       if (actorBalance < testS.amountIn) {
@@ -120,7 +122,7 @@ contract TraderWithSplit is BaseActor {
         testS.amountIn, testS.amountOut, testS.tokenIn, testS.tokenOut, _currentActor, block.timestamp + 1 hours
       );
       // send the received tokens to the sweeper
-      // replicate on the other transmuter but split the orders
+      // replicate on the other parallelizer but split the orders
       {
         testS.amountInSplit1 = (testS.amountIn * splitProportion) / BASE_9;
         testS.amountOutSplit1 = _transmuterSplit.quoteIn(testS.amountInSplit1, testS.tokenIn, testS.tokenOut);
@@ -148,7 +150,7 @@ contract TraderWithSplit is BaseActor {
       _transmuter.swapExactOutput(
         testS.amountOut, testS.amountIn, testS.tokenIn, testS.tokenOut, _currentActor, block.timestamp + 1 hours
       );
-      // replicate on the other transmuter but wplit the orders
+      // replicate on the other parallelizer but wplit the orders
       {
         testS.amountOutSplit1 = (testS.amountOut * splitProportion) / BASE_9;
         testS.amountInSplit1 = _transmuterSplit.quoteOut(testS.amountOutSplit1, testS.tokenIn, testS.tokenOut);

@@ -9,7 +9,7 @@ import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV
 import { MockAccessControlManager } from "tests/mock/MockAccessControlManager.sol";
 
 import "contracts/utils/Constants.sol";
-import { CollateralSetup, Fixture, ITransmuter, Test } from "../Fixture.sol";
+import { CollateralSetup, Fixture, IParallelizer, Test } from "../Fixture.sol";
 import { TraderWithSplit } from "./actors/TraderWithSplit.t.sol";
 import { ArbitragerWithSplit } from "./actors/ArbitragerWithSplit.t.sol";
 import { Governance } from "./actors/Governance.t.sol";
@@ -21,7 +21,7 @@ contract PathIndeInvariants is Fixture {
   uint256 internal constant _NUM_TRADER = 2;
   uint256 internal constant _NUM_ARB = 2;
 
-  ITransmuter transmuterSplit;
+  IParallelizer transmuterSplit;
 
   TraderWithSplit internal _traderHandler;
   ArbitragerWithSplit internal _arbitragerHandler;
@@ -34,9 +34,9 @@ contract PathIndeInvariants is Fixture {
   function setUp() public virtual override {
     super.setUp();
 
-    // Deploy another transmuter to check the independant path property
+    // Deploy another parallelizer to check the independant path property
     config = address(new Test());
-    transmuterSplit = deployReplicaTransmuter(
+    transmuterSplit = deployReplicaParallelizer(
       config,
       abi.encodeWithSelector(
         Test.initialize.selector,
@@ -49,8 +49,12 @@ contract PathIndeInvariants is Fixture {
     );
 
     vm.startPrank(governor);
-    accessManager.setTargetFunctionRole(address(transmuterSplit), getTransmuterGovernorSelectorAccess(), GOVERNOR_ROLE);
-    accessManager.setTargetFunctionRole(address(transmuterSplit), getTransmuterGuardianSelectorAccess(), GUARDIAN_ROLE);
+    accessManager.setTargetFunctionRole(
+      address(transmuterSplit), getParallelizerGovernorSelectorAccess(), GOVERNOR_ROLE
+    );
+    accessManager.setTargetFunctionRole(
+      address(transmuterSplit), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE
+    );
     vm.stopPrank();
 
     {
@@ -66,7 +70,7 @@ contract PathIndeInvariants is Fixture {
       yFeeRedemption[2] = int64(int256((1e9 * 9) / 10));
       yFeeRedemption[3] = int64(int256(1e9));
       vm.startPrank(guardian);
-      transmuter.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
+      parallelizer.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
       transmuterSplit.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
       vm.stopPrank();
     }
@@ -81,9 +85,9 @@ contract PathIndeInvariants is Fixture {
     _oracles.push(oracleB);
     _oracles.push(oracleY);
 
-    _traderHandler = new TraderWithSplit(transmuter, transmuterSplit, _collaterals, _oracles, _NUM_TRADER);
-    _arbitragerHandler = new ArbitragerWithSplit(transmuter, transmuterSplit, _collaterals, _oracles, _NUM_ARB);
-    _governanceHandler = new Governance(transmuter, transmuterSplit, _collaterals, _oracles);
+    _traderHandler = new TraderWithSplit(parallelizer, transmuterSplit, _collaterals, _oracles, _NUM_TRADER);
+    _arbitragerHandler = new ArbitragerWithSplit(parallelizer, transmuterSplit, _collaterals, _oracles, _NUM_ARB);
+    _governanceHandler = new Governance(parallelizer, transmuterSplit, _collaterals, _oracles);
 
     vm.startPrank(governor);
     accessManager.grantRole(GOVERNOR_ROLE, _governanceHandler.actors(0), 0);
@@ -91,7 +95,7 @@ contract PathIndeInvariants is Fixture {
     vm.stopPrank();
 
     // Label newly created addresses
-    vm.label(address(transmuterSplit), "TransmuterSplit");
+    vm.label(address(transmuterSplit), "ParallelizerSplit");
     for (uint256 i; i < _NUM_ARB; i++) {
       vm.label(_arbitragerHandler.actors(i), string.concat("Arbi ", Strings.toString(i)));
     }
@@ -143,9 +147,9 @@ contract PathIndeInvariants is Fixture {
     console.log("-------------------");
     console.log("");
 
-    (uint256 issuedA, uint256 issued) = transmuter.getIssuedByCollateral(address(eurA));
-    (uint256 issuedB,) = transmuter.getIssuedByCollateral(address(eurB));
-    (uint256 issuedY,) = transmuter.getIssuedByCollateral(address(eurY));
+    (uint256 issuedA, uint256 issued) = parallelizer.getIssuedByCollateral(address(eurA));
+    (uint256 issuedB,) = parallelizer.getIssuedByCollateral(address(eurB));
+    (uint256 issuedY,) = parallelizer.getIssuedByCollateral(address(eurY));
     console.log("Issued A: ", issuedA);
     console.log("Issued B: ", issuedB);
     console.log("Issued Y: ", issuedY);
@@ -153,7 +157,7 @@ contract PathIndeInvariants is Fixture {
   }
 
   function invariant_Supply() public {
-    uint256 stablecoinIssued = transmuter.getTotalIssued();
+    uint256 stablecoinIssued = parallelizer.getTotalIssued();
     uint256 stablecoinIssuedSplit = transmuterSplit.getTotalIssued();
 
     uint256 balance = tokenP.balanceOf(sweeper);
@@ -171,7 +175,7 @@ contract PathIndeInvariants is Fixture {
 
   function invariant_CollateralRatio() public {
     uint256 storedCollatRatio = _governanceHandler.collateralRatio();
-    (uint64 collateralRatio,) = transmuter.getCollateralRatio();
+    (uint64 collateralRatio,) = parallelizer.getCollateralRatio();
     if (storedCollatRatio <= BASE_9) {
       assertGe(uint256(collateralRatio), storedCollatRatio);
     }
@@ -188,7 +192,7 @@ contract PathIndeInvariants is Fixture {
 
   function invariant_RedeemCollateralRatio() public {
     uint256 storedCollatRatio = _governanceHandler.collateralRatio();
-    (uint64 collateralRatio,) = transmuter.getCollateralRatio();
+    (uint64 collateralRatio,) = parallelizer.getCollateralRatio();
     if (storedCollatRatio <= BASE_9) assertGe(collateralRatio, storedCollatRatio);
     else assertGe(collateralRatio, BASE_9);
 
@@ -196,14 +200,14 @@ contract PathIndeInvariants is Fixture {
   }
 
   function invariant_PathIndependenceTotalSupply() public {
-    uint256 stablecoinIssued = transmuter.getTotalIssued();
+    uint256 stablecoinIssued = parallelizer.getTotalIssued();
     uint256 stablecoinIssuedSplit = transmuterSplit.getTotalIssued();
     assertApproxEqRelDecimal(stablecoinIssued, stablecoinIssuedSplit, _MAX_PERCENTAGE_DEVIATION * 100, 18);
   }
 
   function invariant_PathIndependenceSubSupply() public {
     for (uint256 i; i < _collaterals.length; i++) {
-      (uint256 issuedPerCollat,) = transmuter.getIssuedByCollateral(_collaterals[i]);
+      (uint256 issuedPerCollat,) = parallelizer.getIssuedByCollateral(_collaterals[i]);
       (uint256 issuedPerCollatSplit,) = transmuterSplit.getIssuedByCollateral(_collaterals[i]);
       assertApproxEqRelDecimal(issuedPerCollat, issuedPerCollatSplit, _MAX_PERCENTAGE_DEVIATION * 500, 18);
     }
@@ -211,14 +215,14 @@ contract PathIndeInvariants is Fixture {
 
   function invariant_PathIndependenceBalanceCollaterals() public {
     for (uint256 i; i < _collaterals.length; i++) {
-      uint256 balance = IERC20(_collaterals[i]).balanceOf(address(transmuter));
+      uint256 balance = IERC20(_collaterals[i]).balanceOf(address(parallelizer));
       uint256 balanceSplit = IERC20(_collaterals[i]).balanceOf(address(transmuterSplit));
       assertApproxEqRelDecimal(balance, balanceSplit, _MAX_PERCENTAGE_DEVIATION * 500, 18);
     }
   }
 
   function invariant_PathIndependenceCollateralRatio() public {
-    (uint256 collateralRatio,) = transmuter.getCollateralRatio();
+    (uint256 collateralRatio,) = parallelizer.getCollateralRatio();
     (uint256 collateralRatioSplit,) = transmuterSplit.getCollateralRatio();
     assertApproxEqRelDecimal(collateralRatio, collateralRatioSplit, _MAX_PERCENTAGE_DEVIATION * 100, 18);
   }

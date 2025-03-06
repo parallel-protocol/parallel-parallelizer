@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import { LibDiamond } from "../libraries/LibDiamond.sol";
-import { LibStorage as s, TransmuterStorage } from "../libraries/LibStorage.sol";
+import { LibStorage as s, ParallelizerStorage } from "../libraries/LibStorage.sol";
 import "../../utils/Errors.sol";
 import "../../utils/Constants.sol";
 
@@ -10,7 +10,7 @@ import "../../utils/Constants.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is a friendly fork of Angle's `AccessControlModifiers` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/AccessControlModifiers.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/AccessControlModifiers.sol
 /// update access logic to use OpenZeppelin's `AccessManaged` logic
 contract AccessManagedModifiers {
   /// @notice Checks whether the `msg.sender` can call a function with a given selector
@@ -24,7 +24,7 @@ contract AccessManagedModifiers {
   /// Diamond Proxy system. The base implementation can be found here
   /// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol
   modifier nonReentrant() {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     // Reentrant protection
     // On the first call, `ts.statusReentrant` will be `NOT_ENTERED`
     if (ts.statusReentrant == ENTERED) revert ReentrantCall();

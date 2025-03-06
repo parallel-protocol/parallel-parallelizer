@@ -12,7 +12,7 @@ import "../Storage.sol";
 /// @dev There is no implementation at this point for a managed collateral handled through this library, and
 /// a new specific `ManagerType` would need to be added in this case
 /// @dev This library is a friendly fork of Angle's `LibManager` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibManager.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibManager.sol
 library LibManager {
   /// @notice Checks to which address managed funds must be transferred
   function transferRecipient(bytes memory config) internal view returns (address recipient) {

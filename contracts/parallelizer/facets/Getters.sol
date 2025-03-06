@@ -17,7 +17,7 @@ import "../Storage.sol";
 /// @custom:contact security@cooperlabs.xyz
 /// @dev There may be duplicates in the info provided by the getters defined here
 /// @dev This contract is a friendly fork of Angle's `Getters` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Getters.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Getters.sol
 contract Getters is IGetters {
   /// @inheritdoc IGetters
   function isValidSelector(bytes4 selector) external view returns (bool) {
@@ -70,7 +70,7 @@ contract Getters is IGetters {
     view
     returns (uint64[] memory xRedemptionCurve, int64[] memory yRedemptionCurve)
   {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     return (ts.xRedemptionCurve, ts.yRedemptionCurve);
   }
 
@@ -80,7 +80,7 @@ contract Getters is IGetters {
   /// negligible amount of `stablecoinsIssued` so DoS attacks on redemptions which use this function
   /// become economically impossible
   function getCollateralRatio() external view returns (uint64 collatRatio, uint256 stablecoinsIssued) {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     // Reentrant protection
     if (ts.statusReentrant == ENTERED) revert ReentrantCall();
 
@@ -93,7 +93,7 @@ contract Getters is IGetters {
     view
     returns (uint256 stablecoinsFromCollateral, uint256 stablecoinsIssued)
   {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     uint256 _normalizer = ts.normalizer;
     return (
       (uint256(ts.collaterals[collateral].normalizedStables) * _normalizer) / BASE_27,
@@ -103,7 +103,7 @@ contract Getters is IGetters {
 
   /// @inheritdoc IGetters
   function getTotalIssued() external view returns (uint256) {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     return (uint256(ts.normalizedStables) * uint256(ts.normalizer)) / BASE_27;
   }
 

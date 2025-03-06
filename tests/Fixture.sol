@@ -18,13 +18,13 @@ import { MockAccessControlManager } from "./mock/MockAccessControlManager.sol";
 import { MockChainlinkOracle } from "./mock/MockChainlinkOracle.sol";
 import { MockTokenPermit } from "./mock/MockTokenPermit.sol";
 
-import { CollateralSetup, Test } from "contracts/transmuter/configs/Test.sol";
+import { CollateralSetup, Test } from "contracts/parallelizer/configs/Test.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol";
-import { ITransmuter, Transmuter } from "./utils/Transmuter.sol";
+import { IParallelizer, Parallelizer } from "./utils/Parallelizer.sol";
 import { ConfigAccessManager } from "./utils/ConfigAccessManager.sol";
 
-contract Fixture is Transmuter, ConfigAccessManager {
+contract Fixture is Parallelizer, ConfigAccessManager {
   ITokenP public tokenP;
 
   IERC20 public eurA;
@@ -97,7 +97,7 @@ contract Fixture is Transmuter, ConfigAccessManager {
 
     config = address(new Test());
 
-    deployTransmuter(
+    deployParallelizer(
       config,
       abi.encodeWithSelector(
         Test.initialize.selector,
@@ -110,14 +110,14 @@ contract Fixture is Transmuter, ConfigAccessManager {
     );
 
     vm.label(address(tokenP), "tokenP");
-    vm.label(address(transmuter), "Transmuter");
+    vm.label(address(parallelizer), "Parallelizer");
     vm.label(address(eurA), "eurA");
     vm.label(address(eurB), "eurB");
     vm.label(address(eurY), "eurY");
 
     vm.startPrank(governor);
-    accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGovernorSelectorAccess(), GOVERNOR_ROLE);
-    accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGuardianSelectorAccess(), GUARDIAN_ROLE);
+    accessManager.setTargetFunctionRole(address(parallelizer), getParallelizerGovernorSelectorAccess(), GOVERNOR_ROLE);
+    accessManager.setTargetFunctionRole(address(parallelizer), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE);
     vm.stopPrank();
   }
 
@@ -151,16 +151,16 @@ contract Fixture is Transmuter, ConfigAccessManager {
   function _mintExactOutput(address owner, address tokenIn, uint256 amountStable, uint256 estimatedAmountIn) internal {
     vm.startPrank(owner);
     deal(tokenIn, owner, estimatedAmountIn);
-    IERC20(tokenIn).approve(address(transmuter), type(uint256).max);
-    transmuter.swapExactOutput(amountStable, estimatedAmountIn, tokenIn, address(tokenP), owner, block.timestamp * 2);
+    IERC20(tokenIn).approve(address(parallelizer), type(uint256).max);
+    parallelizer.swapExactOutput(amountStable, estimatedAmountIn, tokenIn, address(tokenP), owner, block.timestamp * 2);
     vm.stopPrank();
   }
 
   function _mintExactInput(address owner, address tokenIn, uint256 amountIn, uint256 estimatedStable) internal {
     vm.startPrank(owner);
     deal(tokenIn, owner, amountIn);
-    IERC20(tokenIn).approve(address(transmuter), type(uint256).max);
-    transmuter.swapExactInput(amountIn, estimatedStable, tokenIn, address(tokenP), owner, block.timestamp * 2);
+    IERC20(tokenIn).approve(address(parallelizer), type(uint256).max);
+    parallelizer.swapExactInput(amountIn, estimatedStable, tokenIn, address(tokenP), owner, block.timestamp * 2);
     vm.stopPrank();
   }
 }

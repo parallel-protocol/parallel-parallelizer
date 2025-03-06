@@ -7,7 +7,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 
 import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
 import { ITokenP } from "interfaces/ITokenP.sol";
-import { ITransmuter } from "interfaces/ITransmuter.sol";
+import { IParallelizer } from "interfaces/IParallelizer.sol";
 import { Test, stdMath, StdStorage, stdStorage } from "@forge-std/Test.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol";
@@ -39,8 +39,8 @@ contract BaseActor is Test {
   address internal _currentActor;
 
   ITokenP tokenP;
-  ITransmuter internal _transmuter;
-  ITransmuter internal _transmuterSplit;
+  IParallelizer internal _transmuter;
+  IParallelizer internal _transmuterSplit;
   address[] internal _collaterals;
   AggregatorV3Interface[] internal _oracles;
   uint256[] internal _maxTokenAmount;
@@ -60,8 +60,8 @@ contract BaseActor is Test {
   constructor(
     uint256 _nbrActor,
     string memory actorType,
-    ITransmuter transmuter,
-    ITransmuter transmuterSplit,
+    IParallelizer parallelizer,
+    IParallelizer transmuterSplit,
     address[] memory collaterals,
     AggregatorV3Interface[] memory oracles
   ) {
@@ -70,9 +70,9 @@ contract BaseActor is Test {
       actors.push(actor);
     }
     nbrActor = _nbrActor;
-    _transmuter = transmuter;
+    _transmuter = parallelizer;
     _transmuterSplit = transmuterSplit;
-    tokenP = ITokenP(transmuter.tokenP());
+    tokenP = ITokenP(parallelizer.tokenP());
     _collaterals = collaterals;
     _oracles = oracles;
     _maxTokenAmount.push(_maxAmountWithoutDecimals * 10 ** IERC20Metadata(_collaterals[0]).decimals());

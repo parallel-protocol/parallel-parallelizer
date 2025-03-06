@@ -17,7 +17,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is a friendly fork of Angle's `RewardHandler` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/RewardHandler.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/RewardHandler.sol
 contract RewardHandler is IRewardHandler {
   using SafeERC20 for IERC20;
 
@@ -29,7 +29,7 @@ contract RewardHandler is IRewardHandler {
   /// @dev Only governance can set which tokens can be swapped through this function by passing a prior approval
   /// transaction to 1inch router for the token to be swapped
   function sellRewards(uint256 minAmountOut, bytes memory payload) external returns (uint256 amountOut) {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     if (!LibDiamond.checkCanCall(msg.sender, msg.data) && ts.isSellerTrusted[msg.sender] == 0) revert NotTrusted();
     address[] memory list = ts.collateralList;
     uint256 listLength = list.length;

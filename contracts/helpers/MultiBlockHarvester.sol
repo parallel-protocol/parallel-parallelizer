@@ -6,7 +6,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
-import { ITransmuter } from "../interfaces/ITransmuter.sol";
+import { IParallelizer } from "../interfaces/IParallelizer.sol";
 import { ITokenP } from "../interfaces/ITokenP.sol";
 import { IPool } from "../interfaces/IPool.sol";
 
@@ -38,9 +38,9 @@ contract MultiBlockHarvester is BaseHarvester {
     uint96 initialMaxSlippage,
     address initialAuthority,
     ITokenP definitivetokenP,
-    ITransmuter definitiveTransmuter
+    IParallelizer definitiveParallelizer
   )
-    BaseHarvester(initialMaxSlippage, initialAuthority, definitivetokenP, definitiveTransmuter)
+    BaseHarvester(initialMaxSlippage, initialAuthority, definitivetokenP, definitiveParallelizer)
   { }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ contract MultiBlockHarvester is BaseHarvester {
     amount = (amount * scale) / 1e9;
     if (amount == 0) revert ZeroAmount();
 
-    try transmuter.updateOracle(yieldBearingAsset) { } catch { }
+    try parallelizer.updateOracle(yieldBearingAsset) { } catch { }
     _rebalance(increase, yieldBearingAsset, yieldBearingInfo, amount);
   }
 
@@ -81,10 +81,10 @@ contract MultiBlockHarvester is BaseHarvester {
    * @param yieldBearingAsset address of the yieldBearingAsset
    */
   function finalizeRebalance(address yieldBearingAsset, uint256 balance) external onlyTrusted {
-    try transmuter.updateOracle(yieldBearingAsset) { } catch { }
-    _adjustAllowance(yieldBearingAsset, address(transmuter), balance);
+    try parallelizer.updateOracle(yieldBearingAsset) { } catch { }
+    _adjustAllowance(yieldBearingAsset, address(parallelizer), balance);
     uint256 amountOut =
-      transmuter.swapExactInput(balance, 0, yieldBearingAsset, address(tokenP), address(this), block.timestamp);
+      parallelizer.swapExactInput(balance, 0, yieldBearingAsset, address(tokenP), address(this), block.timestamp);
     address depositAddress = yieldBearingAsset == XEVT ? yieldBearingToDepositAddress[yieldBearingAsset] : address(0);
     _checkSlippage(balance, amountOut, yieldBearingAsset, depositAddress, true);
   }
@@ -101,17 +101,17 @@ contract MultiBlockHarvester is BaseHarvester {
   )
     internal
   {
-    _adjustAllowance(address(tokenP), address(transmuter), amount);
+    _adjustAllowance(address(tokenP), address(parallelizer), amount);
     address depositAddress = yieldBearingToDepositAddress[yieldBearingAsset];
     if (typeAction == 1) {
       uint256 amountOut =
-        transmuter.swapExactInput(amount, 0, address(tokenP), yieldBearingInfo.asset, address(this), block.timestamp);
+        parallelizer.swapExactInput(amount, 0, address(tokenP), yieldBearingInfo.asset, address(this), block.timestamp);
       if (yieldBearingAsset == XEVT) {
         _adjustAllowance(yieldBearingInfo.asset, address(depositAddress), amountOut);
         (uint256 shares,) = IPool(depositAddress).deposit(amountOut, address(this));
-        _adjustAllowance(yieldBearingAsset, address(transmuter), shares);
+        _adjustAllowance(yieldBearingAsset, address(parallelizer), shares);
         amountOut =
-          transmuter.swapExactInput(shares, 0, yieldBearingAsset, address(tokenP), address(this), block.timestamp);
+          parallelizer.swapExactInput(shares, 0, yieldBearingAsset, address(tokenP), address(this), block.timestamp);
         _checkSlippage(amount, amountOut, address(tokenP), depositAddress, false);
       } else if (yieldBearingAsset == USDM) {
         IERC20(yieldBearingInfo.asset).safeTransfer(depositAddress, amountOut);
@@ -119,7 +119,7 @@ contract MultiBlockHarvester is BaseHarvester {
       }
     } else {
       uint256 amountOut =
-        transmuter.swapExactInput(amount, 0, address(tokenP), yieldBearingAsset, address(this), block.timestamp);
+        parallelizer.swapExactInput(amount, 0, address(tokenP), yieldBearingAsset, address(this), block.timestamp);
       _checkSlippage(amount, amountOut, yieldBearingAsset, depositAddress, false);
       if (yieldBearingAsset == XEVT) {
         IPool(depositAddress).requestRedeem(amountOut);

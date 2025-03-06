@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import "../transmuter/Storage.sol";
+import "../parallelizer/Storage.sol";
 
 /// @title IDiamondCut
 /// @author Cooper Labs

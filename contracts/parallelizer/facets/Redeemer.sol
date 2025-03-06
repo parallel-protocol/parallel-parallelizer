@@ -25,7 +25,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is a friendly fork of Angle's `Redeemer` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Redeemer.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Redeemer.sol
 contract Redeemer is IRedeemer, AccessManagedModifiers {
   using SafeERC20 for IERC20;
   using Math for uint256;
@@ -123,7 +123,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     nonReentrant
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
 
     if (ts.isRedemptionLive == 0) revert Paused();
     if (block.timestamp > deadline) revert TooLate();
@@ -170,7 +170,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     view
     returns (address[] memory tokens, uint256[] memory balances, uint256[] memory subCollateralsTracker)
   {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     uint64 collatRatio;
     uint256 stablecoinsIssued;
     (collatRatio, stablecoinsIssued, tokens, balances, subCollateralsTracker) = LibGetters.getCollateralRatio();
@@ -198,7 +198,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
 
   /// @notice Updates the `normalizer` variable used to track stablecoins issued from each asset and globally
   function _updateNormalizer(uint256 amount, bool increase) internal returns (uint256 newNormalizerValue) {
-    TransmuterStorage storage ts = s.transmuterStorage();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     uint256 _normalizer = ts.normalizer;
     uint256 _normalizedStables = ts.normalizedStables;
     // In case of an increase, the update formula used is the simplified version of the formula below:

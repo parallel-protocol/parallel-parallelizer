@@ -9,7 +9,7 @@ import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC31
 import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
 import { RouterSwapper } from "@helpers/RouterSwapper.sol";
 
-import { ITransmuter } from "interfaces/ITransmuter.sol";
+import { IParallelizer } from "interfaces/IParallelizer.sol";
 import { ITokenP } from "interfaces/ITokenP.sol";
 import { IERC4626 } from "interfaces/external/IERC4626.sol";
 
@@ -26,7 +26,7 @@ enum SwapType {
 /// @title GenericHarvester
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev Generic contract for anyone to permissionlessly adjust the reserves of Angle Transmuter
+/// @dev Generic contract for anyone to permissionlessly adjust the reserves of Angle Parallelizer
 /// @dev This contract is a friendly fork of Angle's GenericHarvester contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/GenericHarvester.sol
 contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper {
@@ -49,12 +49,12 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     address initialTokenTransferAddress,
     address initialSwapRouter,
     ITokenP definitivetokenP,
-    ITransmuter definitiveTransmuter,
+    IParallelizer definitiveParallelizer,
     address initialAuthority,
     IERC3156FlashLender definitiveFlashloan
   )
     RouterSwapper(initialSwapRouter, initialTokenTransferAddress)
-    BaseHarvester(initialMaxSlippage, initialAuthority, definitivetokenP, definitiveTransmuter)
+    BaseHarvester(initialMaxSlippage, initialAuthority, definitivetokenP, definitiveParallelizer)
   {
     if (address(definitiveFlashloan) == address(0)) revert ZeroAddress();
     flashloan = definitiveFlashloan;
@@ -94,9 +94,9 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
 
   /// @notice Invests or divests from the yield asset associated to `yieldBearingAsset` based on the current exposure
   ///  to this yieldBearingAsset
-  /// @dev This transaction either reduces the exposure to `yieldBearingAsset` in the Transmuter or frees up
+  /// @dev This transaction either reduces the exposure to `yieldBearingAsset` in the Parallelizer or frees up
   /// some yieldBearingAsset that can then be used for people looking to burn deposit tokens
-  /// @dev Due to potential transaction fees within the Transmuter, this function doesn't exactly bring
+  /// @dev Due to potential transaction fees within the Parallelizer, this function doesn't exactly bring
   /// `yieldBearingAsset` to the target exposure
   /// @dev scale is a number between 0 and 1e9 that represents the proportion of the tokenP to harvest,
   /// it is used to lower the amount of the asset to harvest for example to have a lower slippage
@@ -108,7 +108,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     if (amount == 0) revert ZeroAmount();
 
     (SwapType swapType, bytes memory data) = abi.decode(extraData, (SwapType, bytes));
-    try transmuter.updateOracle(yieldBearingInfo.asset) { } catch { }
+    try parallelizer.updateOracle(yieldBearingInfo.asset) { } catch { }
     adjustYieldExposure(
       amount, increase, yieldBearingAsset, yieldBearingInfo.asset, (amount * (1e9 - maxSlippage)) / 1e9, swapType, data
     );
@@ -175,14 +175,15 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
         tokenOut = asset;
       }
     }
-    uint256 amountOut = transmuter.swapExactInput(amount, 0, address(tokenP), tokenIn, address(this), block.timestamp);
+    uint256 amountOut =
+      parallelizer.swapExactInput(amount, 0, address(tokenP), tokenIn, address(this), block.timestamp);
 
     // Swap to tokenIn
     amountOut = _swapToTokenOut(typeAction, tokenIn, tokenOut, amountOut, swapType, callData);
 
-    _adjustAllowance(tokenOut, address(transmuter), amountOut);
+    _adjustAllowance(tokenOut, address(parallelizer), amountOut);
     uint256 amountStableOut =
-      transmuter.swapExactInput(amountOut, minAmountOut, tokenOut, address(tokenP), address(this), block.timestamp);
+      parallelizer.swapExactInput(amountOut, minAmountOut, tokenOut, address(tokenP), address(this), block.timestamp);
     if (amount > amountStableOut) {
       budget[sender] -= amount - amountStableOut; // Will revert if not enough funds
     }

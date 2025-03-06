@@ -2,13 +2,13 @@
 pragma solidity 0.8.28;
 
 import "../../utils/Constants.sol";
-import { DiamondStorage, ImplementationStorage, TransmuterStorage } from "../Storage.sol";
+import { DiamondStorage, ImplementationStorage, ParallelizerStorage } from "../Storage.sol";
 
 /// @title LibStorage
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is a friendly fork of Angle's `LibStorage` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibStorage.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibStorage.sol
 library LibStorage {
   /// @notice Returns the storage struct stored at the `DIAMOND_STORAGE_POSITION` slot
   /// @dev This struct handles the logic of the different facets used in the diamond proxy
@@ -20,8 +20,8 @@ library LibStorage {
   }
 
   /// @notice Returns the storage struct stored at the `TRANSMUTER_STORAGE_POSITION` slot
-  /// @dev This struct handles the particular logic of the Transmuter system
-  function transmuterStorage() internal pure returns (TransmuterStorage storage ts) {
+  /// @dev This struct handles the particular logic of the Parallelizer system
+  function transmuterStorage() internal pure returns (ParallelizerStorage storage ts) {
     bytes32 position = TRANSMUTER_STORAGE_POSITION;
     assembly ("memory-safe") {
       ts.slot := position

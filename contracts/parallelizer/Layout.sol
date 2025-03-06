@@ -2,9 +2,9 @@
 pragma solidity 0.8.28;
 
 import "../utils/Constants.sol";
-import { DiamondStorage, TransmuterStorage, Collateral, FacetInfo, WhitelistType } from "./Storage.sol";
+import { DiamondStorage, ParallelizerStorage, Collateral, FacetInfo, WhitelistType } from "./Storage.sol";
 
-/// @notice Contract mimicking the overall storage layout of the transmuter system.
+/// @notice Contract mimicking the overall storage layout of the parallelizer system.
 /// @dev Not meant to be deployed or used. The goals are:
 ///  - To ensure the storage layout is well understood by everyone
 ///  - To force test failures if the layout is changed
@@ -36,7 +36,7 @@ contract Layout {
   mapping(address => uint256) public isTrusted; // slot 7
   mapping(address => uint256) public isSellerTrusted; // slot 8
   mapping(WhitelistType => mapping(address => uint256)) public isWhitelistedForType; // slot 9
-  // uint256(TRANSMUTER_STORAGE_POSITION) - TransmuterStorage offset (9) - uint256(DIAMOND_STORAGE_POSITION)
+  // uint256(TRANSMUTER_STORAGE_POSITION) - ParallelizerStorage offset (9) - uint256(DIAMOND_STORAGE_POSITION)
   uint256[3_183_375_284_495_168_307_942_345_002_138_838_670_162_164_004_951_576_664_793_207_874_081_895_365_205]
     private __gap3;
   bytes4[] public selectors; // slot 1

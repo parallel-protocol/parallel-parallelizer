@@ -118,7 +118,7 @@ struct Collateral {
   uint256 stablecoinCap; // Cap on the amount of stablecoins that can be issued from this collateral
 }
 
-struct TransmuterStorage {
+struct ParallelizerStorage {
   ITokenP tokenP; // tokenP handled by the system
   uint8 isRedemptionLive; // If redemption is unpaused
   uint8 statusReentrant; // If call is reentrant or not

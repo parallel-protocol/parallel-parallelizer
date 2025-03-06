@@ -20,7 +20,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is a friendly fork of Angle's `SettersGovernor` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/SettersGovernor.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/SettersGovernor.sol
 contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
   using SafeERC20 for IERC20;
 

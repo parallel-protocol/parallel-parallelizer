@@ -16,16 +16,16 @@ import { MockERC777, IERC1820Registry } from "../mock/MockERC777.sol";
 import { MockTokenPermit } from "../mock/MockTokenPermit.sol";
 import { ReentrantRedeemGetCollateralRatio, ReentrantRedeemSwap } from "../mock/MockReentrant.sol";
 
-import { CollateralSetup, Test } from "contracts/transmuter/configs/Test.sol";
-import { LibGetters } from "contracts/transmuter/libraries/LibGetters.sol";
-import "contracts/transmuter/Storage.sol";
+import { CollateralSetup, Test } from "contracts/parallelizer/configs/Test.sol";
+import { LibGetters } from "contracts/parallelizer/libraries/LibGetters.sol";
+import "contracts/parallelizer/Storage.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol" as Errors;
 
-import { ITransmuter, Transmuter } from "../utils/Transmuter.sol";
+import { IParallelizer, Parallelizer } from "../utils/Parallelizer.sol";
 import { ConfigAccessManager } from "../utils/ConfigAccessManager.sol";
 
-contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
+contract ParallelizerReentrantTest is Parallelizer, ConfigAccessManager {
   using SafeERC20 for IERC20;
 
   ITokenP public tokenP;
@@ -110,7 +110,7 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
 
     // Config
     config = address(new Test());
-    deployTransmuter(
+    deployParallelizer(
       config,
       abi.encodeWithSelector(
         Test.initialize.selector,
@@ -122,12 +122,12 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
       )
     );
     vm.startPrank(governor);
-    accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGovernorSelectorAccess(), GOVERNOR_ROLE);
-    accessManager.setTargetFunctionRole(address(transmuter), getTransmuterGuardianSelectorAccess(), GUARDIAN_ROLE);
+    accessManager.setTargetFunctionRole(address(parallelizer), getParallelizerGovernorSelectorAccess(), GOVERNOR_ROLE);
+    accessManager.setTargetFunctionRole(address(parallelizer), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE);
     vm.stopPrank();
 
     vm.label(address(tokenP), "tokenP");
-    vm.label(address(transmuter), "Transmuter");
+    vm.label(address(parallelizer), "Parallelizer");
     vm.label(address(eurA), "eurA");
     vm.label(address(eurB), "eurB");
     vm.label(address(eurY), "eurY");
@@ -142,13 +142,13 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
     int64[] memory yFeeRedemption = new int64[](1);
     yFeeRedemption[0] = int64(int256(BASE_9));
     vm.startPrank(guardian);
-    transmuter.setFees(address(eurA), xFeeMint, yFee, true);
-    transmuter.setFees(address(eurA), xFeeBurn, yFee, false);
-    transmuter.setFees(address(eurB), xFeeMint, yFee, true);
-    transmuter.setFees(address(eurB), xFeeBurn, yFee, false);
-    transmuter.setFees(address(eurY), xFeeMint, yFee, true);
-    transmuter.setFees(address(eurY), xFeeBurn, yFee, false);
-    transmuter.setRedemptionCurveParams(xFeeMint, yFeeRedemption);
+    parallelizer.setFees(address(eurA), xFeeMint, yFee, true);
+    parallelizer.setFees(address(eurA), xFeeBurn, yFee, false);
+    parallelizer.setFees(address(eurB), xFeeMint, yFee, true);
+    parallelizer.setFees(address(eurB), xFeeBurn, yFee, false);
+    parallelizer.setFees(address(eurY), xFeeMint, yFee, true);
+    parallelizer.setFees(address(eurY), xFeeBurn, yFee, false);
+    parallelizer.setRedemptionCurveParams(xFeeMint, yFeeRedemption);
     vm.stopPrank();
 
     _collaterals.push(address(eurA));
@@ -164,11 +164,11 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
 
     // deploy all the reentrant contracts
     contractReentrantRedeemGetCollateralRatio =
-      new ReentrantRedeemGetCollateralRatio(ITransmuter(address(transmuter)), IERC1820Registry(address(registry)));
+      new ReentrantRedeemGetCollateralRatio(IParallelizer(address(parallelizer)), IERC1820Registry(address(registry)));
     contractReentrantRedeemGetCollateralRatio.setInterfaceImplementer();
 
     contractReentrantRedeemSwap = new ReentrantRedeemSwap(
-      ITransmuter(address(transmuter)),
+      IParallelizer(address(parallelizer)),
       IERC1820Registry(address(registry)),
       IERC20(address(tokenP)),
       IERC20(address(eurB))
@@ -183,7 +183,7 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
 
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
-    (, uint256[] memory quoteAmounts) = transmuter.quoteRedemptionCurve(amountBurnt);
+    (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     if (quoteAmounts[0] == 0) return;
 
     tokenP.transfer(address(contractReentrantRedeemGetCollateralRatio), amountBurnt);
@@ -199,7 +199,7 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
 
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
-    (, uint256[] memory quoteAmounts) = transmuter.quoteRedemptionCurve(amountBurnt);
+    (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     if (quoteAmounts[0] == 0) return;
 
     tokenP.transfer(address(contractReentrantRedeemSwap), amountBurnt);
@@ -225,10 +225,10 @@ contract TransmuterReentrantTest is Transmuter, ConfigAccessManager {
     for (uint256 i; i < _collaterals.length; ++i) {
       initialAmounts[i] = bound(initialAmounts[i], 0, _maxTokenAmount[i]);
       deal(_collaterals[i], alice, initialAmounts[i]);
-      IERC20(_collaterals[i]).approve(address(transmuter), initialAmounts[i]);
+      IERC20(_collaterals[i]).approve(address(parallelizer), initialAmounts[i]);
 
       collateralMintedStables[i] =
-        transmuter.swapExactInput(initialAmounts[i], 0, _collaterals[i], address(tokenP), alice, block.timestamp * 2);
+        parallelizer.swapExactInput(initialAmounts[i], 0, _collaterals[i], address(tokenP), alice, block.timestamp * 2);
       mintedStables += collateralMintedStables[i];
     }
 
