@@ -2,16 +2,16 @@
 
 pragma solidity 0.8.28;
 
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 
 import { console } from "@forge-std/console.sol";
 
 import { IMockFacet, MockPureFacet } from "tests/mock/MockFacets.sol";
 
-import { Layout } from "contracts/transmuter/Layout.sol";
-import "contracts/transmuter/Storage.sol";
-import { Test } from "contracts/transmuter/configs/Test.sol";
-import { DiamondCut } from "contracts/transmuter/facets/DiamondCut.sol";
+import { Layout } from "contracts/parallelizer/Layout.sol";
+import "contracts/parallelizer/Storage.sol";
+import { Test } from "contracts/parallelizer/configs/Test.sol";
+import { DiamondCut } from "contracts/parallelizer/facets/DiamondCut.sol";
 import "contracts/utils/Constants.sol";
 
 import { Fixture } from "../Fixture.sol";
@@ -21,28 +21,28 @@ contract Test_Layout is Fixture {
 
   function setUp() public override {
     super.setUp();
-    layout = Layout(address(transmuter));
+    layout = Layout(address(parallelizer));
   }
 
   function test_Layout() public {
-    address agToken = address(transmuter.agToken());
-    uint8 isRedemptionLive = transmuter.isPaused(address(0), ActionType.Redeem) ? 0 : 1;
-    uint256 stablecoinsIssued = transmuter.getTotalIssued();
-    address[] memory collateralList = transmuter.getCollateralList();
-    (uint64[] memory xRedemptionCurve, int64[] memory yRedemptionCurve) = transmuter.getRedemptionFees();
-    Collateral memory collateral = transmuter.getCollateralInfo(collateralList[0]);
+    address tokenP = address(parallelizer.tokenP());
+    uint8 isRedemptionLive = parallelizer.isPaused(address(0), ActionType.Redeem) ? 0 : 1;
+    uint256 stablecoinsIssued = parallelizer.getTotalIssued();
+    address[] memory collateralList = parallelizer.getCollateralList();
+    (uint64[] memory xRedemptionCurve, int64[] memory yRedemptionCurve) = parallelizer.getRedemptionFees();
+    Collateral memory collateral = parallelizer.getCollateralInfo(collateralList[0]);
     hoax(governor);
-    transmuter.toggleTrusted(alice, TrustedType.Updater);
+    parallelizer.toggleTrusted(alice, TrustedType.Updater);
     hoax(governor);
-    transmuter.toggleTrusted(alice, TrustedType.Seller);
-    address accessManager = transmuter.accessManager();
+    parallelizer.toggleTrusted(alice, TrustedType.Seller);
+    address accessManager = parallelizer.accessManager();
     hoax(guardian);
-    transmuter.setDummyImplementation(address(alice));
-    address implementation = transmuter.implementation();
+    parallelizer.setDummyImplementation(address(alice));
+    address implementation = parallelizer.implementation();
 
     _etch();
 
-    assertEq(layout.agToken(), agToken);
+    assertEq(layout.tokenP(), tokenP);
     assertEq(layout.isRedemptionLive(), isRedemptionLive);
     assertEq((layout.normalizedStables() * layout.normalizer()) / BASE_27, stablecoinsIssued);
     for (uint256 i; i < collateralList.length; i++) {
@@ -79,7 +79,7 @@ contract Test_Layout is Fixture {
     assertEq(layout.isTrusted(bob), 0);
     assertEq(layout.isSellerTrusted(bob), 0);
 
-    bytes4[] memory selectors = _generateSelectors("ITransmuter");
+    bytes4[] memory selectors = _generateSelectors("IParallelizer");
     for (uint256 i = 0; i < selectors.length; ++i) {
       (address facetAddress, uint16 selectorPosition) = layout.selectorInfo(selectors[i]);
       assertNotEq(facetAddress, address(0));

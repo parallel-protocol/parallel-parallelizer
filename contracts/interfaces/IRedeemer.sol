@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 /// @title IRedeemer
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `IRedeemer` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IRedeemer.sol
 interface IRedeemer {
   /// @notice Redeems `amount` of stablecoins from the system
   /// @param receiver Address which should be receiving the output tokens
@@ -21,7 +23,7 @@ interface IRedeemer {
     returns (address[] memory tokens, uint256[] memory amounts);
 
   /// @notice Same as the redeem function above with the additional feature to specify a list of `forfeitTokens` for
-  /// which the Transmuter system will not try to do a transfer to `receiver`.
+  /// which the Parallelizer system will not try to do a transfer to `receiver`.
   function redeemWithForfeit(
     uint256 amount,
     address receiver,

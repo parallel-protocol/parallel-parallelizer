@@ -9,7 +9,11 @@ import { Context } from "@openzeppelin/contracts/utils/Context.sol";
 import "../utils/Errors.sol";
 
 /// @title AccessControl
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev Fork of OpenZeppelin's `AccessManaged` contract
+/// updated to make _checkCanCall to return bool
+/// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/manager/AccessManaged.sol
 contract AccessManaged is Context, IAccessManaged {
   address private _authority;
 

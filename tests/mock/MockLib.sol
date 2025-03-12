@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
-import { LibHelpers } from "../../contracts/transmuter/libraries/LibHelpers.sol";
-import { LibManager } from "../../contracts/transmuter/libraries/LibManager.sol";
-import { LibStorage } from "../../contracts/transmuter/libraries/LibStorage.sol";
-import { ImplementationStorage } from "../../contracts/transmuter/Storage.sol";
+import { LibHelpers } from "../../contracts/parallelizer/libraries/LibHelpers.sol";
+import { LibManager } from "../../contracts/parallelizer/libraries/LibManager.sol";
+import { LibStorage } from "../../contracts/parallelizer/libraries/LibStorage.sol";
+import { ImplementationStorage } from "../../contracts/parallelizer/Storage.sol";
 
 contract MockLib {
   function convertDecimalTo(uint256 amount, uint8 fromDecimals, uint8 toDecimals) external pure returns (uint256) {

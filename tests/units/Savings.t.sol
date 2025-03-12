@@ -19,7 +19,7 @@ contract SavingsNameableUpgradeTest is Fixture {
   function setUp() public override {
     super.setUp();
     vm.startPrank(governor);
-    deal({ token: address(agToken), to: governor, give: 1e18 });
+    deal({ token: address(tokenP), to: governor, give: 1e18 });
 
     SavingsNameable savingsImpl = new SavingsNameable();
 
@@ -27,14 +27,14 @@ contract SavingsNameableUpgradeTest is Fixture {
     address futureProxyAddress = vm.computeCreateAddress(governor, vm.getNonce(governor));
 
     // Pre-approve the future proxy address
-    agToken.approve(futureProxyAddress, 1e18);
+    tokenP.approve(futureProxyAddress, 1e18);
 
     saving = SavingsNameable(
       address(
         new ERC1967Proxy(
           address(savingsImpl),
           abi.encodeWithSelector(
-            savingsImpl.initialize.selector, accessManager, IERC20Metadata(address(agToken)), name, symbol, 1
+            savingsImpl.initialize.selector, accessManager, IERC20Metadata(address(tokenP)), name, symbol, 1
           )
         )
       )

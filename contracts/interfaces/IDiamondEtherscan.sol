@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.28;
 
 /// @title IDiamondEtherscan
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 interface IDiamondEtherscan {
   /// @notice Sets a dummy implementation with the same layout at the diamond proxy contract with all its facets
   function setDummyImplementation(address _implementation) external;

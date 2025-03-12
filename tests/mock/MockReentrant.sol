@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
-import { ITransmuter, Transmuter } from "../utils/Transmuter.sol";
+import { IParallelizer, Parallelizer } from "../utils/Parallelizer.sol";
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { IERC1820Registry } from "./MockERC777.sol";
 
@@ -10,19 +9,19 @@ contract ReentrantRedeemGetCollateralRatio {
   bytes32 private constant _TOKENS_SENDER_INTERFACE_HASH = keccak256("ERC777TokensSender");
   bytes32 private constant _TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
 
-  ITransmuter transmuter;
+  IParallelizer parallelizer;
   IERC1820Registry registry;
 
-  constructor(ITransmuter _transmuter, IERC1820Registry _registry) {
-    transmuter = _transmuter;
+  constructor(IParallelizer _transmuter, IERC1820Registry _registry) {
+    parallelizer = _transmuter;
     registry = _registry;
   }
 
   function testERC777Reentrancy(uint256 redeemAmount) public {
     uint256[] memory minAmountOuts;
-    (, uint256[] memory quoteAmounts) = transmuter.quoteRedemptionCurve(redeemAmount);
+    (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(redeemAmount);
     minAmountOuts = new uint256[](quoteAmounts.length);
-    transmuter.redeem(redeemAmount, address(this), block.timestamp * 2, minAmountOuts);
+    parallelizer.redeem(redeemAmount, address(this), block.timestamp * 2, minAmountOuts);
   }
 
   function setInterfaceImplementer() public {
@@ -36,7 +35,7 @@ contract ReentrantRedeemGetCollateralRatio {
     // reenter here
     if (from != address(0)) {
       // It should revert here
-      transmuter.getCollateralRatio();
+      parallelizer.getCollateralRatio();
     }
   }
 
@@ -47,23 +46,23 @@ contract ReentrantRedeemSwap {
   bytes32 private constant _TOKENS_SENDER_INTERFACE_HASH = keccak256("ERC777TokensSender");
   bytes32 private constant _TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
 
-  ITransmuter transmuter;
+  IParallelizer parallelizer;
   IERC1820Registry registry;
-  IERC20 agToken;
+  IERC20 tokenP;
   IERC20 collateral;
 
-  constructor(ITransmuter _transmuter, IERC1820Registry _registry, IERC20 _agToken, IERC20 _collateral) {
-    transmuter = _transmuter;
+  constructor(IParallelizer _transmuter, IERC1820Registry _registry, IERC20 _tokenP, IERC20 _collateral) {
+    parallelizer = _transmuter;
     registry = _registry;
-    agToken = _agToken;
+    tokenP = _tokenP;
     collateral = _collateral;
   }
 
   function testERC777Reentrancy(uint256 redeemAmount) public {
     uint256[] memory minAmountOuts;
-    (, uint256[] memory quoteAmounts) = transmuter.quoteRedemptionCurve(redeemAmount);
+    (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(redeemAmount);
     minAmountOuts = new uint256[](quoteAmounts.length);
-    transmuter.redeem(redeemAmount, address(this), block.timestamp * 2, minAmountOuts);
+    parallelizer.redeem(redeemAmount, address(this), block.timestamp * 2, minAmountOuts);
   }
 
   function setInterfaceImplementer() public {
@@ -77,7 +76,7 @@ contract ReentrantRedeemSwap {
     // reenter here
     if (from != address(0)) {
       // It should revert here
-      transmuter.swapExactInput(1e18, 0, address(collateral), address(agToken), address(this), block.timestamp * 2);
+      parallelizer.swapExactInput(1e18, 0, address(collateral), address(tokenP), address(this), block.timestamp * 2);
     }
   }
 

@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import "../transmuter/Storage.sol";
+import "../parallelizer/Storage.sol";
 
 /// @title ISettersGovernor
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `ISettersGovernor` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/ISetters.sol
 interface ISettersGovernor {
-  /// @notice Recovers `amount` of `token` from the Transmuter contract
+  /// @notice Recovers `amount` of `token` from the Parallelizer contract
   function recoverERC20(address collateral, IERC20 token, address to, uint256 amount) external;
 
   /// @notice Sets a new access manager address
@@ -47,7 +49,8 @@ interface ISettersGovernor {
 }
 
 /// @title ISettersGovernor
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 interface ISettersGuardian {
   /// @notice Changes the pause status for mint or burn transactions for `collateral`
   function togglePause(address collateral, ActionType action) external;

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.28;
 
-import "contracts/transmuter/Storage.sol";
-import { LibDiamond } from "contracts/transmuter/libraries/LibDiamond.sol";
-import { LibStorage as s } from "contracts/transmuter/libraries/LibStorage.sol";
+import "contracts/parallelizer/Storage.sol";
+import { LibDiamond } from "contracts/parallelizer/libraries/LibDiamond.sol";
+import { LibStorage as s } from "contracts/parallelizer/libraries/LibStorage.sol";
 import "contracts/utils/Errors.sol";
 
 interface IMockFacet {

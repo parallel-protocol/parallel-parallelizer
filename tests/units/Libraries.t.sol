@@ -8,7 +8,7 @@ import { stdError } from "@forge-std/Test.sol";
 import "tests/mock/MockManager.sol";
 import { IERC20 } from "tests/mock/MockTokenPermit.sol";
 import { MockLib } from "tests/mock/MockLib.sol";
-import "contracts/transmuter/Storage.sol";
+import "contracts/parallelizer/Storage.sol";
 
 import "contracts/utils/Errors.sol" as Errors;
 

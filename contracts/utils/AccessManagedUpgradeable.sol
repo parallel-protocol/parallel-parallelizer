@@ -8,14 +8,12 @@ import { IAccessManaged } from "@openzeppelin/contracts/access/manager/IAccessMa
 import { ContextUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-/**
- * @dev This contract module makes available a {restricted} modifier. Functions decorated with this modifier will be
- * permissioned according to an "authority": a contract like {AccessManager} that follows the {IAuthority} interface,
- * implementing a policy that allows certain callers to access certain functions.
- *
- * IMPORTANT: The `restricted` modifier should never be used on `internal` functions, judiciously used in `public`
- * functions, and ideally only used in `external` functions. See {restricted}.
- */
+/// @title AccessControl
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev Fork of OpenZeppelin's `AccessManagedUpgradeable` contract
+/// updated to make _checkCanCall to return bool
+/// https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/manager/AccessManagedUpgradeable.sol
 abstract contract AccessManagedUpgradeable is Initializable, ContextUpgradeable, IAccessManaged {
   /// @custom:storage-location erc7201:openzeppelin.storage.AccessManaged
   struct AccessManagedStorage {

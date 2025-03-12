@@ -4,17 +4,16 @@ pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import { IAccessControlManager } from "interfaces/IAccessControlManager.sol";
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
 
 import { MockAccessControlManager } from "tests/mock/MockAccessControlManager.sol";
 import { MockChainlinkOracle } from "tests/mock/MockChainlinkOracle.sol";
 import { MockTokenPermit } from "tests/mock/MockTokenPermit.sol";
 
-import { Test } from "contracts/transmuter/configs/Test.sol";
-import { LibGetters } from "contracts/transmuter/libraries/LibGetters.sol";
-import "contracts/transmuter/Storage.sol";
+import { Test } from "contracts/parallelizer/configs/Test.sol";
+import { LibGetters } from "contracts/parallelizer/libraries/LibGetters.sol";
+import "contracts/parallelizer/Storage.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol" as Errors;
 
@@ -22,9 +21,9 @@ import { Fixture } from "../Fixture.sol";
 
 contract StablecoinCapTest is Fixture {
   function test_GetStablecoinCap_Init_Success() public {
-    assertEq(transmuter.getStablecoinCap(address(eurA)), type(uint256).max);
-    assertEq(transmuter.getStablecoinCap(address(eurB)), type(uint256).max);
-    assertEq(transmuter.getStablecoinCap(address(eurY)), type(uint256).max);
+    assertEq(parallelizer.getStablecoinCap(address(eurA)), type(uint256).max);
+    assertEq(parallelizer.getStablecoinCap(address(eurB)), type(uint256).max);
+    assertEq(parallelizer.getStablecoinCap(address(eurY)), type(uint256).max);
   }
 
   function test_RevertWhen_SetStablecoinCap_TooLargeMint() public {
@@ -33,14 +32,14 @@ contract StablecoinCapTest is Fixture {
     address collateral = address(eurA);
 
     vm.prank(guardian);
-    transmuter.setStablecoinCap(collateral, stablecoinCap);
+    parallelizer.setStablecoinCap(collateral, stablecoinCap);
 
     deal(collateral, bob, amount);
     startHoax(bob);
-    IERC20(collateral).approve(address(transmuter), amount);
+    IERC20(collateral).approve(address(parallelizer), amount);
     vm.expectRevert(Errors.InvalidSwap.selector);
     startHoax(bob);
-    transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
+    parallelizer.swapExactOutput(amount, type(uint256).max, collateral, address(tokenP), bob, block.timestamp * 2);
   }
 
   function test_RevertWhen_SetStablecoinCap_SlightlyLargeMint() public {
@@ -49,14 +48,14 @@ contract StablecoinCapTest is Fixture {
     address collateral = address(eurA);
 
     vm.prank(guardian);
-    transmuter.setStablecoinCap(collateral, stablecoinCap);
+    parallelizer.setStablecoinCap(collateral, stablecoinCap);
 
     deal(collateral, bob, amount);
     startHoax(bob);
-    IERC20(collateral).approve(address(transmuter), amount);
+    IERC20(collateral).approve(address(parallelizer), amount);
     vm.expectRevert(Errors.InvalidSwap.selector);
     startHoax(bob);
-    transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
+    parallelizer.swapExactOutput(amount, type(uint256).max, collateral, address(tokenP), bob, block.timestamp * 2);
   }
 
   function test_SetStablecoinCap_Success() public {
@@ -65,12 +64,12 @@ contract StablecoinCapTest is Fixture {
     address collateral = address(eurA);
 
     vm.prank(guardian);
-    transmuter.setStablecoinCap(collateral, stablecoinCap);
+    parallelizer.setStablecoinCap(collateral, stablecoinCap);
 
     deal(collateral, bob, amount);
     startHoax(bob);
-    IERC20(collateral).approve(address(transmuter), amount);
+    IERC20(collateral).approve(address(parallelizer), amount);
     startHoax(bob);
-    transmuter.swapExactOutput(amount, type(uint256).max, collateral, address(agToken), bob, block.timestamp * 2);
+    parallelizer.swapExactOutput(amount, type(uint256).max, collateral, address(tokenP), bob, block.timestamp * 2);
   }
 }

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 /// @title IRewardHandler
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `IRewardHandler` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IRewardHandler.sol
 interface IRewardHandler {
   /// @notice Sells some external tokens through a 1inch call
   /// @param minAmountOut Minimum amount of the outToken to get

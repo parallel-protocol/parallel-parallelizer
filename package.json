@@ -1,5 +1,5 @@
 {
-  "name": "angle-transmuter",
+  "name": "parallel-parallelizer",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -23,10 +23,10 @@
     "prettier:write": "prettier --write \"**/*.{json,md,yml}\" --ignore-path \".prettierignore\""
   },
   "keywords": [],
-  "author": "Angle Labs, Inc.",
+  "author": "Parallel Labs, Inc.",
   "license": "BUSL-1.1",
   "bugs": {
-    "url": "https://github.com/AngleProtocol/angle-transmuter/issues"
+    "url": "https://github.com/ParallelProtocol/parallel-parallelizer/issues"
   },
   "devDependencies": {
     "forge-std": "github:foundry-rs/forge-std#v1.9.5",

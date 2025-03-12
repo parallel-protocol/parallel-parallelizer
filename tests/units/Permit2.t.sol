@@ -16,7 +16,7 @@ import "tests/mock/MockManager.sol";
 import { IERC20 } from "tests/mock/MockTokenPermit.sol";
 import { Permit2, SignatureVerification } from "tests/mock/Permit2.sol";
 
-import "contracts/transmuter/Storage.sol";
+import "contracts/parallelizer/Storage.sol";
 import "contracts/utils/Errors.sol" as Errors;
 
 import "../Fixture.sol";
@@ -51,11 +51,11 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline
     });
-    bytes memory sig = getPermitTransferSignature(permit, 2, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 2, DOMAIN_SEPARATOR, address(parallelizer));
 
     vm.expectRevert(SignatureVerification.InvalidSigner.selector);
     startHoax(alice);
-    transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
+    parallelizer.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
   }
 
   function test_RevertWhen_SwapExactInputWithPermit_InvalidSender() public {
@@ -69,11 +69,11 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     vm.expectRevert(SignatureVerification.InvalidSigner.selector);
     startHoax(bob);
-    transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
+    parallelizer.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
   }
 
   function test_RevertWhen_SwapExactInputWithPermit_InvalidDeadline() public {
@@ -87,11 +87,11 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline - 1
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     vm.expectRevert(SignatureVerification.InvalidSigner.selector);
     startHoax(bob);
-    transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
+    parallelizer.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
   }
 
   function test_RevertWhen_SwapExactInputWithPermit_InvalidNonce() public {
@@ -105,11 +105,11 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline - 1
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     vm.expectRevert(SignatureVerification.InvalidSigner.selector);
     startHoax(bob);
-    transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce + 1, sig));
+    parallelizer.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce + 1, sig));
   }
 
   function test_RevertWhen_SwapExactInputWithPermit_InvalidAmount() public {
@@ -122,11 +122,11 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     vm.expectRevert(SignatureVerification.InvalidSigner.selector);
     startHoax(bob);
-    transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
+    parallelizer.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
   }
 
   function test_RevertWhen_SwapExactOutputWithPermit_InvalidAmount() public {
@@ -143,11 +143,11 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     vm.expectRevert(SignatureVerification.InvalidSigner.selector);
     startHoax(alice);
-    transmuter.swapExactOutputWithPermit(
+    parallelizer.swapExactOutputWithPermit(
       amountOut, amountInMax, address(eurA), alice, deadline, abi.encode(nonce, sig)
     );
   }
@@ -163,14 +163,14 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     startHoax(alice);
-    transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
+    parallelizer.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
 
-    assertEq(agToken.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
+    assertEq(tokenP.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
     assertEq(eurA.balanceOf(alice), 0);
-    assertEq(eurA.balanceOf(address(transmuter)), BASE_6);
+    assertEq(eurA.balanceOf(address(parallelizer)), BASE_6);
   }
 
   function test_SwapExactOutputWithPermit() public {
@@ -187,16 +187,16 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     startHoax(alice);
-    transmuter.swapExactOutputWithPermit(
+    parallelizer.swapExactOutputWithPermit(
       amountOut, amountInMax, address(eurA), alice, deadline, abi.encode(nonce, sig)
     );
 
-    assertEq(agToken.balanceOf(alice), BASE_18);
+    assertEq(tokenP.balanceOf(alice), BASE_18);
     assertEq(eurA.balanceOf(alice), amountInMax - amountIn);
-    assertEq(eurA.balanceOf(address(transmuter)), amountIn);
+    assertEq(eurA.balanceOf(address(parallelizer)), amountIn);
   }
 
   function test_SwapExactInputWithPermitAndManager() public {
@@ -210,7 +210,7 @@ contract Permit2Test is Fixture, FunctionUtils {
     manager.setSubCollaterals(data.subCollaterals, data.config);
 
     hoax(governor);
-    transmuter.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), data);
 
     // Test
     deal(address(eurA), alice, BASE_6);
@@ -223,12 +223,12 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     startHoax(alice);
-    transmuter.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
+    parallelizer.swapExactInputWithPermit(BASE_6, 0, address(eurA), alice, deadline, abi.encode(nonce, sig));
 
-    assertEq(agToken.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
+    assertEq(tokenP.balanceOf(alice), BASE_27 / (BASE_9 + BASE_9 / 99));
     assertEq(eurA.balanceOf(alice), 0);
     assertEq(eurA.balanceOf(address(manager)), BASE_6);
   }
@@ -244,7 +244,7 @@ contract Permit2Test is Fixture, FunctionUtils {
     manager.setSubCollaterals(data.subCollaterals, data.config);
 
     hoax(governor);
-    transmuter.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), data);
 
     // Test
     uint256 amountOut = BASE_18;
@@ -260,14 +260,14 @@ contract Permit2Test is Fixture, FunctionUtils {
       nonce: nonce,
       deadline: deadline
     });
-    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(transmuter));
+    bytes memory sig = getPermitTransferSignature(permit, 1, DOMAIN_SEPARATOR, address(parallelizer));
 
     startHoax(alice);
-    transmuter.swapExactOutputWithPermit(
+    parallelizer.swapExactOutputWithPermit(
       amountOut, amountInMax, address(eurA), alice, deadline, abi.encode(nonce, sig)
     );
 
-    assertEq(agToken.balanceOf(alice), BASE_18);
+    assertEq(tokenP.balanceOf(alice), BASE_18);
     assertEq(eurA.balanceOf(alice), amountInMax - amountIn);
     assertEq(eurA.balanceOf(address(manager)), amountIn);
   }

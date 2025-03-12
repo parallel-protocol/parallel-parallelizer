@@ -11,10 +11,10 @@ import {
   DiamondProxy
 } from "tests/mock/MockFacets.sol";
 
-import "contracts/transmuter/Storage.sol";
-import { Test } from "contracts/transmuter/configs/Test.sol";
-import { DiamondCut } from "contracts/transmuter/facets/DiamondCut.sol";
-import { LibDiamond } from "contracts/transmuter/libraries/LibDiamond.sol";
+import "contracts/parallelizer/Storage.sol";
+import { Test } from "contracts/parallelizer/configs/Test.sol";
+import { DiamondCut } from "contracts/parallelizer/facets/DiamondCut.sol";
+import { LibDiamond } from "contracts/parallelizer/libraries/LibDiamond.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol" as Errors;
 
@@ -44,7 +44,7 @@ contract Test_DiamondCut is Fixture {
 
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, guardian));
     hoax(guardian);
-    transmuter.diamondCut(facetCut, address(0x0), "");
+    parallelizer.diamondCut(facetCut, address(0x0), "");
   }
 
   function test_RevertWhen_NoSelectorsProvidedForFacetForCut() public {
@@ -56,7 +56,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(abi.encodeWithSelector(Errors.NoSelectorsProvidedForFacetForCut.selector, pureFacet));
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0x0), "");
+    parallelizer.diamondCut(facetCut, address(0x0), "");
   }
 
   function test_RevertWhen_IncorrectFacetCutAction() public {
@@ -68,7 +68,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(bytes("")); // Reverts with a Panic code
 
     hoax(governor);
-    DiamondCutAux(address(transmuter)).diamondCut(facetCut, address(0x0), "");
+    DiamondCutAux(address(parallelizer)).diamondCut(facetCut, address(0x0), "");
   }
 
   function test_RevertWhen_InitializerHasNoCode() public {
@@ -79,7 +79,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(Errors.ContractHasNoCode.selector);
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(1), "");
+    parallelizer.diamondCut(facetCut, address(1), "");
   }
 
   function test_RevertWhen_InitializerRevert() public {
@@ -96,7 +96,7 @@ contract Test_DiamondCut is Fixture {
     );
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, initializer, abi.encodeWithSelector(MockInitializer.initializeRevert.selector));
+    parallelizer.diamondCut(facetCut, initializer, abi.encodeWithSelector(MockInitializer.initializeRevert.selector));
   }
 
   function test_RevertWhen_InitializerRevertWithMessage() public {
@@ -107,7 +107,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(MockInitializer.CustomError.selector);
 
     hoax(governor);
-    transmuter.diamondCut(
+    parallelizer.diamondCut(
       facetCut, initializer, abi.encodeWithSelector(MockInitializer.initializeRevertWithMessage.selector)
     );
   }
@@ -119,7 +119,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(abi.encodeWithSelector(Errors.CannotAddSelectorsToZeroAddress.selector, selectors));
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "");
+    parallelizer.diamondCut(facetCut, address(0), "");
   }
 
   function test_RevertWhen_AddAlreadyExistingSelector() public {
@@ -128,7 +128,7 @@ contract Test_DiamondCut is Fixture {
       FacetCut({ facetAddress: address(pureFacet), action: FacetCutAction.Add, functionSelectors: selectors });
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0x0), "");
+    parallelizer.diamondCut(facetCut, address(0x0), "");
 
     facetCut[0] =
       FacetCut({ facetAddress: address(writeFacet), action: FacetCutAction.Add, functionSelectors: selectors });
@@ -136,7 +136,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(abi.encodeWithSelector(Errors.CannotAddFunctionToDiamondThatAlreadyExists.selector, selectors[0]));
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "");
+    parallelizer.diamondCut(facetCut, address(0), "");
   }
 
   function test_RevertWhen_ReplaceFromZeroAddress() public {
@@ -146,7 +146,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(abi.encodeWithSelector(Errors.CannotReplaceFunctionsFromFacetWithZeroAddress.selector, selectors));
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "");
+    parallelizer.diamondCut(facetCut, address(0), "");
   }
 
   function test_RevertWhen_ReplaceImmutableFunction() public {
@@ -176,7 +176,7 @@ contract Test_DiamondCut is Fixture {
       FacetCut({ facetAddress: address(pureFacet), action: FacetCutAction.Add, functionSelectors: selectors });
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0x0), "");
+    parallelizer.diamondCut(facetCut, address(0x0), "");
 
     facetCut[0] =
       FacetCut({ facetAddress: address(pureFacet), action: FacetCutAction.Replace, functionSelectors: selectors });
@@ -186,7 +186,7 @@ contract Test_DiamondCut is Fixture {
     );
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "");
+    parallelizer.diamondCut(facetCut, address(0), "");
   }
 
   function test_RevertWhen_ReplaceFunctionThatDoesNotExists() public {
@@ -197,7 +197,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(abi.encodeWithSelector(Errors.CannotReplaceFunctionThatDoesNotExists.selector, selectors[0]));
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "");
+    parallelizer.diamondCut(facetCut, address(0), "");
   }
 
   function test_RevertWhen_RemoveFacetAddressMustBeZeroAddress() public {
@@ -208,7 +208,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(abi.encodeWithSelector(Errors.RemoveFacetAddressMustBeZeroAddress.selector, pureFacet));
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "");
+    parallelizer.diamondCut(facetCut, address(0), "");
   }
 
   function test_RevertWhen_RemoveFunctionThatDoesNotExist() public {
@@ -218,7 +218,7 @@ contract Test_DiamondCut is Fixture {
     vm.expectRevert(abi.encodeWithSelector(Errors.CannotRemoveFunctionThatDoesNotExist.selector, selectors[0]));
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "");
+    parallelizer.diamondCut(facetCut, address(0), "");
   }
 
   function test_RevertWhen_RemoveImmutableFunction() public {
@@ -245,14 +245,14 @@ contract Test_DiamondCut is Fixture {
       FacetCut({ facetAddress: address(pureFacet), action: FacetCutAction.Add, functionSelectors: selectors });
 
     // Events
-    vm.expectEmit(address(transmuter));
+    vm.expectEmit(address(parallelizer));
     emit LibDiamond.DiamondCut(facetCut, address(0x0), "");
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0x0), "");
+    parallelizer.diamondCut(facetCut, address(0x0), "");
 
-    assertEq(IMockFacet(address(transmuter)).newFunction(), 1);
-    assertEq(IMockFacet(address(transmuter)).newFunction2(), 2);
+    assertEq(IMockFacet(address(parallelizer)).newFunction(), 1);
+    assertEq(IMockFacet(address(parallelizer)).newFunction2(), 2);
   }
 
   function test_AddSimpleWriteFacet() public {
@@ -261,14 +261,14 @@ contract Test_DiamondCut is Fixture {
       FacetCut({ facetAddress: address(writeFacet), action: FacetCutAction.Add, functionSelectors: selectors });
 
     // Event
-    vm.expectEmit(address(transmuter));
+    vm.expectEmit(address(parallelizer));
     emit LibDiamond.DiamondCut(facetCut, address(0x0), "");
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0x0), "");
+    parallelizer.diamondCut(facetCut, address(0x0), "");
 
-    assertEq(IMockFacet(address(transmuter)).newFunction(), 0);
-    assertEq(IMockFacet(address(transmuter)).newFunction2(), 1);
+    assertEq(IMockFacet(address(parallelizer)).newFunction(), 0);
+    assertEq(IMockFacet(address(parallelizer)).newFunction2(), 1);
   }
 
   function test_AddWriteFacetWithInitializer() public {
@@ -277,14 +277,14 @@ contract Test_DiamondCut is Fixture {
       FacetCut({ facetAddress: address(writeFacet), action: FacetCutAction.Add, functionSelectors: selectors });
 
     // Event
-    vm.expectEmit(address(transmuter));
+    vm.expectEmit(address(parallelizer));
     emit LibDiamond.DiamondCut(facetCut, initializer, abi.encodeWithSelector(MockInitializer.initialize.selector));
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, initializer, abi.encodeWithSelector(MockInitializer.initialize.selector));
+    parallelizer.diamondCut(facetCut, initializer, abi.encodeWithSelector(MockInitializer.initialize.selector));
 
-    assertEq(IMockFacet(address(transmuter)).newFunction(), 2); // 2 because of the initializer
-    assertEq(IMockFacet(address(transmuter)).newFunction2(), 1);
+    assertEq(IMockFacet(address(parallelizer)).newFunction(), 2); // 2 because of the initializer
+    assertEq(IMockFacet(address(parallelizer)).newFunction2(), 1);
   }
 
   function test_ReplaceReadWithWriteFacet() public {
@@ -293,23 +293,23 @@ contract Test_DiamondCut is Fixture {
       FacetCut({ facetAddress: address(pureFacet), action: FacetCutAction.Add, functionSelectors: selectors });
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "0x");
+    parallelizer.diamondCut(facetCut, address(0), "0x");
 
-    assertEq(IMockFacet(address(transmuter)).newFunction(), 1);
-    assertEq(IMockFacet(address(transmuter)).newFunction2(), 2);
+    assertEq(IMockFacet(address(parallelizer)).newFunction(), 1);
+    assertEq(IMockFacet(address(parallelizer)).newFunction2(), 2);
 
     facetCut[0] =
       FacetCut({ facetAddress: address(writeFacet), action: FacetCutAction.Replace, functionSelectors: selectors });
 
     // Event
-    vm.expectEmit(address(transmuter));
+    vm.expectEmit(address(parallelizer));
     emit LibDiamond.DiamondCut(facetCut, address(0), "0x");
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "0x");
+    parallelizer.diamondCut(facetCut, address(0), "0x");
 
-    assertEq(IMockFacet(address(transmuter)).newFunction(), 0);
-    assertEq(IMockFacet(address(transmuter)).newFunction2(), 1);
+    assertEq(IMockFacet(address(parallelizer)).newFunction(), 0);
+    assertEq(IMockFacet(address(parallelizer)).newFunction2(), 1);
   }
 
   function test_ReplaceWriteWithExtendedWriteFacet() public {
@@ -318,10 +318,12 @@ contract Test_DiamondCut is Fixture {
       FacetCut({ facetAddress: address(writeFacet), action: FacetCutAction.Add, functionSelectors: selectors });
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(initializer), abi.encodeWithSelector(MockInitializer.initialize.selector));
+    parallelizer.diamondCut(
+      facetCut, address(initializer), abi.encodeWithSelector(MockInitializer.initialize.selector)
+    );
 
-    assertEq(IMockFacet(address(transmuter)).newFunction(), 2); // Slot 1 is 2 with the initializer
-    assertEq(IMockFacet(address(transmuter)).newFunction2(), 1); // Slot 1 is now 1
+    assertEq(IMockFacet(address(parallelizer)).newFunction(), 2); // Slot 1 is 2 with the initializer
+    assertEq(IMockFacet(address(parallelizer)).newFunction2(), 1); // Slot 1 is now 1
 
     facetCut[0] = FacetCut({
       facetAddress: address(writeExpandedFacet),
@@ -330,14 +332,14 @@ contract Test_DiamondCut is Fixture {
     });
 
     // Event
-    vm.expectEmit(address(transmuter));
+    vm.expectEmit(address(parallelizer));
     emit LibDiamond.DiamondCut(facetCut, address(0), "0x");
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "0x");
+    parallelizer.diamondCut(facetCut, address(0), "0x");
 
-    assertEq(IMockFacet(address(transmuter)).newFunction(), 1); // Slot 1 is still 2
-    assertEq(IMockFacet(address(transmuter)).newFunction2(), 20); // Slot 2 is 20
+    assertEq(IMockFacet(address(parallelizer)).newFunction(), 1); // Slot 1 is still 2
+    assertEq(IMockFacet(address(parallelizer)).newFunction2(), 20); // Slot 2 is 20
   }
 
   function test_RemoveWriteFacet() public {
@@ -346,23 +348,25 @@ contract Test_DiamondCut is Fixture {
       FacetCut({ facetAddress: address(writeFacet), action: FacetCutAction.Add, functionSelectors: selectors });
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(initializer), abi.encodeWithSelector(MockInitializer.initialize.selector));
+    parallelizer.diamondCut(
+      facetCut, address(initializer), abi.encodeWithSelector(MockInitializer.initialize.selector)
+    );
 
-    assertEq(IMockFacet(address(transmuter)).newFunction(), 2); // Slot 1 is 2 with the initializer
-    assertEq(IMockFacet(address(transmuter)).newFunction2(), 1); // Slot 1 is now 1
+    assertEq(IMockFacet(address(parallelizer)).newFunction(), 2); // Slot 1 is 2 with the initializer
+    assertEq(IMockFacet(address(parallelizer)).newFunction2(), 1); // Slot 1 is now 1
 
     facetCut[0] = FacetCut({ facetAddress: address(0), action: FacetCutAction.Remove, functionSelectors: selectors });
 
     // Event
-    vm.expectEmit(address(transmuter));
+    vm.expectEmit(address(parallelizer));
     emit LibDiamond.DiamondCut(facetCut, address(0), "0x");
 
     hoax(governor);
-    transmuter.diamondCut(facetCut, address(0), "0x");
+    parallelizer.diamondCut(facetCut, address(0), "0x");
 
     vm.expectRevert(abi.encodeWithSelector(Errors.FunctionNotFound.selector, IMockFacet.newFunction.selector));
-    IMockFacet(address(transmuter)).newFunction();
+    IMockFacet(address(parallelizer)).newFunction();
     vm.expectRevert(abi.encodeWithSelector(Errors.FunctionNotFound.selector, IMockFacet.newFunction2.selector));
-    IMockFacet(address(transmuter)).newFunction2();
+    IMockFacet(address(parallelizer)).newFunction2();
   }
 }

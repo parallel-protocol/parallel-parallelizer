@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import "contracts/utils/Constants.sol";
-import { BaseActor, ITransmuter, AggregatorV3Interface, IERC20, IERC20Metadata } from "./BaseActor.t.sol";
+import { BaseActor, IParallelizer, AggregatorV3Interface, IERC20, IERC20Metadata } from "./BaseActor.t.sol";
 import { MockChainlinkOracle } from "tests/mock/MockChainlinkOracle.sol";
 import "../../utils/FunctionUtils.sol";
 
@@ -11,12 +11,12 @@ contract Governance is BaseActor, FunctionUtils {
   uint64 public collateralRatioSplit;
 
   constructor(
-    ITransmuter transmuter,
-    ITransmuter transmuterSplit,
+    IParallelizer parallelizer,
+    IParallelizer transmuterSplit,
     address[] memory collaterals,
     AggregatorV3Interface[] memory oracles
   )
-    BaseActor(1, "Trader", transmuter, transmuterSplit, collaterals, oracles)
+    BaseActor(1, "Trader", parallelizer, transmuterSplit, collaterals, oracles)
   { }
 
   // Random oracle change of at most 1%

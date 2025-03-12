@@ -4,8 +4,8 @@ pragma solidity 0.8.28;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessManaged } from "../utils/AccessManaged.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ITransmuter } from "../interfaces/ITransmuter.sol";
-import { IAgToken } from "../interfaces/IAgToken.sol";
+import { IParallelizer } from "../interfaces/IParallelizer.sol";
+import { ITokenP } from "../interfaces/ITokenP.sol";
 
 import "../utils/Errors.sol";
 import "../interfaces/IHarvester.sol";
@@ -15,18 +15,21 @@ struct YieldBearingParams {
   address asset;
   // Target exposure to the collateral yield bearing asset used
   uint64 targetExposure;
-  // Maximum exposure within the Transmuter to the deposit asset
+  // Maximum exposure within the Parallelizer to the deposit asset
   uint64 maxExposure;
-  // Minimum exposure within the Transmuter to the deposit asset
+  // Minimum exposure within the Parallelizer to the deposit asset
   uint64 minExposure;
-  // Whether limit exposures should be overriden or read onchain through the Transmuter
+  // Whether limit exposures should be overriden or read onchain through the Parallelizer
   // This value should be 1 to override exposures or 2 if these shouldn't be overriden
   uint64 overrideExposures;
 }
 
 /// @title BaseHarvester
-/// @author Angle Labs, Inc.
-/// @dev Abstract contract for a harvester that aims at rebalancing a Transmuter
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev Abstract contract for a harvester that aims at rebalancing a Parallelizer
+/// @dev This contract is a friendly fork of Angle's BaseHarvester contract:
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseHarvester.sol
 abstract contract BaseHarvester is IHarvester, AccessManaged {
   using SafeERC20 for IERC20;
 
@@ -58,11 +61,11 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
                                                        VARIABLES
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-  /// @notice Reference to the `transmuter` implementation this contract aims at rebalancing
-  ITransmuter public immutable transmuter;
-  /// @notice AgToken handled by the `transmuter` of interest
-  IAgToken public immutable agToken;
-  /// @notice Max slippage when dealing with the Transmuter
+  /// @notice Reference to the `parallelizer` implementation this contract aims at rebalancing
+  IParallelizer public immutable parallelizer;
+  /// @notice TokenP handled by the `parallelizer` of interest
+  ITokenP public immutable tokenP;
+  /// @notice Max slippage when dealing with the Parallelizer
   uint96 public maxSlippage;
   /// @notice Data associated to a yield bearing asset
   mapping(address => YieldBearingParams) public yieldBearingData;
@@ -83,14 +86,14 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   constructor(
     uint96 initialMaxSlippage,
     address initialAuthority,
-    IAgToken definitiveAgToken,
-    ITransmuter definitiveTransmuter
+    ITokenP definitiveTokenP,
+    IParallelizer definitiveParallelizer
   )
     AccessManaged(initialAuthority)
   {
     _setMaxSlippage(initialMaxSlippage);
-    agToken = definitiveAgToken;
-    transmuter = definitiveTransmuter;
+    tokenP = definitiveTokenP;
+    parallelizer = definitiveParallelizer;
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -102,9 +105,9 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
    * @param yieldBearingAsset address of the yieldBearingAsset
    * @param asset address of the asset
    * @param targetExposure target exposure to the yieldBearingAsset asset used
-   * @param minExposure minimum exposure within the Transmuter to the asset
-   * @param maxExposure maximum exposure within the Transmuter to the asset
-   * @param overrideExposures whether limit exposures should be overriden or read onchain through the Transmuter
+   * @param minExposure minimum exposure within the Parallelizer to the asset
+   * @param maxExposure maximum exposure within the Parallelizer to the asset
+   * @param overrideExposures whether limit exposures should be overriden or read onchain through the Parallelizer
    */
   function setYieldBearingAssetData(
     address yieldBearingAsset,
@@ -177,7 +180,7 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Compute the amount needed to rebalance the Transmuter
+   * @notice Compute the amount needed to rebalance the Parallelizer
    * @param yieldBearingAsset address of the yield bearing asset
    * @return increase whether the exposure should be increased
    * @return amount amount to be rebalanced
@@ -199,8 +202,8 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     returns (uint8 increase, uint256 amount)
   {
     (uint256 stablecoinsFromYieldBearingAsset, uint256 stablecoinsIssued) =
-      transmuter.getIssuedByCollateral(yieldBearingAsset);
-    (uint256 stablecoinsFromAsset,) = transmuter.getIssuedByCollateral(yieldBearingInfo.asset);
+      parallelizer.getIssuedByCollateral(yieldBearingAsset);
+    (uint256 stablecoinsFromAsset,) = parallelizer.getIssuedByCollateral(yieldBearingInfo.asset);
     uint256 targetExposureScaled = yieldBearingInfo.targetExposure * stablecoinsIssued;
     if (stablecoinsFromYieldBearingAsset * 1e9 > targetExposureScaled) {
       // Need to decrease exposure to yield bearing asset
@@ -261,13 +264,13 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     virtual
   {
     uint64[] memory xFeeMint;
-    (xFeeMint,) = transmuter.getCollateralMintFees(asset);
+    (xFeeMint,) = parallelizer.getCollateralMintFees(asset);
     uint256 length = xFeeMint.length;
     if (length <= 1) yieldBearingInfo.maxExposure = 1e9;
     else yieldBearingInfo.maxExposure = xFeeMint[length - 2];
 
     uint64[] memory xFeeBurn;
-    (xFeeBurn,) = transmuter.getCollateralBurnFees(asset);
+    (xFeeBurn,) = parallelizer.getCollateralBurnFees(asset);
     length = xFeeBurn.length;
     if (length <= 1) yieldBearingInfo.minExposure = 0;
     else yieldBearingInfo.minExposure = xFeeBurn[length - 2];

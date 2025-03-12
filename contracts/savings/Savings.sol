@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity 0.8.28;
 
 import "./BaseSavings.sol";
 
 /// @title Savings
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 /// @notice In this implementation, assets in the contract increase in value following a `rate` chosen by governance
+/// @dev This contract is a friendly fork of Angle's Savings contract:
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/savings/Savings.sol
 contract Savings is BaseSavings {
   using SafeERC20 for IERC20Metadata;
   using Math for uint256;
@@ -96,14 +98,14 @@ contract Savings is BaseSavings {
     CONTRACT LOGIC                                                  
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-  /// @notice Accrues interest to this contract by minting agTokens
+  /// @notice Accrues interest to this contract by minting tokenPs
   function _accrue() internal returns (uint256 newTotalAssets) {
     uint256 currentBalance = super.totalAssets();
     newTotalAssets = _computeUpdatedAssets(currentBalance, block.timestamp - lastUpdate);
     lastUpdate = uint40(block.timestamp);
     uint256 earned = newTotalAssets - currentBalance;
     if (earned > 0) {
-      IAgToken(asset()).mint(address(this), earned);
+      ITokenP(asset()).mint(address(this), earned);
       emit Accrued(earned);
     }
   }

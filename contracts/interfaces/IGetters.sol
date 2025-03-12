@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
-import { IAgToken } from "interfaces/IAgToken.sol";
+import { ITokenP } from "interfaces/ITokenP.sol";
 
-import "../transmuter/Storage.sol";
+import "../parallelizer/Storage.sol";
 
 /// @title IGetters
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
+/// @dev This interface is a friendly fork of Angle's `IGetters` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IGetters.sol
 interface IGetters {
   /// @notice Checks whether a given `selector` is actually a valid selector corresponding to a function in one of
   /// the
   /// facets of the proxy
   function isValidSelector(bytes4 selector) external view returns (bool);
 
-  /// @notice Stablecoin minted by transmuter
-  function agToken() external view returns (IAgToken);
+  /// @notice Stablecoin minted by parallelizer
+  function tokenP() external view returns (ITokenP);
 
   /// @notice Returns the list of collateral assets supported by the system
   function getCollateralList() external view returns (address[] memory);
@@ -38,15 +40,15 @@ interface IGetters {
   /// ratio when users come to redeem
   function getRedemptionFees() external view returns (uint64[] memory, int64[] memory);
 
-  /// @notice Returns the collateral ratio of Transmuter in base `10**9` and a rounded version of the total amount
+  /// @notice Returns the collateral ratio of Parallelizer in base `10**9` and a rounded version of the total amount
   /// of stablecoins issued
   function getCollateralRatio() external view returns (uint64 collatRatio, uint256 stablecoinsIssued);
 
-  /// @notice Returns the total amount of stablecoins issued through Transmuter
+  /// @notice Returns the total amount of stablecoins issued through Parallelizer
   function getTotalIssued() external view returns (uint256 stablecoinsIssued);
 
   /// @notice Returns the amount of stablecoins issued from `collateral` and the total amount of stablecoins issued
-  /// through Transmuter
+  /// through Parallelizer
   function getIssuedByCollateral(address collateral)
     external
     view

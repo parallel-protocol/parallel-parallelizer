@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.28;
 
 import { StdUtils } from "@forge-std/Test.sol";
 import "contracts/utils/Constants.sol";
 
 /// @title FunctionUtils
-/// @author Angle Labs, Inc.
+/// @author Cooper Labs
+/// @custom:contact security@cooperlabs.xyz
 contract FunctionUtils is StdUtils {
   function _convertDecimalTo(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
     if (fromDecimals > toDecimals) return amount / 10 ** (fromDecimals - toDecimals);
