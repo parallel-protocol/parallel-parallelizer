@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-
-pragma solidity >=0.5.0;
+pragma solidity 0.8.28;
 
 import { ICbETH } from "../interfaces/external/coinbase/ICbETH.sol";
 import { ISfrxETH } from "../interfaces/external/frax/ISfrxETH.sol";
@@ -15,8 +14,8 @@ import { IRETH } from "../interfaces/external/rocketPool/IRETH.sol";
 /// @dev Equals `keccak256("diamond.standard.diamond.storage") - 1`
 bytes32 constant DIAMOND_STORAGE_POSITION = 0xc8fcad8db84d3cc18b4c41d551ea0ee66dd599cde068d998e57d5e09332c131b;
 
-/// @dev Storage position of `TransmuterStorage` structure
-/// @dev Equals `keccak256("diamond.standard.transmuter.storage") - 1`
+/// @dev Storage position of `ParallelizerStorage` structure
+/// @dev Equals `keccak256("diamond.standard.parallelizer.storage") - 1`
 bytes32 constant TRANSMUTER_STORAGE_POSITION = 0xc1f2f38dde3351ac0a64934139e816326caa800303a1235dc53707d0de05d8bd;
 
 /// @dev Storage position of `ImplementationStorage` structure
@@ -50,6 +49,14 @@ uint256 constant MAX_MINT_FEE = BASE_12 - 1;
 // increase the likelihood of the full refund coming into effect.
 uint8 constant NOT_ENTERED = 1;
 uint8 constant ENTERED = 2;
+
+/*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                     REENTRANT                                                      
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+// Role IDs for the AccessManager
+uint64 constant GOVERNOR_ROLE = 10;
+uint64 constant GUARDIAN_ROLE = 20;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                COMMON ADDRESSES                                                 

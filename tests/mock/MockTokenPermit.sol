@@ -1,87 +1,87 @@
 // SPDX-License-Identifier: GPL-3.0
-
-pragma solidity ^0.8.7;
+pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract MockTokenPermit is ERC20Permit {
-    using SafeERC20 for IERC20;
-    event Minting(address indexed _to, address indexed _minter, uint256 _amount);
+  using SafeERC20 for IERC20;
 
-    event Burning(address indexed _from, address indexed _burner, uint256 _amount);
+  event Minting(address indexed _to, address indexed _minter, uint256 _amount);
 
-    uint8 internal _decimal;
-    mapping(address => bool) public minters;
-    address public treasury;
-    uint256 public fees;
+  event Burning(address indexed _from, address indexed _burner, uint256 _amount);
 
-    bool public reverts;
+  uint8 internal _decimal;
+  mapping(address => bool) public minters;
+  address public treasury;
+  uint256 public fees;
 
-    constructor(string memory name_, string memory symbol_, uint8 decimal_) ERC20Permit(name_) ERC20(name_, symbol_) {
-        _decimal = decimal_;
-    }
+  bool public reverts;
 
-    function decimals() public view override returns (uint8) {
-        return _decimal;
-    }
+  constructor(string memory name_, string memory symbol_, uint8 decimal_) ERC20Permit(name_) ERC20(name_, symbol_) {
+    _decimal = decimal_;
+  }
 
-    function mint(address account, uint256 amount) external {
-        _mint(account, amount);
-        emit Minting(account, msg.sender, amount);
-    }
+  function decimals() public view override returns (uint8) {
+    return _decimal;
+  }
 
-    function burn(address account, uint256 amount) public {
-        _burn(account, amount);
-        emit Burning(account, msg.sender, amount);
-    }
+  function mint(address account, uint256 amount) external {
+    _mint(account, amount);
+    emit Minting(account, msg.sender, amount);
+  }
 
-    function setAllowance(address from, address to) public {
-        _approve(from, to, type(uint256).max);
-    }
+  function burn(address account, uint256 amount) public {
+    _burn(account, amount);
+    emit Burning(account, msg.sender, amount);
+  }
 
-    function burnSelf(uint256 amount, address account) public {
-        _burn(account, amount);
-        emit Burning(account, msg.sender, amount);
-    }
+  function setAllowance(address from, address to) public {
+    _approve(from, to, type(uint256).max);
+  }
 
-    function addMinter(address minter) public {
-        minters[minter] = true;
-    }
+  function burnSelf(uint256 amount, address account) public {
+    _burn(account, amount);
+    emit Burning(account, msg.sender, amount);
+  }
 
-    function removeMinter(address minter) public {
-        minters[minter] = false;
-    }
+  function addMinter(address minter) public {
+    minters[minter] = true;
+  }
 
-    function setTreasury(address _treasury) public {
-        treasury = _treasury;
-    }
+  function removeMinter(address minter) public {
+    minters[minter] = false;
+  }
 
-    function setFees(uint256 _fees) public {
-        fees = _fees;
-    }
+  function setTreasury(address _treasury) public {
+    treasury = _treasury;
+  }
 
-    function recoverERC20(IERC20 token, address to, uint256 amount) external {
-        token.safeTransfer(to, amount);
-    }
+  function setFees(uint256 _fees) public {
+    fees = _fees;
+  }
 
-    function swapIn(address bridgeToken, uint256 amount, address to) external returns (uint256) {
-        require(!reverts);
+  function recoverERC20(IERC20 token, address to, uint256 amount) external {
+    token.safeTransfer(to, amount);
+  }
 
-        IERC20(bridgeToken).safeTransferFrom(msg.sender, address(this), amount);
-        uint256 canonicalOut = amount;
-        canonicalOut -= (canonicalOut * fees) / 10 ** 9;
-        _mint(to, canonicalOut);
-        return canonicalOut;
-    }
+  function swapIn(address bridgeToken, uint256 amount, address to) external returns (uint256) {
+    require(!reverts);
 
-    function swapOut(address bridgeToken, uint256 amount, address to) external returns (uint256) {
-        require(!reverts);
-        _burn(msg.sender, amount);
-        uint256 bridgeOut = amount;
-        bridgeOut -= (bridgeOut * fees) / 10 ** 9;
-        IERC20(bridgeToken).safeTransfer(to, bridgeOut);
-        return bridgeOut;
-    }
+    IERC20(bridgeToken).safeTransferFrom(msg.sender, address(this), amount);
+    uint256 canonicalOut = amount;
+    canonicalOut -= (canonicalOut * fees) / 10 ** 9;
+    _mint(to, canonicalOut);
+    return canonicalOut;
+  }
+
+  function swapOut(address bridgeToken, uint256 amount, address to) external returns (uint256) {
+    require(!reverts);
+    _burn(msg.sender, amount);
+    uint256 bridgeOut = amount;
+    bridgeOut -= (bridgeOut * fees) / 10 ** 9;
+    IERC20(bridgeToken).safeTransfer(to, bridgeOut);
+    return bridgeOut;
+  }
 }
