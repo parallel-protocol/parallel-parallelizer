@@ -13,7 +13,9 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/I
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Fork of OpenZeppelin's `AccessManagedUpgradeable` contract
 /// updated to make _checkCanCall to return bool
+/* solhint-disable max-line-length */
 /// https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/manager/AccessManagedUpgradeable.sol
+/* solhint-enable max-line-length */
 abstract contract AccessManagedUpgradeable is Initializable, ContextUpgradeable, IAccessManaged {
   /// @custom:storage-location erc7201:openzeppelin.storage.AccessManaged
   struct AccessManagedStorage {
