@@ -1,6 +1,6 @@
 # Parallel - Parallelizer
 
-## What is Parallelizer?
+## Summary
 
 **Parallelizer is friendly fork of Angle's Transmuter which is an autonomous and modular price stability module for
 decentralized stablecoin protocols.**
@@ -16,7 +16,7 @@ position models.
 
 ---
 
-## Contracts Architecture 🏘️
+## Architecture
 
 The Parallelizer system relies on a [diamond proxy pattern](https://eips.ethereum.org/EIPS/eip-2535). There is as such
 only one main contract (the `Parallelizer` contract) which delegates calls to different facets each with their own
@@ -40,7 +40,7 @@ issued through the Parallelizer.
 
 ---
 
-## Changed with Angle's Transmuter
+## Changed compared to Angle's Transmuter
 
 Some changed has been made to the original Angle's Transmuter:
 
@@ -53,7 +53,7 @@ Some changed has been made to the original Angle's Transmuter:
 - Remove files that will not be used by Parallel (`SavingsVest.sol`, some `Configs/`, etc.)
 - Renamed contracts (`AgToken` -> `TokenP`, `Transmuter` -> `Parallelizer`)
 
-## Documentation 📚
+## Documentation Links 📚
 
 ### Angle documentation
 
@@ -92,10 +92,6 @@ shouldn't be able to extract funds from the system.
 
 The Angle's Transmuter and savings smart contracts have been audited by Code4rena, find the audit report
 [here](https://code4rena.com/reports/2023-06-angle).
-
----
-
-### Bug Bounty
 
 ---
 
@@ -253,8 +249,8 @@ If you're interested in contributing, please see our [contributions guidelines](
 
 ## Questions & Feedback
 
-For any question or feedback you can send an email to [contact@angle.money](mailto:contact@angle.money). Don't hesitate
-to reach out on [Twitter](https://twitter.com/AngleProtocol)🐦 as well.
+For any question or feedback you can use [discord](https://discord.com/invite/mimodao). Don't hesitate to reach out on
+[Twitter](https://twitter.com/mimo_labs)🐦 as well.
 
 ---
 
