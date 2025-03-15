@@ -36,31 +36,8 @@ interface ITokenP is IERC20 {
   function burnSelf(uint256 amount, address burner) external;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    TREASURY ONLY FUNCTIONS                                             
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
-
-  /// @notice Adds a minter in the contract
-  /// @param minter Minter address to add
-  /// @dev Zero address checks are performed directly in the `Treasury` contract
-  function addMinter(address minter) external;
-
-  /// @notice Removes a minter from the contract
-  /// @param minter Minter address to remove
-  /// @dev This function can also be called by a minter wishing to revoke itself
-  function removeMinter(address minter) external;
-
-  /// @notice Sets a new treasury contract
-  /// @param _treasury New treasury address
-  function setTreasury(address _treasury) external;
-
-  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     EXTERNAL FUNCTIONS                                                
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
-
-  /// @notice Checks whether an address has the right to mint tokenPs
-  /// @param minter Address for which the minting right should be checked
-  /// @return Whether the address has the right to mint tokenPs or not
-  function isMinter(address minter) external view returns (bool);
 
   /// @notice Amount of decimals of the stablecoin
   function decimals() external view returns (uint8);
