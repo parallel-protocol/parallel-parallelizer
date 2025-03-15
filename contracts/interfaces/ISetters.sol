@@ -8,7 +8,7 @@ import "../parallelizer/Storage.sol";
 /// @title ISettersGovernor
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This interface is a friendly fork of Angle's `ISettersGovernor` interface
+/// @dev This interface is an authorized fork of Angle's `ISettersGovernor` interface
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/ISetters.sol
 interface ISettersGovernor {
   /// @notice Recovers `amount` of `token` from the Parallelizer contract

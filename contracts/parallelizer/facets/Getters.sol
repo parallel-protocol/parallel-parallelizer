@@ -16,7 +16,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev There may be duplicates in the info provided by the getters defined here
-/// @dev This contract is a friendly fork of Angle's `Getters` contract
+/// @dev This contract is an authorized fork of Angle's `Getters` contract
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Getters.sol
 contract Getters is IGetters {
   /// @inheritdoc IGetters

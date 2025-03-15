@@ -28,7 +28,7 @@ struct YieldBearingParams {
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Abstract contract for a harvester that aims at rebalancing a Parallelizer
-/// @dev This contract is a friendly fork of Angle's BaseHarvester contract:
+/// @dev This contract is an authorized fork of Angle's BaseHarvester contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseHarvester.sol
 abstract contract BaseHarvester is IHarvester, AccessManaged {
   using SafeERC20 for IERC20;

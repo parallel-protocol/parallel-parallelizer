@@ -7,7 +7,7 @@ import { ContractType } from "./Constants.sol";
 
 /// @title JsonReader
 /// @author Angle Labs, Inc.
-/// @dev This contract is a friendly fork of Angle's `JsonReader` contract
+/// @dev This contract is an authorized fork of Angle's `JsonReader` contract
 /// https://github.com/AngleProtocol/utils/blob/main/src/JsonReader.sol
 contract JsonReader is Script {
   using stdJson for string;

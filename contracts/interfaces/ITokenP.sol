@@ -7,7 +7,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @notice Interface for the stablecoins `tokenP` contracts
-/// @dev This interface is a friendly fork of Angle's `IAgToken` interface
+/// @dev This interface is an authorized fork of Angle's `IAgToken` interface
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IAgToken.sol
 interface ITokenP is IERC20 {
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

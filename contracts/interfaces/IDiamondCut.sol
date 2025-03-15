@@ -8,7 +8,7 @@ import "../parallelizer/Storage.sol";
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Reference: EIP-2535 Diamonds
 /// @dev Forked from https://github.com/mudgen/diamond-3/blob/master/contracts/interfaces/IDiamondCut.sol by mudgen
-/// @dev This interface is a friendly fork of Angle's `IDiamondCut` interface
+/// @dev This interface is an authorized fork of Angle's `IDiamondCut` interface
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IDiamondCut.sol
 interface IDiamondCut {
   /// @notice Add/replace/remove any number of functions and optionally execute a function with delegatecall

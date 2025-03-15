@@ -24,7 +24,7 @@ import "../Storage.sol";
 /// @title Redeemer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This contract is a friendly fork of Angle's `Redeemer` contract
+/// @dev This contract is an authorized fork of Angle's `Redeemer` contract
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Redeemer.sol
 contract Redeemer is IRedeemer, AccessManagedModifiers {
   using SafeERC20 for IERC20;

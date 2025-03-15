@@ -11,7 +11,7 @@ import { ContractType, Constants } from "@helpers/Constants.sol";
 
 /// @title CommonUtils
 /// @author Angle Labs, Inc.
-/// @dev This contract is a friendly fork of Angle's `CommonUtils` contract
+/// @dev This contract is an authorized fork of Angle's `CommonUtils` contract
 /// https://github.com/AngleProtocol/utils/blob/main/src/CommonUtils.sol
 contract CommonUtils is CommonBase, JsonReader {
   using strings for *;

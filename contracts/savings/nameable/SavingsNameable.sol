@@ -6,7 +6,7 @@ import "../Savings.sol";
 /// @title SavingsNameable
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This contract is a friendly fork of Angle's SavingsNameable contract:
+/// @dev This contract is an authorized fork of Angle's SavingsNameable contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/savings/nameable/SavingsNameable.sol
 contract SavingsNameable is Savings {
   string internal __name;

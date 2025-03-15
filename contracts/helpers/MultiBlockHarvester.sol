@@ -17,7 +17,7 @@ import "../utils/Constants.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Contract to harvest yield from multiple yield bearing assets in multiple blocks transactions
-/// @dev This contract is a friendly fork of Angle's MultiBlockHarvester contract:
+/// @dev This contract is an authorized fork of Angle's MultiBlockHarvester contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/MultiBlockHarvester.sol
 contract MultiBlockHarvester is BaseHarvester {
   using SafeERC20 for IERC20;

@@ -17,7 +17,7 @@ import "../Storage.sol";
 /// @title LibSetters
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This library is a friendly fork of Angle's `LibSetters` library
+/// @dev This library is an authorized fork of Angle's `LibSetters` library
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibSetters.sol
 library LibSetters {
   using SafeCast for uint256;

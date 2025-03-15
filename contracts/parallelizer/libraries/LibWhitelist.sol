@@ -11,7 +11,7 @@ import "../Storage.sol";
 /// @title LibWhitelist
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This library is a friendly fork of Angle's `LibWhitelist` library
+/// @dev This library is an authorized fork of Angle's `LibWhitelist` library
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibWhitelist.sol
 library LibWhitelist {
   /// @notice Checks whether `sender` is whitelisted for a collateral with `whitelistData`

@@ -27,7 +27,7 @@ enum SwapType {
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Generic contract for anyone to permissionlessly adjust the reserves of Angle Parallelizer
-/// @dev This contract is a friendly fork of Angle's GenericHarvester contract:
+/// @dev This contract is an authorized fork of Angle's GenericHarvester contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/GenericHarvester.sol
 contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper {
   using SafeCast for uint256;

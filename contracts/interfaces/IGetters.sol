@@ -8,7 +8,7 @@ import "../parallelizer/Storage.sol";
 /// @title IGetters
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This interface is a friendly fork of Angle's `IGetters` interface
+/// @dev This interface is an authorized fork of Angle's `IGetters` interface
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IGetters.sol
 interface IGetters {
   /// @notice Checks whether a given `selector` is actually a valid selector corresponding to a function in one of

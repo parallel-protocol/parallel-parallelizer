@@ -7,7 +7,7 @@ import "./BaseSavings.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @notice In this implementation, assets in the contract increase in value following a `rate` chosen by governance
-/// @dev This contract is a friendly fork of Angle's Savings contract:
+/// @dev This contract is an authorized fork of Angle's Savings contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/savings/Savings.sol
 contract Savings is BaseSavings {
   using SafeERC20 for IERC20Metadata;

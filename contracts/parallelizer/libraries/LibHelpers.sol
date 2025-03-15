@@ -8,7 +8,7 @@ import "../Storage.sol";
 /// @title LibHelpers
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This library is a friendly fork of Angle's `LibHelpers` library
+/// @dev This library is an authorized fork of Angle's `LibHelpers` library
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibHelpers.sol
 library LibHelpers {
   /// @notice Rebases the units of `amount` from `fromDecimals` to `toDecimals`

@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 /// @title IRedeemer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This interface is a friendly fork of Angle's `IRedeemer` interface
+/// @dev This interface is an authorized fork of Angle's `IRedeemer` interface
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IRedeemer.sol
 interface IRedeemer {
   /// @notice Redeems `amount` of stablecoins from the system

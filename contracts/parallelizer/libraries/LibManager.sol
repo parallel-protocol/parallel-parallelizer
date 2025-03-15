@@ -11,7 +11,7 @@ import "../Storage.sol";
 /// @dev Managed collateral assets may be handled through external smart contracts or directly through this library
 /// @dev There is no implementation at this point for a managed collateral handled through this library, and
 /// a new specific `ManagerType` would need to be added in this case
-/// @dev This library is a friendly fork of Angle's `LibManager` library
+/// @dev This library is an authorized fork of Angle's `LibManager` library
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibManager.sol
 library LibManager {
   /// @notice Checks to which address managed funds must be transferred

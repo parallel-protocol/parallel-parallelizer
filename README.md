@@ -2,7 +2,7 @@
 
 ## Summary
 
-**Parallelizer is friendly fork of Angle's Transmuter which is an autonomous and modular price stability module for
+**Parallelizer is an authorized fork of Angle's Transmuter which is an autonomous and modular price stability module for
 decentralized stablecoin protocols.**
 
 - It is conceived as a basket of different assets (normally stablecoins) backing a stablecoin and comes with guarantees
@@ -13,8 +13,6 @@ decentralized stablecoin protocols.**
 
 Parallelizer is compatible with other common mechanisms often used to issue stablecoins like collateralized-debt
 position models.
-
----
 
 ## Architecture
 
@@ -38,8 +36,6 @@ The Parallelizer system can come with optional [ERC4626](https://eips.ethereum.o
 [savings contracts](./contracts/savings/) which can be used to distribute a yield to the holders of the stablecoin
 issued through the Parallelizer.
 
----
-
 ## Changed compared to Angle's Transmuter
 
 Some changed has been made to the original Angle's Transmuter:
@@ -60,8 +56,6 @@ Some changed has been made to the original Angle's Transmuter:
 - [Transmuter Whitepaper](https://docs.angle.money/overview/whitepapers)
 - [Angle Documentation](https://docs.angle.money)
 - [Angle Developers Documentation](https://developers.angle.money)
-
----
 
 ## Security ⛑️
 
@@ -93,11 +87,7 @@ shouldn't be able to extract funds from the system.
 The Angle's Transmuter and savings smart contracts have been audited by Code4rena, find the audit report
 [here](https://code4rena.com/reports/2023-06-angle).
 
----
-
 ## Deployment Addresses 🚦
-
----
 
 ## Development 🛠️
 
@@ -147,8 +137,6 @@ Warning:
 - this repository uses [`ffi`](https://book.getfoundry.sh/cheatcodes/ffi) in its test suite. Beware as a malicious actor
   forking this repo may execute malicious commands on your machine
 
----
-
 ### Compilation
 
 Compilation of production contracts will be done using the via-ir pipeline.
@@ -180,8 +168,6 @@ FOUNDRY_PROFILE=dev forge test --list
 FOUNDRY_PROFILE=dev forge test --list --json --match-test "testXXX*"
 ```
 
----
-
 ### Deploying
 
 There is an example script in the `scripts/foundry` folder. Then you can run:
@@ -189,8 +175,6 @@ There is an example script in the `scripts/foundry` folder. Then you can run:
 ```bash
 bun run deploy <FILE_NAME> --rpc-url <NETWORK_NAME>
 ```
-
----
 
 ### Coverage
 
@@ -202,15 +186,11 @@ bun run coverage
 
 You'll need to install lcov `brew install lcov` to visualize the coverage report.
 
----
-
 ### Gas report ⛽️
 
 ```bash
 bun run gas
 ```
-
----
 
 ### Etherscan Verification ✅
 
@@ -231,28 +211,20 @@ Every time a facet is updated with a new function or a change in interface, a ne
 deployed and governance should call `DiamondEtherscan.setDummyImplementation()` with the newly deployed dummy
 implementation.
 
----
-
 ### [Slither](https://github.com/crytic/slither)
 
 ```bash
 bun run slither
 ```
 
----
-
 ## Contributing
 
 If you're interested in contributing, please see our [contributions guidelines](./CONTRIBUTING.md).
-
----
 
 ## Questions & Feedback
 
 For any question or feedback you can use [discord](https://discord.com/invite/mimodao). Don't hesitate to reach out on
 [Twitter](https://twitter.com/mimo_labs)🐦 as well.
-
----
 
 ## Licensing
 

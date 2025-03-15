@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 /// @title IHarvester
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This interface is a friendly fork of Angle's `IHarvester` interface
+/// @dev This interface is an authorized fork of Angle's `IHarvester` interface
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IHarvester.sol
 interface IHarvester {
   function setYieldBearingAssetData(

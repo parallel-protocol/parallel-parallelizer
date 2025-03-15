@@ -6,7 +6,7 @@ import { SafeERC20, IERC20 } from "@openzeppelin/contracts/token/ERC20/utils/Saf
 /// @title Swapper
 /// @author Angle Labs, Inc.
 /// @dev Abstract contract for swapping tokens using a router/aggregator
-/// @dev This contract is a friendly fork of Angle's `RouterSwapper` contract
+/// @dev This contract is an authorized fork of Angle's `RouterSwapper` contract
 /// https://github.com/AngleProtocol/utils/blob/main/src/RouterSwapper.sol
 abstract contract RouterSwapper {
   using SafeERC20 for IERC20;

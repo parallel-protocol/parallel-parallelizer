@@ -9,7 +9,7 @@ import "../../utils/Constants.sol";
 /// @title AccessManagedModifiers
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This contract is a friendly fork of Angle's `AccessControlModifiers` contract
+/// @dev This contract is an authorized fork of Angle's `AccessControlModifiers` contract
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/AccessControlModifiers.sol
 /// update access logic to use OpenZeppelin's `AccessManaged` logic
 contract AccessManagedModifiers {

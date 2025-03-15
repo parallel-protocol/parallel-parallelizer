@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 /// @title IManager
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This interface is a friendly fork of Angle's `IManager` interface
+/// @dev This interface is an authorized fork of Angle's `IManager` interface
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IManager.sol
 interface IManager {
   /// @notice Returns the amount of collateral managed by the Manager

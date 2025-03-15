@@ -50,7 +50,7 @@ struct LocalVariables {
 /// @dev In case of a burn again, the swap functions will revert if the call concerns a collateral that requires a
 /// whitelist but the `to` address does not have it. The quote functions will not revert in this case.
 /// @dev Calling one of the swap functions in a burn case does not require any prior token approval
-/// @dev This contract is a friendly fork of Angle's `Swapper` contract
+/// @dev This contract is an authorized fork of Angle's `Swapper` contract
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Swapper.sol
 contract Swapper is ISwapper, AccessManagedModifiers {
   using SafeERC20 for IERC20;

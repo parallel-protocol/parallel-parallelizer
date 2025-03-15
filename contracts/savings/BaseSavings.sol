@@ -28,7 +28,7 @@ import "../utils/Errors.sol";
 /// (like `deposit`, `mint`, `redeem` or `withdraw`). Even though there should be no specific sandwiching
 /// issue with current implementations, it is still recommended to interact with Parallel Savings contracts
 /// through a router that can implement such a protection.
-/// @dev This contract is a friendly fork of Angle's Savings contract:
+/// @dev This contract is an authorized fork of Angle's Savings contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/savings/BaseSavings.sol
 abstract contract BaseSavings is Initializable, AccessManagedUpgradeable, ERC4626Upgradeable, UUPSUpgradeable {
   /// @custom:oz-upgrades-unsafe-allow constructor

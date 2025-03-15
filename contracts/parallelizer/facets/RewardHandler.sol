@@ -16,7 +16,7 @@ import "../Storage.sol";
 /// @title RewardHandler
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This contract is a friendly fork of Angle's `RewardHandler` contract
+/// @dev This contract is an authorized fork of Angle's `RewardHandler` contract
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/RewardHandler.sol
 contract RewardHandler is IRewardHandler {
   using SafeERC20 for IERC20;

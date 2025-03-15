@@ -16,7 +16,7 @@ import "../Storage.sol";
 /// @title LibGetters
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This library is a friendly fork of Angle's `LibGetters` library
+/// @dev This library is an authorized fork of Angle's `LibGetters` library
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibGetters.sol
 library LibGetters {
   using Math for uint256;
