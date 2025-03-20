@@ -49,7 +49,7 @@ Some changed has been made to the original Angle's Transmuter:
 - Remove files that will not be used by Parallel (`SavingsVest.sol`, some `Configs/`, etc.)
 - Renamed contracts (`AgToken` -> `TokenP`, `Transmuter` -> `Parallelizer`)
 
-## Documentation Links 📚
+## Documentation Links
 
 ### Angle documentation
 
@@ -57,7 +57,9 @@ Some changed has been made to the original Angle's Transmuter:
 - [Angle Documentation](https://docs.angle.money)
 - [Angle Developers Documentation](https://developers.angle.money)
 
-## Security ⛑️
+## Deployment Addresses
+
+## Security
 
 ### Trust assumptions of the Parallelizer system
 
@@ -87,9 +89,7 @@ shouldn't be able to extract funds from the system.
 The Angle's Transmuter and savings smart contracts have been audited by Code4rena, find the audit report
 [here](https://code4rena.com/reports/2023-06-angle).
 
-## Deployment Addresses 🚦
-
-## Development 🛠️
+## Development
 
 This repository is built on [Foundry](https://github.com/foundry-rs/foundry).
 
@@ -98,19 +98,9 @@ This repository is built on [Foundry](https://github.com/foundry-rs/foundry).
 #### Install Foundry
 
 If you don't have Foundry:
-
-```bash
-curl -L https://foundry.paradigm.xyz | bash
-
-source /root/.zshrc
-# or, if you're under bash: source /root/.bashrc
-
-foundryup
-```
+[Install foundry following the instructions.](https://book.getfoundry.sh/getting-started/installation)
 
 #### Install packages
-
-You can install all dependencies by running
 
 ```bash
 bun install
@@ -121,21 +111,16 @@ bun install
 This repository uses [`ffi`](https://book.getfoundry.sh/cheatcodes/ffi) in its test suite. Beware as a malicious actor
 forking this repo could add malicious commands using this.
 
-#### Create `.env` file
+### Setup `.env` file
 
-In order to interact with non local networks, you must create an `.env` that has:
-
-- a `MNEMONIC` for each of the chain you
-- a network key
-- an `ETHERSCAN_API_KEY`
+```bash
+PRIVATE_KEY="PRIVATE KEY"
+ALCHEMY_API_KEY="ALCHEMY_API_KEY"
+```
 
 For additional keys, you can check the [`.env.example`](/.env.example) file.
 
-Warning:
-
-- always keep your confidential information safe
-- this repository uses [`ffi`](https://book.getfoundry.sh/cheatcodes/ffi) in its test suite. Beware as a malicious actor
-  forking this repo may execute malicious commands on your machine
+**Warning: always keep your confidential information safe**
 
 ### Compilation
 
@@ -155,10 +140,6 @@ Here are examples of how to run the test suite:
 
 ```bash
 bun run test
-FOUNDRY_PROFILE=dev forge test -vvv --watch # To watch changing files
-FOUNDRY_PROFILE=dev forge test -vvv --match-path test/fuzz/Redeemer.test.sol
-FOUNDRY_PROFILE=dev forge test -vvv --match-test "testAbc*"
-FOUNDRY_PROFILE=dev forge test -vvv --fork-url <RPC_URL>
 ```
 
 You can also list tests:
@@ -170,12 +151,6 @@ FOUNDRY_PROFILE=dev forge test --list --json --match-test "testXXX*"
 
 ### Deploying
 
-There is an example script in the `scripts/foundry` folder. Then you can run:
-
-```bash
-bun run deploy <FILE_NAME> --rpc-url <NETWORK_NAME>
-```
-
 ### Coverage
 
 We recommend the use of this [vscode extension](ryanluker.vscode-coverage-gutters).
@@ -186,30 +161,11 @@ bun run coverage
 
 You'll need to install lcov `brew install lcov` to visualize the coverage report.
 
-### Gas report ⛽️
+### Gas report
 
 ```bash
 bun run gas
 ```
-
-### Etherscan Verification ✅
-
-To facilitate the interactions with the Diamond Proxy contract on Etherscan, one solution introduced
-[here](https://github.com/zdenham/diamond-etherscan/blob/main/README.md) is to deploy the system with a dummy facet that
-is in fact a noop mock of the whole diamond.
-
-To get the dummy implementation, solution is to:
-
-- download the [repo](https://github.com/zdenham/diamond-etherscan/blob/main/README.md) and follow the instructions
-- upload the dummy implementation [here](./scripts/generated/DummyDiamondImplementation.sol)
-- if the address used has ownership on the Parallelizer contracts, run
-  [this script](./scripts/gnosis/VerifyProxyEtherscan.s.sol) to deploy the new dummy facet and add it to the whole
-  Parallelizer system
-- go to Etherscan and point the `DiamondProxy` to the `DiamondEtherscanFacet` contract
-
-Every time a facet is updated with a new function or a change in interface, a new dummy implementation should be
-deployed and governance should call `DiamondEtherscan.setDummyImplementation()` with the newly deployed dummy
-implementation.
 
 ### [Slither](https://github.com/crytic/slither)
 
@@ -224,7 +180,7 @@ If you're interested in contributing, please see our [contributions guidelines](
 ## Questions & Feedback
 
 For any question or feedback you can use [discord](https://discord.com/invite/mimodao). Don't hesitate to reach out on
-[Twitter](https://twitter.com/mimo_labs)🐦 as well.
+[Twitter](https://twitter.com/mimo_labs) as well.
 
 ## Licensing
 
