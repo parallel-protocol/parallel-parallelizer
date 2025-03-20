@@ -5,12 +5,12 @@
   "scripts": {
     "ci:coverage": "forge coverage --report lcov --ir-minimum && bun run lcov:clean",
     "coverage": "FOUNDRY_PROFILE=dev forge coverage --report lcov --ir-minimum && bun run lcov:clean && bun run lcov:generate-html",
-    "compile": "forge build",
+    "compile": "forge build && hardhat compile",
     "compile:dev": "FOUNDRY_PROFILE=dev forge build",
     "gas": "FOUNDRY_PROFILE=dev bun run test --gas-report",
     "test:unit": "forge test -vvv --match-path \"tests/units/**/*.sol\"",
     "test:invariant": "forge test -vvv --match-path \"tests/invariants/**/*.sol\"",
-    "slither": "chmod +x ./slither.sh && ./slither.sh",
+    "slither": "slither .",
     "test": "forge test -vvv",
     "lcov:clean": "lcov --remove lcov.info -o lcov.info 'test/**' 'scripts/**' 'contracts/transmuter/configs/**' 'contracts/utils/**'",
     "lcov:generate-html": "genhtml lcov.info --output=coverage",
@@ -29,10 +29,15 @@
     "url": "https://github.com/ParallelProtocol/parallel-parallelizer/issues"
   },
   "devDependencies": {
+    "dotenv": "^16.4.7",
     "forge-std": "github:foundry-rs/forge-std#v1.9.5",
+    "hardhat": "^2.22.19",
+    "hardhat-deploy": "^1.0.1",
     "prettier": "^3.5.3",
     "solhint": "^3.5.1",
-    "solhint-plugin-prettier": "^0.0.5"
+    "solhint-plugin-prettier": "^0.0.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.2.0",
