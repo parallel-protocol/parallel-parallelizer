@@ -102,7 +102,6 @@ contract MultiBlockHarvester is BaseHarvester {
   )
     internal
   {
-    _adjustAllowance(address(tokenP), address(parallelizer), amount);
     address depositAddress = yieldBearingToDepositAddress[yieldBearingAsset];
     if (typeAction == 1) {
       uint256 amountOut =
