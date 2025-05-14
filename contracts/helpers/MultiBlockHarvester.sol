@@ -35,12 +35,11 @@ contract MultiBlockHarvester is BaseHarvester {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   constructor(
-    uint96 initialMaxSlippage,
     address initialAuthority,
     ITokenP definitivetokenP,
     IParallelizer definitiveParallelizer
   )
-    BaseHarvester(initialMaxSlippage, initialAuthority, definitivetokenP, definitiveParallelizer)
+    BaseHarvester(initialAuthority, definitivetokenP, definitiveParallelizer)
   { }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +86,9 @@ contract MultiBlockHarvester is BaseHarvester {
     uint256 amountOut =
       parallelizer.swapExactInput(balance, 0, yieldBearingAsset, address(tokenP), address(this), block.timestamp);
     address depositAddress = yieldBearingAsset == XEVT ? yieldBearingToDepositAddress[yieldBearingAsset] : address(0);
-    _checkSlippage(balance, amountOut, yieldBearingAsset, depositAddress, true);
+    _checkSlippage(
+      balance, amountOut, yieldBearingAsset, depositAddress, true, yieldBearingData[yieldBearingAsset].maxSlippage
+    );
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,15 +113,15 @@ contract MultiBlockHarvester is BaseHarvester {
         _adjustAllowance(yieldBearingAsset, address(parallelizer), shares);
         amountOut =
           parallelizer.swapExactInput(shares, 0, yieldBearingAsset, address(tokenP), address(this), block.timestamp);
-        _checkSlippage(amount, amountOut, address(tokenP), depositAddress, false);
+        _checkSlippage(amount, amountOut, address(tokenP), depositAddress, false, yieldBearingInfo.maxSlippage);
       } else if (yieldBearingAsset == USDM) {
         IERC20(yieldBearingInfo.asset).safeTransfer(depositAddress, amountOut);
-        _checkSlippage(amount, amountOut, yieldBearingInfo.asset, depositAddress, false);
+        _checkSlippage(amount, amountOut, yieldBearingInfo.asset, depositAddress, false, yieldBearingInfo.maxSlippage);
       }
     } else {
       uint256 amountOut =
         parallelizer.swapExactInput(amount, 0, address(tokenP), yieldBearingAsset, address(this), block.timestamp);
-      _checkSlippage(amount, amountOut, yieldBearingAsset, depositAddress, false);
+      _checkSlippage(amount, amountOut, yieldBearingAsset, depositAddress, false, yieldBearingInfo.maxSlippage);
       if (yieldBearingAsset == XEVT) {
         IPool(depositAddress).requestRedeem(amountOut);
       } else if (yieldBearingAsset == USDM) {
@@ -138,7 +139,8 @@ contract MultiBlockHarvester is BaseHarvester {
     uint256 amountOut,
     address asset,
     address depositAddress,
-    bool assetIn
+    bool assetIn,
+    uint96 maxSlippage
   )
     internal
     view

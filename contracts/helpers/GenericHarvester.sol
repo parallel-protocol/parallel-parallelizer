@@ -45,7 +45,6 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   constructor(
-    uint96 initialMaxSlippage,
     address initialTokenTransferAddress,
     address initialSwapRouter,
     ITokenP definitivetokenP,
@@ -54,7 +53,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     IERC3156FlashLender definitiveFlashloan
   )
     RouterSwapper(initialSwapRouter, initialTokenTransferAddress)
-    BaseHarvester(initialMaxSlippage, initialAuthority, definitivetokenP, definitiveParallelizer)
+    BaseHarvester(initialAuthority, definitivetokenP, definitiveParallelizer)
   {
     if (address(definitiveFlashloan) == address(0)) revert ZeroAddress();
     flashloan = definitiveFlashloan;
@@ -107,11 +106,16 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     (uint8 increase, uint256 amount) = _computeRebalanceAmount(yieldBearingAsset, yieldBearingInfo);
     amount = (amount * scale) / 1e9;
     if (amount == 0) revert ZeroAmount();
-
     (SwapType swapType, bytes memory data) = abi.decode(extraData, (SwapType, bytes));
     try parallelizer.updateOracle(yieldBearingAsset) { } catch { }
     _adjustYieldExposure(
-      amount, increase, yieldBearingAsset, yieldBearingInfo.asset, (amount * (1e9 - maxSlippage)) / 1e9, swapType, data
+      amount,
+      increase,
+      yieldBearingAsset,
+      yieldBearingInfo.asset,
+      (amount * (1e9 - yieldBearingInfo.maxSlippage)) / 1e9,
+      swapType,
+      data
     );
   }
 
