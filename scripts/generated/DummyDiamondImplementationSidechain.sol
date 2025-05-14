@@ -144,7 +144,13 @@ contract DummyDiamondImplementation {
 
   function setAccessControlManager(address _newAccessControlManager) external { }
 
-  function setCollateralManager(address collateral, Tuple5479340 memory managerData) external { }
+  function setCollateralManager(
+    address collateral,
+    address checkExternalManagerBalance,
+    Tuple5479340 memory managerData
+  )
+    external
+  { }
 
   function setOracle(address collateral, bytes memory oracleConfig) external { }
 

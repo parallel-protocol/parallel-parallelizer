@@ -49,11 +49,17 @@ library LibSetters {
   }
 
   /// @notice Internal version of `setCollateralManager`
-  function setCollateralManager(address collateral, ManagerStorage memory managerData) internal {
+  function setCollateralManager(
+    address collateral,
+    bool checkExternalManagerBalance,
+    ManagerStorage memory managerData
+  )
+    internal
+  {
     Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
     if (collatInfo.decimals == 0) revert NotCollateral();
     uint8 isManaged = collatInfo.isManaged;
-    if (isManaged > 0) {
+    if (isManaged > 0 && checkExternalManagerBalance) {
       (, uint256 totalValue) = LibManager.totalAssets(collatInfo.managerData.config);
       if (totalValue > 0) revert ManagerHasAssets();
     }

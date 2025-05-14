@@ -44,8 +44,15 @@ contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
 
   /// @inheritdoc ISettersGovernor
   /// @dev Funds need to have been withdrawn from the eventual previous manager prior to this call
-  function setCollateralManager(address collateral, ManagerStorage memory managerData) external restricted {
-    LibSetters.setCollateralManager(collateral, managerData);
+  function setCollateralManager(
+    address collateral,
+    bool checkExternalManagerBalance,
+    ManagerStorage memory managerData
+  )
+    external
+    restricted
+  {
+    LibSetters.setCollateralManager(collateral, checkExternalManagerBalance, managerData);
   }
 
   /// @inheritdoc ISettersGovernor
