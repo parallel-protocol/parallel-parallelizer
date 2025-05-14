@@ -425,9 +425,9 @@ contract Swapper is ISwapper, AccessManagedModifiers {
 
             if (v.isMint) {
               // In the mint case:
-              // `m_t = (-1-g(0)+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1})]/((f_{i+1}-g(0))/b_{i+1})`
+              // `m_t = (-1-g(0)+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1}])/((f_{i+1}-g(0))/b_{i+1})`
               // And so: g(0)+(f_{i+1}-f_i)/(b_{i+1}-b_i)m_t/2
-              //                      = (g(0)-1+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1})]) / 2
+              //                      = (g(0)-1+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1}]) / 2
               midFee = int64(
                 (
                   int256(Math.sqrt((uint256(int256(BASE_9) + currentFees)) ** 2 + ac4, Math.Rounding.Ceil))
@@ -436,9 +436,9 @@ contract Swapper is ISwapper, AccessManagedModifiers {
               );
             } else {
               // In the burn case:
-              // `m_t = (1-g(0)+sqrt[(1-g(0))**2-2M(f_{i+1}-g(0))/b_{i+1})]/((f_{i+1}-g(0))/b_{i+1})`
+              // `m_t = (1-g(0)+sqrt[(1-g(0))**2-2M(f_{i+1}-g(0))/b_{i+1}])/((f_{i+1}-g(0))/b_{i+1})`
               // And so: g(0)+(f_{i+1}-f_i)/(b_{i+1}-b_i)m_t/2
-              //                      = (g(0)+1-sqrt[(1-g(0))**2-2M(f_{i+1}-g(0))/b_{i+1})]) / 2
+              //                      = (g(0)+1-sqrt[(1-g(0))**2-2M(f_{i+1}-g(0))/b_{i+1}]) / 2
 
               uint256 baseMinusCurrentSquared = (uint256(int256(BASE_9) - currentFees)) ** 2;
               // Mathematically, this condition is always verified, but rounding errors may make this
