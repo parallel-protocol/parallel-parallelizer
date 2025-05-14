@@ -16,7 +16,7 @@ bytes32 constant DIAMOND_STORAGE_POSITION = 0xc8fcad8db84d3cc18b4c41d551ea0ee66d
 
 /// @dev Storage position of `ParallelizerStorage` structure
 /// @dev Equals `keccak256("diamond.standard.parallelizer.storage") - 1`
-bytes32 constant TRANSMUTER_STORAGE_POSITION = 0xc1f2f38dde3351ac0a64934139e816326caa800303a1235dc53707d0de05d8bd;
+bytes32 constant TRANSMUTER_STORAGE_POSITION = 0x4b2dd303f68b99d244b702089c802b6e9ea1b5d4ef61fd436d6c41abb1178c75;
 
 /// @dev Storage position of `ImplementationStorage` structure
 /// @dev Equals `keccak256("eip1967.proxy.implementation") - 1`

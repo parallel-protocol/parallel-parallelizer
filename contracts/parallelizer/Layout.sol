@@ -10,7 +10,7 @@ import { DiamondStorage, ParallelizerStorage, Collateral, FacetInfo, WhitelistTy
 ///  - To force test failures if the layout is changed
 /// @dev
 ///  - uint256(TRANSMUTER_STORAGE_POSITION)
-///         = 87725637715361972314474735372533017845526400132006062725239677556399819577533
+///         = 34004428136983271448470628240738343798407004761490164663157697638250996796533
 ///  - uint256(DIAMOND_STORAGE_POSITION)
 ///         = 90909012999857140622417080374671856515688564136957639390032885430481714942747
 ///  - uint256(IMPLEMENTATION_STORAGE_POSITION)
@@ -21,7 +21,7 @@ contract Layout {
     private __gap1;
   address public implementation;
   // uint256(TRANSMUTER_STORAGE_POSITION) - 1 - uint256(IMPLEMENTATION_STORAGE_POSITION)
-  uint256[63_285_583_310_056_702_947_905_333_115_721_520_886_117_326_369_500_905_343_566_708_717_130_208_881_920]
+  uint256[9_564_373_731_678_002_081_901_225_983_926_846_838_997_930_998_985_007_281_484_728_798_981_386_100_920]
     private __gap2;
   address public tokenP; // slot 1
   uint8 public isRedemptionLive; // slot 1
@@ -36,8 +36,8 @@ contract Layout {
   mapping(address => uint256) public isTrusted; // slot 7
   mapping(address => uint256) public isSellerTrusted; // slot 8
   mapping(WhitelistType => mapping(address => uint256)) public isWhitelistedForType; // slot 9
-  // uint256(TRANSMUTER_STORAGE_POSITION) - ParallelizerStorage offset (9) - uint256(DIAMOND_STORAGE_POSITION)
-  uint256[3_183_375_284_495_168_307_942_345_002_138_838_670_162_164_004_951_576_664_793_207_874_081_895_365_205]
+  // uint256(DIAMOND_STORAGE_POSITION) - ParallelizerStorage offset (9) - uint256(TRANSMUTER_STORAGE_POSITION)
+  uint256[56_904_584_862_873_869_173_946_452_133_933_512_717_281_559_375_467_474_726_875_187_792_230_718_146_205]
     private __gap3;
   bytes4[] public selectors; // slot 1
   mapping(bytes4 => FacetInfo) public selectorInfo; // slot 2
