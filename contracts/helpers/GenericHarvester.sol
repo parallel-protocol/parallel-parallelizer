@@ -35,7 +35,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
 
   bytes32 public constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
 
-  /// @notice Angle stablecoin flashloan contract
+  /// @notice Parallel stablecoin flashloan contract
   IERC3156FlashLender public immutable flashloan;
   /// @notice Budget of tokenP available for each users
   mapping(address => uint256) public budget;
@@ -108,7 +108,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     if (amount == 0) revert ZeroAmount();
 
     (SwapType swapType, bytes memory data) = abi.decode(extraData, (SwapType, bytes));
-    try parallelizer.updateOracle(yieldBearingInfo.asset) { } catch { }
+    try parallelizer.updateOracle(yieldBearingAsset) { } catch { }
     adjustYieldExposure(
       amount, increase, yieldBearingAsset, yieldBearingInfo.asset, (amount * (1e9 - maxSlippage)) / 1e9, swapType, data
     );

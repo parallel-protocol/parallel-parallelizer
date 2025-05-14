@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 import { CommonBase, VmSafe } from "@forge-std/Base.sol";
 import { Test } from "@forge-std/Test.sol";
