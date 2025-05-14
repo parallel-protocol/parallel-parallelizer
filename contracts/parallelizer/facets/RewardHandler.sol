@@ -30,7 +30,7 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
   /// @dev It is impossible to sell a token that is a collateral through this function
   /// @dev Trusted sellers and governance only may call this function
   /// @dev Only governance can set which tokens can be swapped through this function by passing a prior approval
-  /// transaction to 1inch router for the token to be swapped
+  /// transaction to Odos router for the token to be swapped
   function sellRewards(uint256 minAmountOut, bytes memory payload) external nonReentrant returns (uint256 amountOut) {
     ParallelizerStorage storage ts = s.transmuterStorage();
     if (!LibDiamond.checkCanCall(msg.sender, msg.data) && ts.isSellerTrusted[msg.sender] == 0) revert NotTrusted();
@@ -44,7 +44,7 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
       balances[i] = IERC20(list[i]).balanceOf(address(this));
     }
     //solhint-disable-next-line
-    (bool success, bytes memory result) = ONE_INCH_ROUTER.call(payload);
+    (bool success, bytes memory result) = ODOS_ROUTER.call(payload);
     if (!success) _revertBytes(result);
     amountOut = abi.decode(result, (uint256));
     if (amountOut < minAmountOut) revert TooSmallAmountOut();
@@ -68,7 +68,7 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
     }
   }
 
-  /// @notice Processes 1Inch revert messages
+  /// @notice Processes odos revert messages
   function _revertBytes(bytes memory errMsg) private pure {
     if (errMsg.length > 0) {
       //solhint-disable-next-line
@@ -76,6 +76,6 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
         revert(add(32, errMsg), mload(errMsg))
       }
     }
-    revert OneInchSwapFailed();
+    revert OdosSwapFailed();
   }
 }

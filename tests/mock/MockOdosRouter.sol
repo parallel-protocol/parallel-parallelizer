@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../contracts/utils/Constants.sol";
 import "../../contracts/utils/Errors.sol";
 
-contract MockOneInchRouter {
+contract MockOdosRouter {
   using SafeERC20 for IERC20;
 
   bool public setRevert;

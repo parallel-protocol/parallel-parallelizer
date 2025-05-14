@@ -35,7 +35,7 @@ error NotGuardian();
 error NotTrusted();
 error NotTrustedOrGuardian();
 error NotWhitelisted();
-error OneInchSwapFailed();
+error OdosSwapFailed();
 error OracleUpdateFailed();
 error Paused();
 error ReentrantCall();

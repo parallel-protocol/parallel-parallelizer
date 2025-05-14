@@ -63,7 +63,7 @@ uint64 constant GUARDIAN_ROLE = 20;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
 address constant PERMIT_2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
-address constant ONE_INCH_ROUTER = 0x1111111254EEB25477B68fb85Ed929f73A960582;
+address constant ODOS_ROUTER = 0xCf5540fFFCdC3d510B18bFcA6d2b9987b0772559;
 address constant AGEUR = 0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8;
 ICbETH constant CBETH = ICbETH(0xBe9895146f7AF43049ca1c1AE358B0541Ea49704);
 IRETH constant RETH = IRETH(0xae78736Cd615f374D3085123A210448E74Fc6393);
