@@ -8,6 +8,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 
 import { LibDiamond } from "../libraries/LibDiamond.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
+import { LibManager } from "../libraries/LibManager.sol";
 
 import "../../utils/Constants.sol";
 import "../../utils/Errors.sol";
@@ -46,16 +47,23 @@ contract RewardHandler is IRewardHandler {
     amountOut = abi.decode(result, (uint256));
     if (amountOut < minAmountOut) revert TooSmallAmountOut();
     bool hasIncreased;
+    address collateral;
     for (uint256 i; i < listLength; ++i) {
       uint256 newBalance = IERC20(list[i]).balanceOf(address(this));
       if (newBalance < balances[i]) {
         revert InvalidSwap();
       } else if (newBalance > balances[i]) {
         hasIncreased = true;
+        collateral = list[i];
         emit RewardsSoldFor(list[i], newBalance - balances[i]);
       }
     }
     if (!hasIncreased) revert InvalidSwap();
+    Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
+    if (collatInfo.isManaged > 0) {
+      IERC20(collateral).safeTransfer(LibManager.transferRecipient(collatInfo.managerData.config), amountOut);
+      LibManager.invest(amountOut, collatInfo.managerData.config);
+    }
   }
 
   /// @notice Processes 1Inch revert messages
