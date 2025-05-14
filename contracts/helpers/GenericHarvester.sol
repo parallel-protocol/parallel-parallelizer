@@ -102,6 +102,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
   /// it is used to lower the amount of the asset to harvest for example to have a lower slippage
   function harvest(address yieldBearingAsset, uint256 scale, bytes calldata extraData) public virtual {
     if (scale > 1e9) revert InvalidParam();
+    updateLimitExposuresYieldAsset(yieldBearingAsset);
     YieldBearingParams memory yieldBearingInfo = yieldBearingData[yieldBearingAsset];
     (uint8 increase, uint256 amount) = _computeRebalanceAmount(yieldBearingAsset, yieldBearingInfo);
     amount = (amount * scale) / 1e9;

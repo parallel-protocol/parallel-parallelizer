@@ -67,6 +67,7 @@ contract MultiBlockHarvester is BaseHarvester {
    */
   function harvest(address yieldBearingAsset, uint256 scale, bytes calldata) external onlyTrusted {
     if (scale > 1e9) revert InvalidParam();
+    updateLimitExposuresYieldAsset(yieldBearingAsset);
     YieldBearingParams memory yieldBearingInfo = yieldBearingData[yieldBearingAsset];
     (uint8 increase, uint256 amount) = _computeRebalanceAmount(yieldBearingAsset, yieldBearingInfo);
     amount = (amount * scale) / 1e9;
