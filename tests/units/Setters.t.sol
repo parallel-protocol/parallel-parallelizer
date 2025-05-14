@@ -3,6 +3,7 @@
 pragma solidity 0.8.28;
 
 import { stdError } from "@forge-std/Test.sol";
+import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 
 import "tests/mock/MockManager.sol";
 import { MockKeyringGuard } from "tests/mock/MockKeyringGuard.sol";
@@ -559,16 +560,22 @@ contract Test_Setters_SetAccessManager is Fixture {
     parallelizer.setAccessManager(alice);
   }
 
+  function test_RevertWhen_InvalidAccessManager() public {
+    vm.expectRevert(Errors.InvalidAccessManager.selector);
+    hoax(governor);
+    parallelizer.setAccessManager(address(governor));
+  }
+
   function test_Success() public {
     address oldAccessManager = address(parallelizer.accessManager());
-
+    address newAccessManager = address(new AccessManager(governor));
     vm.expectEmit(address(parallelizer));
-    emit LibSetters.OwnershipTransferred(oldAccessManager, alice);
+    emit LibSetters.OwnershipTransferred(oldAccessManager, newAccessManager);
 
     hoax(governor);
-    parallelizer.setAccessManager(alice);
+    parallelizer.setAccessManager(newAccessManager);
 
-    assertEq(parallelizer.accessManager(), alice);
+    assertEq(parallelizer.accessManager(), newAccessManager);
   }
 }
 

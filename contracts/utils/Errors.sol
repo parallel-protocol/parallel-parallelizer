@@ -25,6 +25,7 @@ error InvalidParams();
 error InvalidRate();
 error InvalidSwap();
 error InvalidTokens();
+error InvalidAccessManager();
 error ManagerHasAssets();
 error NoSelectorsProvidedForFacetForCut(address _facetAddress);
 error NotAllowed();

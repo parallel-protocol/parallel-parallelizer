@@ -42,10 +42,11 @@ library LibSetters {
 
   /// @notice Internal version of `setAccessManager`
   function setAccessManager(IAccessManager _newAccessManager) internal {
+    if (address(_newAccessManager).code.length == 0) revert InvalidAccessManager();
     DiamondStorage storage ds = s.diamondStorage();
-    IAccessManager previousAccessManager = ds.accessManager;
+    address previousAccessManager = address(ds.accessManager);
     ds.accessManager = _newAccessManager;
-    emit OwnershipTransferred(address(previousAccessManager), address(_newAccessManager));
+    emit OwnershipTransferred(previousAccessManager, address(_newAccessManager));
   }
 
   /// @notice Internal version of `setCollateralManager`
