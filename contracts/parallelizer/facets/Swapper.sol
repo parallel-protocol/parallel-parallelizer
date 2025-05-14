@@ -165,7 +165,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   /// @inheritdoc ISwapper
   function quoteIn(uint256 amountIn, address tokenIn, address tokenOut) external view returns (uint256 amountOut) {
     ParallelizerStorage storage ts = s.transmuterStorage();
-    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, 0);
+    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, block.timestamp);
     if (mint) {
       amountOut = _quoteMintExactInput(collatInfo, amountIn);
       _checkHardCaps(collatInfo, amountOut, ts.normalizer);
@@ -178,7 +178,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   /// @inheritdoc ISwapper
   function quoteOut(uint256 amountOut, address tokenIn, address tokenOut) external view returns (uint256 amountIn) {
     ParallelizerStorage storage ts = s.transmuterStorage();
-    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, 0);
+    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, block.timestamp);
     if (mint) {
       _checkHardCaps(collatInfo, amountOut, ts.normalizer);
       return _quoteMintExactOutput(collatInfo, amountOut);
@@ -511,7 +511,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     view
     returns (bool mint, Collateral storage collatInfo)
   {
-    if (deadline != 0 && block.timestamp > deadline) revert TooLate();
+    if (block.timestamp > deadline) revert TooLate();
     ParallelizerStorage storage ts = s.transmuterStorage();
     address _tokenP = address(ts.tokenP);
     if (tokenIn == _tokenP) {
@@ -536,7 +536,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     view
     returns (address tokenOut, Collateral storage collatInfo)
   {
-    if (deadline != 0 && block.timestamp > deadline) revert TooLate();
+    if (block.timestamp > deadline) revert TooLate();
     ParallelizerStorage storage ts = s.transmuterStorage();
     collatInfo = ts.collaterals[tokenIn];
     if (collatInfo.isMintLive == 0) revert Paused();
