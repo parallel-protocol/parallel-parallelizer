@@ -4,7 +4,7 @@ Thanks for your interest in contributing to the Transmuter system! Transmuter is
 is welcome to improve it.
 
 If you need to get in contact with the repository maintainers, please reach out in the
-[#developers channel](https://discord.gg/HcRB8QMeKU) of Angle Discord Server.
+[#community-dev channel](https://discord.gg/DgFR5T4DbM) of Parallel Discord Server.
 
 ## Types of Contributing
 
@@ -21,7 +21,7 @@ There are many ways to contribute, but here are a few if you want a place to sta
 
 ## Opening an Issue
 
-When opening an [issue](https://github.com/AngleProtocol/angle-transmuter/issues/new/choose), please title it with a
+When opening an [issue](https://github.com/parallel-protocol/parallel-parallelizer/issues), please title it with a
 concise problem statement and check that a similar request is not already open or in progress. Not all issues may be
 deemed worth resolving, so please follow through with responding to any questions or comments that others may have
 regarding the issue.
@@ -40,7 +40,7 @@ maintainers to align on the change before spending time on the development.**
 
 Finally, before opening a pull request please do the following:
 
-- Run the Foundry tests with `yarn test`
+- Run the Foundry tests with `bun run test`
 - Document any new functions, structs, or interfaces following the natspec standard.
 - Add tests! For smaller contributions, they should be tested with unit tests, and fuzz tests where possible. For bigger
   contributions, they should be tested with invariant tests where possible.
