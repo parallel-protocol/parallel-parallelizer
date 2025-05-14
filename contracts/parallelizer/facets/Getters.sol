@@ -203,7 +203,7 @@ contract Getters is IGetters {
   }
 
   /// @inheritdoc IGetters
-  function getConsumingSchedule() external view returns (bool) {
-    return s.transmuterStorage().consumingSchedule;
+  function isConsumingScheduledOp() external view returns (bytes4) {
+    return s.transmuterStorage().consumingSchedule ? this.isConsumingScheduledOp.selector : bytes4(0);
   }
 }
