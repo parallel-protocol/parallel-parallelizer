@@ -121,6 +121,7 @@ contract MultiBlockHarvester is BaseHarvester {
     } else {
       uint256 amountOut =
         parallelizer.swapExactInput(amount, 0, address(tokenP), yieldBearingAsset, address(this), block.timestamp);
+      if (yieldBearingAsset == USDM) amountOut = IERC20(yieldBearingAsset).balanceOf(address(this));
       _checkSlippage(amount, amountOut, yieldBearingAsset, depositAddress, false, yieldBearingInfo.maxSlippage);
       if (yieldBearingAsset == XEVT) {
         IPool(depositAddress).requestRedeem(amountOut);
