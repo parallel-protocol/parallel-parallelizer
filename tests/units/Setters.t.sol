@@ -1271,9 +1271,9 @@ contract Test_Setters_RevokeCollateral is Fixture {
   function test_RevertWhen_StillBacked() public {
     _mintExactOutput(alice, address(eurA), 1 ether, 1 ether);
 
-    vm.expectRevert(Errors.NotCollateral.selector);
+    vm.expectRevert(Errors.CollateralBacked.selector);
     hoax(governor);
-    parallelizer.adjustStablecoins(address(this), 1 ether, true);
+    parallelizer.revokeCollateral(address(eurA), true);
   }
 
   function test_RevertWhen_ManagerHasAssets() public {

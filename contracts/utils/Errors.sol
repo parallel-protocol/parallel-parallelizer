@@ -12,6 +12,7 @@ error CannotReplaceFunctionThatDoesNotExists(bytes4 _selector);
 error CannotReplaceFunctionWithTheSameFunctionFromTheSameFacet(bytes4 _selector);
 error CannotReplaceImmutableFunction(bytes4 _selector);
 error ContractHasNoCode();
+error CollateralBacked();
 error FunctionNotFound(bytes4 _functionSelector);
 error IncorrectFacetCutAction(uint8 _action);
 error InitializationFunctionReverted(address _initializationContractAddress, bytes _calldata);
