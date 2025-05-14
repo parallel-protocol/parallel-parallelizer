@@ -117,12 +117,12 @@ library LibSetters {
   }
 
   /// @notice Internal version of `revokeCollateral`
-  function revokeCollateral(address collateral) internal {
+  function revokeCollateral(address collateral, bool checkExternalManagerBalance) internal {
     ParallelizerStorage storage ts = s.transmuterStorage();
     Collateral storage collatInfo = ts.collaterals[collateral];
     if (collatInfo.decimals == 0 || collatInfo.normalizedStables > 0) revert NotCollateral();
     uint8 isManaged = collatInfo.isManaged;
-    if (isManaged > 0) {
+    if (isManaged > 0 && checkExternalManagerBalance) {
       (, uint256 totalValue) = LibManager.totalAssets(collatInfo.managerData.config);
       if (totalValue > 0) revert ManagerHasAssets();
     }

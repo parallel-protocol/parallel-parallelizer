@@ -45,7 +45,9 @@ interface ISettersGovernor {
   function adjustStablecoins(address collateral, uint128 amount, bool increase) external;
 
   /// @notice Revokes `collateral` from the system
-  function revokeCollateral(address collateral) external;
+  /// @dev If `checkExternalManagerBalance` is true, the function will check that the current manager no longer has
+  /// assets before revoking the collateral
+  function revokeCollateral(address collateral, bool checkExternalManagerBalance) external;
 
   /// @notice Sets the `oracleConfig` used to read the value of `collateral` for the mint, burn and redemption
   /// operations
