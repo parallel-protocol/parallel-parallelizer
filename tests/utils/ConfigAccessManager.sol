@@ -72,7 +72,7 @@ abstract contract ConfigAccessManager is Helper {
     return selectors;
   }
 
-  function getGuardianGenericHarvesterSelectorAccess() internal pure returns (bytes4[] memory) {
+  function getGovernorGenericHarvesterSelectorAccess() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](2);
     selectors[0] = GenericHarvester.setTokenTransferAddress.selector;
     selectors[1] = GenericHarvester.setSwapRouter.selector;
