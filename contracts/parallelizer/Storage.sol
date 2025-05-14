@@ -46,7 +46,6 @@ enum OracleReadType {
   CBETH,
   RETH,
   SFRXETH,
-  PYTH,
   MAX,
   MORPHO_ORACLE
 }
