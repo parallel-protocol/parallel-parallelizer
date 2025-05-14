@@ -712,13 +712,13 @@ contract Test_Setters_SetWhitelistStatus is Fixture {
 
     bytes memory whitelistData2 = abi.encode(WhitelistType.BACKED, emptyData);
     vm.expectEmit(address(parallelizer));
-    emit LibSetters.CollateralWhitelistStatusUpdated(address(eurA), whitelistData2, 0);
+    emit LibSetters.CollateralWhitelistStatusUpdated(address(eurA), "", 0);
 
     hoax(governor);
     parallelizer.setWhitelistStatus(address(eurA), 0, whitelistData2);
 
     assert(!parallelizer.isWhitelistedCollateral(address(eurA)));
-    assertEq(parallelizer.getCollateralWhitelistData(address(eurA)), whitelistData);
+    assertEq(parallelizer.getCollateralWhitelistData(address(eurA)), "");
   }
 }
 

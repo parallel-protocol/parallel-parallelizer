@@ -157,9 +157,12 @@ library LibSetters {
       // Sanity check
       LibWhitelist.checkWhitelist(whitelistData, address(this));
       collatInfo.whitelistData = whitelistData;
+    } else {
+      // If whitelist is revoked, clear the whitelist data
+      collatInfo.whitelistData = "";
     }
     collatInfo.onlyWhitelisted = whitelistStatus;
-    emit CollateralWhitelistStatusUpdated(collateral, whitelistData, whitelistStatus);
+    emit CollateralWhitelistStatusUpdated(collateral, collatInfo.whitelistData, whitelistStatus);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
