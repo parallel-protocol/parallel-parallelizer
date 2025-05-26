@@ -1,6 +1,6 @@
 import "dotenv/config";
-
 import "hardhat-deploy";
+import "@nomicfoundation/hardhat-foundry";
 
 import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from "hardhat/types";
 
@@ -23,10 +23,12 @@ const config: HardhatUserConfig = {
       {
         version: "0.8.28",
         settings: {
+          evmVersion: "cancun",
           optimizer: {
             enabled: true,
-            runs: 10_000,
+            runs: 1_000,
           },
+          viaIR: true,
         },
       },
     ],
