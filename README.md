@@ -93,8 +93,15 @@ The Angle's Transmuter and savings smart contracts have been audited by Code4ren
 
 The Parallelizer and savings contracts have been audited by:
 
-- Bailsec in April/March 2025, find the final audit report
-  [here](./docs/audits/Bailsec%20-%20Parallel%20Protocol%20-%20V3%20Core%20-%20Final%20Report.pdf)
+#### Bailsec
+
+Bailsec in April/March 2025, find the final audit report
+[here](./docs/audits/Bailsec%20-%20Parallel%20Protocol%20-%20V3%20Core%20-%20Final%20Report.pdf)
+
+#### Certora
+
+Certora by formal verification in April/March 2025, find the final audit report
+[here](./docs/audits/Certora_Report_Parallel_Parallelizer_BridgeToken_final.pdf)
 
 ## Development
 
