@@ -26,6 +26,6 @@ const deploy: DeployFunction = async (hre) => {
   console.log(`Deployed facet: ${contractName}, network: ${hre.network.name}, address: ${diamondEtherscan.address}`);
 };
 
-deploy.tags = ["Facets", contractName];
+deploy.tags = [contractName];
 
 export default deploy;
