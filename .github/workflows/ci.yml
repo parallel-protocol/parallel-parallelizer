@@ -41,7 +41,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
 
       - name: Compile foundry
-        run: bun run compile --sizes
+        run: forge build --sizes
 
       - name: "Cache the build so that it can be re-used by the other jobs"
         uses: "actions/cache/save@v4"
@@ -106,5 +106,5 @@ jobs:
             node_modules
           key: "build-${{ github.sha }}"
 
-      - name: Run Foundry tests
+      - name: Run Foundry invariant tests
         run: bun run test:invariant
