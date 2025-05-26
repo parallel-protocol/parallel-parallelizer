@@ -209,11 +209,11 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     if (amountIn > 0 && amountOut > 0) {
       ParallelizerStorage storage ts = s.transmuterStorage();
       if (mint) {
-        _checkHardCaps(collatInfo, amountOut, ts.normalizer);
         uint128 changeAmount = (amountOut.mulDiv(BASE_27, ts.normalizer, Math.Rounding.Ceil)).toUint128();
         // The amount of stablecoins issued from a collateral are not stored as absolute variables, but
         // as variables normalized by a `normalizer`
         collatInfo.normalizedStables = collatInfo.normalizedStables + uint216(changeAmount);
+        _checkHardCaps(collatInfo, 0, ts.normalizer);
         ts.normalizedStables = ts.normalizedStables + changeAmount;
         if (permitData.length > 0) {
           PERMIT_2.functionCall(permitData);
