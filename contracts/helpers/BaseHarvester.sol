@@ -22,6 +22,8 @@ struct YieldBearingParams {
   // Whether limit exposures should be overriden or read onchain through the Parallelizer
   // This value should be 1 to override exposures or 2 if these shouldn't be overriden
   uint64 overrideExposures;
+  // Maximum slippage when dealing with the Parallelizer
+  uint96 maxSlippage;
 }
 
 /// @title BaseHarvester
@@ -66,7 +68,7 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   /// @notice TokenP handled by the `parallelizer` of interest
   ITokenP public immutable tokenP;
   /// @notice Max slippage when dealing with the Parallelizer
-  uint96 public maxSlippage;
+  mapping(address => uint96) public maxTokenSlippage;
   /// @notice Data associated to a yield bearing asset
   mapping(address => YieldBearingParams) public yieldBearingData;
   /// @notice trusted addresses that can update target exposure and do others non critical operations
@@ -84,14 +86,12 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   constructor(
-    uint96 initialMaxSlippage,
     address initialAuthority,
     ITokenP definitiveTokenP,
     IParallelizer definitiveParallelizer
   )
     AccessManaged(initialAuthority)
   {
-    _setMaxSlippage(initialMaxSlippage);
     tokenP = definitiveTokenP;
     parallelizer = definitiveParallelizer;
   }
@@ -115,12 +115,15 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     uint64 targetExposure,
     uint64 minExposure,
     uint64 maxExposure,
-    uint64 overrideExposures
+    uint64 overrideExposures,
+    uint96 maxSlippage
   )
     external
     restricted
   {
-    _setYieldBearingAssetData(yieldBearingAsset, asset, targetExposure, minExposure, maxExposure, overrideExposures);
+    _setYieldBearingAssetData(
+      yieldBearingAsset, asset, targetExposure, minExposure, maxExposure, overrideExposures, maxSlippage
+    );
   }
 
   /**
@@ -138,8 +141,8 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
    * @notice Set the max allowed slippage
    * @param newMaxSlippage new max allowed slippage
    */
-  function setMaxSlippage(uint96 newMaxSlippage) external restricted {
-    _setMaxSlippage(newMaxSlippage);
+  function setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) external restricted {
+    _setMaxSlippage(yieldBearingAsset, newMaxSlippage);
   }
 
   /**
@@ -236,7 +239,8 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     uint64 targetExposure,
     uint64 minExposure,
     uint64 maxExposure,
-    uint64 overrideExposures
+    uint64 overrideExposures,
+    uint96 maxSlippage
   )
     internal
     virtual
@@ -244,8 +248,10 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     YieldBearingParams storage yieldBearingInfo = yieldBearingData[yieldBearingAsset];
     yieldBearingInfo.asset = asset;
     if (targetExposure >= 1e9) revert InvalidParam();
+    if (maxSlippage >= 1e9) revert InvalidParam();
     yieldBearingInfo.targetExposure = targetExposure;
     yieldBearingInfo.overrideExposures = overrideExposures;
+    yieldBearingInfo.maxSlippage = maxSlippage;
     if (overrideExposures == 1) {
       if (maxExposure >= 1e9 || minExposure >= maxExposure) revert InvalidParam();
       yieldBearingInfo.maxExposure = maxExposure;
@@ -276,9 +282,9 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     else yieldBearingInfo.minExposure = xFeeBurn[length - 2];
   }
 
-  function _setMaxSlippage(uint96 newMaxSlippage) internal virtual {
+  function _setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) internal virtual {
     if (newMaxSlippage > 1e9) revert InvalidParam();
-    maxSlippage = newMaxSlippage;
+    maxTokenSlippage[yieldBearingAsset] = newMaxSlippage;
   }
 
   function _scaleAmountBasedOnDecimals(

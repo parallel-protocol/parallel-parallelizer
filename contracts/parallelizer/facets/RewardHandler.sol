@@ -6,8 +6,11 @@ import { IRewardHandler } from "interfaces/IRewardHandler.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
+
 import { LibDiamond } from "../libraries/LibDiamond.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
+import { LibManager } from "../libraries/LibManager.sol";
 
 import "../../utils/Constants.sol";
 import "../../utils/Errors.sol";
@@ -18,7 +21,7 @@ import "../Storage.sol";
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is an authorized fork of Angle's `RewardHandler` contract
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/RewardHandler.sol
-contract RewardHandler is IRewardHandler {
+contract RewardHandler is IRewardHandler, AccessManagedModifiers {
   using SafeERC20 for IERC20;
 
   event RewardsSoldFor(address indexed tokenObtained, uint256 balanceUpdate);
@@ -27,8 +30,8 @@ contract RewardHandler is IRewardHandler {
   /// @dev It is impossible to sell a token that is a collateral through this function
   /// @dev Trusted sellers and governance only may call this function
   /// @dev Only governance can set which tokens can be swapped through this function by passing a prior approval
-  /// transaction to 1inch router for the token to be swapped
-  function sellRewards(uint256 minAmountOut, bytes memory payload) external returns (uint256 amountOut) {
+  /// transaction to Odos router for the token to be swapped
+  function sellRewards(uint256 minAmountOut, bytes memory payload) external nonReentrant returns (uint256 amountOut) {
     ParallelizerStorage storage ts = s.transmuterStorage();
     if (!LibDiamond.checkCanCall(msg.sender, msg.data) && ts.isSellerTrusted[msg.sender] == 0) revert NotTrusted();
     address[] memory list = ts.collateralList;
@@ -41,24 +44,31 @@ contract RewardHandler is IRewardHandler {
       balances[i] = IERC20(list[i]).balanceOf(address(this));
     }
     //solhint-disable-next-line
-    (bool success, bytes memory result) = ONE_INCH_ROUTER.call(payload);
+    (bool success, bytes memory result) = ODOS_ROUTER.call(payload);
     if (!success) _revertBytes(result);
     amountOut = abi.decode(result, (uint256));
     if (amountOut < minAmountOut) revert TooSmallAmountOut();
     bool hasIncreased;
+    address collateral;
     for (uint256 i; i < listLength; ++i) {
       uint256 newBalance = IERC20(list[i]).balanceOf(address(this));
       if (newBalance < balances[i]) {
         revert InvalidSwap();
       } else if (newBalance > balances[i]) {
         hasIncreased = true;
+        collateral = list[i];
         emit RewardsSoldFor(list[i], newBalance - balances[i]);
       }
     }
     if (!hasIncreased) revert InvalidSwap();
+    Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
+    if (collatInfo.isManaged > 0) {
+      IERC20(collateral).safeTransfer(LibManager.transferRecipient(collatInfo.managerData.config), amountOut);
+      LibManager.invest(amountOut, collatInfo.managerData.config);
+    }
   }
 
-  /// @notice Processes 1Inch revert messages
+  /// @notice Processes odos revert messages
   function _revertBytes(bytes memory errMsg) private pure {
     if (errMsg.length > 0) {
       //solhint-disable-next-line
@@ -66,6 +76,6 @@ contract RewardHandler is IRewardHandler {
         revert(add(32, errMsg), mload(errMsg))
       }
     }
-    revert OneInchSwapFailed();
+    revert OdosSwapFailed();
   }
 }

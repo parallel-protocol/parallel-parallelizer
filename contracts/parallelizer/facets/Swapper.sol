@@ -51,7 +51,7 @@ struct LocalVariables {
 /// whitelist but the `to` address does not have it. The quote functions will not revert in this case.
 /// @dev Calling one of the swap functions in a burn case does not require any prior token approval
 /// @dev This contract is an authorized fork of Angle's `Swapper` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Swapper.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Swapper.sol
 contract Swapper is ISwapper, AccessManagedModifiers {
   using SafeERC20 for IERC20;
   using SafeCast for uint256;
@@ -165,7 +165,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   /// @inheritdoc ISwapper
   function quoteIn(uint256 amountIn, address tokenIn, address tokenOut) external view returns (uint256 amountOut) {
     ParallelizerStorage storage ts = s.transmuterStorage();
-    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, 0);
+    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, block.timestamp);
     if (mint) {
       amountOut = _quoteMintExactInput(collatInfo, amountIn);
       _checkHardCaps(collatInfo, amountOut, ts.normalizer);
@@ -178,7 +178,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   /// @inheritdoc ISwapper
   function quoteOut(uint256 amountOut, address tokenIn, address tokenOut) external view returns (uint256 amountIn) {
     ParallelizerStorage storage ts = s.transmuterStorage();
-    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, 0);
+    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, block.timestamp);
     if (mint) {
       _checkHardCaps(collatInfo, amountOut, ts.normalizer);
       return _quoteMintExactOutput(collatInfo, amountOut);
@@ -425,9 +425,9 @@ contract Swapper is ISwapper, AccessManagedModifiers {
 
             if (v.isMint) {
               // In the mint case:
-              // `m_t = (-1-g(0)+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1})]/((f_{i+1}-g(0))/b_{i+1})`
+              // `m_t = (-1-g(0)+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1}])/((f_{i+1}-g(0))/b_{i+1})`
               // And so: g(0)+(f_{i+1}-f_i)/(b_{i+1}-b_i)m_t/2
-              //                      = (g(0)-1+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1})]) / 2
+              //                      = (g(0)-1+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1}]) / 2
               midFee = int64(
                 (
                   int256(Math.sqrt((uint256(int256(BASE_9) + currentFees)) ** 2 + ac4, Math.Rounding.Ceil))
@@ -436,9 +436,9 @@ contract Swapper is ISwapper, AccessManagedModifiers {
               );
             } else {
               // In the burn case:
-              // `m_t = (1-g(0)+sqrt[(1-g(0))**2-2M(f_{i+1}-g(0))/b_{i+1})]/((f_{i+1}-g(0))/b_{i+1})`
+              // `m_t = (1-g(0)+sqrt[(1-g(0))**2-2M(f_{i+1}-g(0))/b_{i+1}])/((f_{i+1}-g(0))/b_{i+1})`
               // And so: g(0)+(f_{i+1}-f_i)/(b_{i+1}-b_i)m_t/2
-              //                      = (g(0)+1-sqrt[(1-g(0))**2-2M(f_{i+1}-g(0))/b_{i+1})]) / 2
+              //                      = (g(0)+1-sqrt[(1-g(0))**2-2M(f_{i+1}-g(0))/b_{i+1}]) / 2
 
               uint256 baseMinusCurrentSquared = (uint256(int256(BASE_9) - currentFees)) ** 2;
               // Mathematically, this condition is always verified, but rounding errors may make this
@@ -511,7 +511,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     view
     returns (bool mint, Collateral storage collatInfo)
   {
-    if (deadline != 0 && block.timestamp > deadline) revert TooLate();
+    if (block.timestamp > deadline) revert TooLate();
     ParallelizerStorage storage ts = s.transmuterStorage();
     address _tokenP = address(ts.tokenP);
     if (tokenIn == _tokenP) {
@@ -536,7 +536,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     view
     returns (address tokenOut, Collateral storage collatInfo)
   {
-    if (deadline != 0 && block.timestamp > deadline) revert TooLate();
+    if (block.timestamp > deadline) revert TooLate();
     ParallelizerStorage storage ts = s.transmuterStorage();
     collatInfo = ts.collaterals[tokenIn];
     if (collatInfo.isMintLive == 0) revert Paused();

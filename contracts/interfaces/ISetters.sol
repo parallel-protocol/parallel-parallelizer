@@ -18,7 +18,14 @@ interface ISettersGovernor {
   function setAccessManager(address _newAccessManager) external;
 
   /// @notice Sets (or unsets) a collateral manager  `collateral`
-  function setCollateralManager(address collateral, ManagerStorage memory managerData) external;
+  /// @dev If `checkExternalManagerBalance` is true, the function will check that the current manager no longer has
+  /// assets before setting the new manager
+  function setCollateralManager(
+    address collateral,
+    bool checkExternalManagerBalance,
+    ManagerStorage memory managerData
+  )
+    external;
 
   /// @notice Sets the allowance of the contract on `token` for `spender` to `amount`
   function changeAllowance(IERC20 token, address spender, uint256 amount) external;
@@ -38,7 +45,9 @@ interface ISettersGovernor {
   function adjustStablecoins(address collateral, uint128 amount, bool increase) external;
 
   /// @notice Revokes `collateral` from the system
-  function revokeCollateral(address collateral) external;
+  /// @dev If `checkExternalManagerBalance` is true, the function will check that the current manager no longer has
+  /// assets before revoking the collateral
+  function revokeCollateral(address collateral, bool checkExternalManagerBalance) external;
 
   /// @notice Sets the `oracleConfig` used to read the value of `collateral` for the mint, burn and redemption
   /// operations

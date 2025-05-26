@@ -42,18 +42,25 @@ library LibSetters {
 
   /// @notice Internal version of `setAccessManager`
   function setAccessManager(IAccessManager _newAccessManager) internal {
+    if (address(_newAccessManager).code.length == 0) revert InvalidAccessManager();
     DiamondStorage storage ds = s.diamondStorage();
-    IAccessManager previousAccessManager = ds.accessManager;
+    address previousAccessManager = address(ds.accessManager);
     ds.accessManager = _newAccessManager;
-    emit OwnershipTransferred(address(previousAccessManager), address(_newAccessManager));
+    emit OwnershipTransferred(previousAccessManager, address(_newAccessManager));
   }
 
   /// @notice Internal version of `setCollateralManager`
-  function setCollateralManager(address collateral, ManagerStorage memory managerData) internal {
+  function setCollateralManager(
+    address collateral,
+    bool checkExternalManagerBalance,
+    ManagerStorage memory managerData
+  )
+    internal
+  {
     Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
     if (collatInfo.decimals == 0) revert NotCollateral();
     uint8 isManaged = collatInfo.isManaged;
-    if (isManaged > 0) {
+    if (isManaged > 0 && checkExternalManagerBalance) {
       (, uint256 totalValue) = LibManager.totalAssets(collatInfo.managerData.config);
       if (totalValue > 0) revert ManagerHasAssets();
     }
@@ -111,12 +118,13 @@ library LibSetters {
   }
 
   /// @notice Internal version of `revokeCollateral`
-  function revokeCollateral(address collateral) internal {
+  function revokeCollateral(address collateral, bool checkExternalManagerBalance) internal {
     ParallelizerStorage storage ts = s.transmuterStorage();
     Collateral storage collatInfo = ts.collaterals[collateral];
-    if (collatInfo.decimals == 0 || collatInfo.normalizedStables > 0) revert NotCollateral();
+    if (collatInfo.decimals == 0) revert NotCollateral();
+    if (collatInfo.normalizedStables > 0) revert CollateralBacked();
     uint8 isManaged = collatInfo.isManaged;
-    if (isManaged > 0) {
+    if (isManaged > 0 && checkExternalManagerBalance) {
       (, uint256 totalValue) = LibManager.totalAssets(collatInfo.managerData.config);
       if (totalValue > 0) revert ManagerHasAssets();
     }
@@ -151,9 +159,12 @@ library LibSetters {
       // Sanity check
       LibWhitelist.checkWhitelist(whitelistData, address(this));
       collatInfo.whitelistData = whitelistData;
+    } else {
+      // If whitelist is revoked, clear the whitelist data
+      collatInfo.whitelistData = "";
     }
     collatInfo.onlyWhitelisted = whitelistStatus;
-    emit CollateralWhitelistStatusUpdated(collateral, whitelistData, whitelistStatus);
+    emit CollateralWhitelistStatusUpdated(collateral, collatInfo.whitelistData, whitelistStatus);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

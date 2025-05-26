@@ -13,13 +13,14 @@ interface IHarvester {
     uint64 targetExposure,
     uint64 minExposureYieldAsset,
     uint64 maxExposureYieldAsset,
-    uint64 overrideExposures
+    uint64 overrideExposures,
+    uint96 maxSlippage
   )
     external;
 
   function updateLimitExposuresYieldAsset(address yieldBearingAsset) external;
 
-  function setMaxSlippage(uint96 newMaxSlippage) external;
+  function setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) external;
 
   function harvest(address yieldBearingAsset, uint256 scale, bytes calldata extraData) external;
 }

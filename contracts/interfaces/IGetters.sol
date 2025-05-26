@@ -121,7 +121,8 @@ interface IGetters {
   /// @notice Returns the address of the `accessManager` contract
   function accessManager() external view returns (address);
 
-  /// @notice Returns if the contract is consuming a scheduled operation
-  /// @dev This is used by the AccessManager to consume scheduled operations
-  function getConsumingSchedule() external view returns (bool);
+  /// @dev Returns true only in the context of a delayed restricted call, at the moment that the scheduled operation is
+  /// being consumed. Prevents denial of service for delayed restricted calls in the case that the contract performs
+  /// attacker controlled calls.
+  function isConsumingScheduledOp() external view returns (bytes4);
 }

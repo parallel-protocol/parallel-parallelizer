@@ -210,7 +210,7 @@ contract Permit2Test is Fixture, FunctionUtils {
     manager.setSubCollaterals(data.subCollaterals, data.config);
 
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     // Test
     deal(address(eurA), alice, BASE_6);
@@ -244,7 +244,7 @@ contract Permit2Test is Fixture, FunctionUtils {
     manager.setSubCollaterals(data.subCollaterals, data.config);
 
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     // Test
     uint256 amountOut = BASE_18;

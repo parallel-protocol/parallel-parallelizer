@@ -44,8 +44,15 @@ contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
 
   /// @inheritdoc ISettersGovernor
   /// @dev Funds need to have been withdrawn from the eventual previous manager prior to this call
-  function setCollateralManager(address collateral, ManagerStorage memory managerData) external restricted {
-    LibSetters.setCollateralManager(collateral, managerData);
+  function setCollateralManager(
+    address collateral,
+    bool checkExternalManagerBalance,
+    ManagerStorage memory managerData
+  )
+    external
+    restricted
+  {
+    LibSetters.setCollateralManager(collateral, checkExternalManagerBalance, managerData);
   }
 
   /// @inheritdoc ISettersGovernor
@@ -82,9 +89,10 @@ contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
   /// is not used to back stables
   /// @dev The system may still have a non null balance of the collateral that is revoked: this should later
   /// be handled through a recoverERC20 call
-  /// @dev Funds needs to have been withdrew from the manager prior to this call
-  function revokeCollateral(address collateral) external restricted {
-    LibSetters.revokeCollateral(collateral);
+  /// @dev Funds needs to have been withdrew from the manager prior to this call if `checkExternalManagerBalance` is
+  /// true
+  function revokeCollateral(address collateral, bool checkExternalManagerBalance) external restricted {
+    LibSetters.revokeCollateral(collateral, checkExternalManagerBalance);
   }
 
   /// @inheritdoc ISettersGovernor

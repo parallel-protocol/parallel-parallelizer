@@ -3,6 +3,7 @@
 pragma solidity 0.8.28;
 
 import { stdError } from "@forge-std/Test.sol";
+import { AccessManager } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 
 import "tests/mock/MockManager.sol";
 import { MockKeyringGuard } from "tests/mock/MockKeyringGuard.sol";
@@ -530,7 +531,7 @@ contract Test_Setters_RecoverERC20 is Fixture {
     manager.setSubCollaterals(data.subCollaterals, data.config);
 
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     deal(address(eurA), address(manager), 1 ether);
 
@@ -559,16 +560,22 @@ contract Test_Setters_SetAccessManager is Fixture {
     parallelizer.setAccessManager(alice);
   }
 
+  function test_RevertWhen_InvalidAccessManager() public {
+    vm.expectRevert(Errors.InvalidAccessManager.selector);
+    hoax(governor);
+    parallelizer.setAccessManager(address(governor));
+  }
+
   function test_Success() public {
     address oldAccessManager = address(parallelizer.accessManager());
-
+    address newAccessManager = address(new AccessManager(governor));
     vm.expectEmit(address(parallelizer));
-    emit LibSetters.OwnershipTransferred(oldAccessManager, alice);
+    emit LibSetters.OwnershipTransferred(oldAccessManager, newAccessManager);
 
     hoax(governor);
-    parallelizer.setAccessManager(alice);
+    parallelizer.setAccessManager(newAccessManager);
 
-    assertEq(parallelizer.accessManager(), alice);
+    assertEq(parallelizer.accessManager(), newAccessManager);
   }
 }
 
@@ -712,13 +719,13 @@ contract Test_Setters_SetWhitelistStatus is Fixture {
 
     bytes memory whitelistData2 = abi.encode(WhitelistType.BACKED, emptyData);
     vm.expectEmit(address(parallelizer));
-    emit LibSetters.CollateralWhitelistStatusUpdated(address(eurA), whitelistData2, 0);
+    emit LibSetters.CollateralWhitelistStatusUpdated(address(eurA), "", 0);
 
     hoax(governor);
     parallelizer.setWhitelistStatus(address(eurA), 0, whitelistData2);
 
     assert(!parallelizer.isWhitelistedCollateral(address(eurA)));
-    assertEq(parallelizer.getCollateralWhitelistData(address(eurA)), whitelistData);
+    assertEq(parallelizer.getCollateralWhitelistData(address(eurA)), "");
   }
 }
 
@@ -919,11 +926,11 @@ contract Test_Setters_SetCollateralManager is Fixture {
 
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, guardian));
     hoax(guardian);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, alice));
     hoax(alice);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
   }
 
   function test_RevertWhen_NotCollateral() public {
@@ -931,7 +938,7 @@ contract Test_Setters_SetCollateralManager is Fixture {
 
     vm.expectRevert(Errors.NotCollateral.selector);
     hoax(governor);
-    parallelizer.setCollateralManager(address(this), data);
+    parallelizer.setCollateralManager(address(this), true, data);
   }
 
   function test_RevertWhen_InvalidParams() public {
@@ -943,7 +950,31 @@ contract Test_Setters_SetCollateralManager is Fixture {
 
     vm.expectRevert(Errors.InvalidParams.selector);
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
+  }
+
+  function test_RevertWhen_UpdateManagerHasAssets() public {
+    MockManager manager = new MockManager(address(eurA)); // Deploy a mock manager for eurA
+    IERC20[] memory subCollaterals = new IERC20[](1);
+    subCollaterals[0] = eurA;
+    manager.setSubCollaterals(subCollaterals, "");
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals,
+      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+    });
+    hoax(governor);
+    parallelizer.setCollateralManager(address(eurA), true, data);
+
+    MockManager newManager = new MockManager(address(eurA)); // Deploy a mock manager for eurA
+    data = ManagerStorage({
+      subCollaterals: subCollaterals,
+      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
+    });
+
+    deal(address(eurA), address(manager), 1);
+    vm.expectRevert(Errors.ManagerHasAssets.selector);
+    hoax(governor);
+    parallelizer.setCollateralManager(address(eurA), true, data);
   }
 
   function test_AddManager() public {
@@ -965,7 +996,7 @@ contract Test_Setters_SetCollateralManager is Fixture {
     emit CollateralManagerSet(address(eurA), data);
 
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     // Refetch storage to check the update
     (isManaged, fetchedSubCollaterals, config) = parallelizer.getManagerData(address(eurA));
@@ -978,6 +1009,73 @@ contract Test_Setters_SetCollateralManager is Fixture {
     assertEq(fetched, address(manager));
   }
 
+  function test_UpdateManager_CheckNoAssets() public {
+    MockManager manager = new MockManager(address(eurA)); // Deploy a mock manager for eurA
+    IERC20[] memory subCollaterals = new IERC20[](1);
+    subCollaterals[0] = eurA;
+    manager.setSubCollaterals(subCollaterals, "");
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals,
+      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+    });
+    hoax(governor);
+    parallelizer.setCollateralManager(address(eurA), true, data);
+
+    MockManager newManager = new MockManager(address(eurB)); // Deploy a mock manager for eurA
+    data = ManagerStorage({
+      subCollaterals: subCollaterals,
+      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
+    });
+    hoax(governor);
+    parallelizer.setCollateralManager(address(eurA), true, data);
+
+    // Refetch storage to check the update
+    (bool isManaged, IERC20[] memory fetchedSubCollaterals, bytes memory config) =
+      parallelizer.getManagerData(address(eurA));
+    (, bytes memory aux) = abi.decode(config, (ManagerType, bytes));
+    address fetched = abi.decode(aux, (address));
+
+    assertEq(isManaged, true);
+    assertEq(fetchedSubCollaterals.length, 1);
+    assertEq(address(fetchedSubCollaterals[0]), address(eurA));
+    assertEq(fetched, address(newManager));
+  }
+
+  function test_UpdateManager_NoCheckAssets() public {
+    MockManager manager = new MockManager(address(eurA)); // Deploy a mock manager for eurA
+    IERC20[] memory subCollaterals = new IERC20[](1);
+    subCollaterals[0] = eurA;
+    manager.setSubCollaterals(subCollaterals, "");
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals,
+      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+    });
+    hoax(governor);
+    parallelizer.setCollateralManager(address(eurA), true, data);
+
+    MockManager newManager = new MockManager(address(eurB)); // Deploy a mock manager for eurA
+    data = ManagerStorage({
+      subCollaterals: subCollaterals,
+      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
+    });
+
+    // Add 1 wei to the manager to check that the function does not revert
+    deal(address(eurA), address(manager), 1);
+    hoax(governor);
+    parallelizer.setCollateralManager(address(eurA), false, data);
+
+    // Refetch storage to check the update
+    (bool isManaged, IERC20[] memory fetchedSubCollaterals, bytes memory config) =
+      parallelizer.getManagerData(address(eurA));
+    (, bytes memory aux) = abi.decode(config, (ManagerType, bytes));
+    address fetched = abi.decode(aux, (address));
+
+    assertEq(isManaged, true);
+    assertEq(fetchedSubCollaterals.length, 1);
+    assertEq(address(fetchedSubCollaterals[0]), address(eurA));
+    assertEq(fetched, address(newManager));
+  }
+
   function test_RemoveManager() public {
     MockManager manager = new MockManager(address(eurA)); // Deploy a mock manager for eurA
     IERC20[] memory subCollaterals = new IERC20[](1);
@@ -986,11 +1084,11 @@ contract Test_Setters_SetCollateralManager is Fixture {
       ManagerStorage({ subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager)) });
 
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     data = ManagerStorage({ subCollaterals: new IERC20[](0), config: "" });
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     (bool isManaged, IERC20[] memory fetchedSubCollaterals, bytes memory config) =
       parallelizer.getManagerData(address(eurA));
@@ -1180,9 +1278,9 @@ contract Test_Setters_RevokeCollateral is Fixture {
   function test_RevertWhen_StillBacked() public {
     _mintExactOutput(alice, address(eurA), 1 ether, 1 ether);
 
-    vm.expectRevert(Errors.NotCollateral.selector);
+    vm.expectRevert(Errors.CollateralBacked.selector);
     hoax(governor);
-    parallelizer.adjustStablecoins(address(this), 1 ether, true);
+    parallelizer.revokeCollateral(address(eurA), true);
   }
 
   function test_RevertWhen_ManagerHasAssets() public {
@@ -1195,14 +1293,14 @@ contract Test_Setters_RevokeCollateral is Fixture {
     manager.setSubCollaterals(data.subCollaterals, "");
 
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     deal(address(eurA), address(manager), 1 ether);
 
     vm.expectRevert(Errors.ManagerHasAssets.selector);
 
     hoax(governor);
-    parallelizer.revokeCollateral(address(eurA));
+    parallelizer.revokeCollateral(address(eurA), true);
   }
 
   function test_Success() public {
@@ -1212,7 +1310,7 @@ contract Test_Setters_RevokeCollateral is Fixture {
     emit CollateralRevoked(address(eurA));
 
     hoax(governor);
-    parallelizer.revokeCollateral(address(eurA));
+    parallelizer.revokeCollateral(address(eurA), true);
 
     address[] memory list = parallelizer.getCollateralList();
     assertEq(list.length, prevlist.length - 1);
@@ -1256,7 +1354,7 @@ contract Test_Setters_RevokeCollateral is Fixture {
     manager.setSubCollaterals(data.subCollaterals, "");
 
     hoax(governor);
-    parallelizer.setCollateralManager(address(eurA), data);
+    parallelizer.setCollateralManager(address(eurA), true, data);
 
     address[] memory prevlist = parallelizer.getCollateralList();
 
@@ -1264,7 +1362,7 @@ contract Test_Setters_RevokeCollateral is Fixture {
     emit CollateralRevoked(address(eurA));
 
     hoax(governor);
-    parallelizer.revokeCollateral(address(eurA));
+    parallelizer.revokeCollateral(address(eurA), true);
 
     address[] memory list = parallelizer.getCollateralList();
     assertEq(list.length, prevlist.length - 1);
@@ -1275,6 +1373,44 @@ contract Test_Setters_RevokeCollateral is Fixture {
 
     assertEq(0, parallelizer.getCollateralDecimals(address(eurA)));
     assertEq(0, eurA.balanceOf(address(manager)));
+    assertEq(0, eurA.balanceOf(address(parallelizer)));
+
+    (bool managed,,) = parallelizer.getManagerData(address(eurA));
+    assert(!managed);
+  }
+
+  function test_SuccessWithManager_NoCheckBalance() public {
+    MockManager manager = new MockManager(address(eurA));
+    IERC20[] memory subCollaterals = new IERC20[](2);
+    subCollaterals[0] = eurA;
+    subCollaterals[1] = eurB;
+    ManagerStorage memory data =
+      ManagerStorage({ subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager)) });
+    manager.setSubCollaterals(data.subCollaterals, "");
+
+    hoax(governor);
+    parallelizer.setCollateralManager(address(eurA), true, data);
+
+    address[] memory prevlist = parallelizer.getCollateralList();
+
+    // Add 1 eurA to the manager
+    deal(address(eurA), address(manager), 1);
+
+    vm.expectEmit(address(parallelizer));
+    emit CollateralRevoked(address(eurA));
+
+    hoax(governor);
+    parallelizer.revokeCollateral(address(eurA), false);
+
+    address[] memory list = parallelizer.getCollateralList();
+    assertEq(list.length, prevlist.length - 1);
+
+    for (uint256 i = 0; i < list.length; i++) {
+      assertNotEq(address(list[i]), address(eurA));
+    }
+
+    assertEq(0, parallelizer.getCollateralDecimals(address(eurA)));
+    assertEq(1, eurA.balanceOf(address(manager)));
     assertEq(0, eurA.balanceOf(address(parallelizer)));
 
     (bool managed,,) = parallelizer.getManagerData(address(eurA));

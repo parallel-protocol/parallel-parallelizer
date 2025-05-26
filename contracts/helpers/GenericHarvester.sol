@@ -45,7 +45,6 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   constructor(
-    uint96 initialMaxSlippage,
     address initialTokenTransferAddress,
     address initialSwapRouter,
     ITokenP definitivetokenP,
@@ -54,7 +53,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     IERC3156FlashLender definitiveFlashloan
   )
     RouterSwapper(initialSwapRouter, initialTokenTransferAddress)
-    BaseHarvester(initialMaxSlippage, initialAuthority, definitivetokenP, definitiveParallelizer)
+    BaseHarvester(initialAuthority, definitivetokenP, definitiveParallelizer)
   {
     if (address(definitiveFlashloan) == address(0)) revert ZeroAddress();
     flashloan = definitiveFlashloan;
@@ -102,41 +101,21 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
   /// it is used to lower the amount of the asset to harvest for example to have a lower slippage
   function harvest(address yieldBearingAsset, uint256 scale, bytes calldata extraData) public virtual {
     if (scale > 1e9) revert InvalidParam();
+    updateLimitExposuresYieldAsset(yieldBearingAsset);
     YieldBearingParams memory yieldBearingInfo = yieldBearingData[yieldBearingAsset];
     (uint8 increase, uint256 amount) = _computeRebalanceAmount(yieldBearingAsset, yieldBearingInfo);
     amount = (amount * scale) / 1e9;
     if (amount == 0) revert ZeroAmount();
-
     (SwapType swapType, bytes memory data) = abi.decode(extraData, (SwapType, bytes));
     try parallelizer.updateOracle(yieldBearingAsset) { } catch { }
-    adjustYieldExposure(
-      amount, increase, yieldBearingAsset, yieldBearingInfo.asset, (amount * (1e9 - maxSlippage)) / 1e9, swapType, data
-    );
-  }
-
-  /// @notice Burns `amountStablecoins` for one yieldBearing asset, swap for asset then mints deposit tokens
-  /// from the proceeds of the swap.
-  /// @dev If `increase` is 1, then the system tries to increase its exposure to the yield bearing asset which means
-  /// burning tokenP for the deposit asset, swapping for the yield bearing asset, then minting the tokenP
-  /// @dev This function reverts if the second tokenP mint gives less than `minAmountOut` of ag tokens
-  /// @dev This function reverts if the swap slippage is higher than `maxSlippage`
-  function adjustYieldExposure(
-    uint256 amountStablecoins,
-    uint8 increase,
-    address yieldBearingAsset,
-    address asset,
-    uint256 minAmountOut,
-    SwapType swapType,
-    bytes memory extraData
-  )
-    public
-    virtual
-  {
-    flashloan.flashLoan(
-      IERC3156FlashBorrower(address(this)),
-      address(tokenP),
-      amountStablecoins,
-      abi.encode(msg.sender, increase, yieldBearingAsset, asset, minAmountOut, swapType, extraData)
+    _adjustYieldExposure(
+      amount,
+      increase,
+      yieldBearingAsset,
+      yieldBearingInfo.asset,
+      (amount * (1e9 - yieldBearingInfo.maxSlippage)) / 1e9,
+      swapType,
+      data
     );
   }
 
@@ -213,6 +192,31 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     INTERNALS                                                     
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  /// @notice Burns `amountStablecoins` for one yieldBearing asset, swap for asset then mints deposit tokens
+  /// from the proceeds of the swap.
+  /// @dev If `increase` is 1, then the system tries to increase its exposure to the yield bearing asset which means
+  /// burning tokenP for the deposit asset, swapping for the yield bearing asset, then minting the tokenP
+  /// @dev This function reverts if the second tokenP mint gives less than `minAmountOut` of ag tokens
+  /// @dev This function reverts if the swap slippage is higher than `maxSlippage`
+  function _adjustYieldExposure(
+    uint256 amountStablecoins,
+    uint8 increase,
+    address yieldBearingAsset,
+    address asset,
+    uint256 minAmountOut,
+    SwapType swapType,
+    bytes memory extraData
+  )
+    internal
+  {
+    flashloan.flashLoan(
+      IERC3156FlashBorrower(address(this)),
+      address(tokenP),
+      amountStablecoins,
+      abi.encode(msg.sender, increase, yieldBearingAsset, asset, minAmountOut, swapType, extraData)
+    );
+  }
 
   function _swapToTokenOut(
     uint256 typeAction,

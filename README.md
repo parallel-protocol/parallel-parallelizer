@@ -89,6 +89,13 @@ shouldn't be able to extract funds from the system.
 The Angle's Transmuter and savings smart contracts have been audited by Code4rena, find the audit report
 [here](https://code4rena.com/reports/2023-06-angle).
 
+#### Parallel audits
+
+The Parallelizer and savings contracts have been audited by:
+
+- Bailsec in April/March 2025, find the final audit report
+  [here](./docs/audits/Bailsec%20-%20Parallel%20Protocol%20-%20V3%20Core%20-%20Final%20Report.pdf)
+
 ## Development
 
 This repository is built on [Foundry](https://github.com/foundry-rs/foundry).
