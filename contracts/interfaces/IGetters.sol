@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import { ITokenP } from "interfaces/ITokenP.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 
 import "../parallelizer/Storage.sol";
 

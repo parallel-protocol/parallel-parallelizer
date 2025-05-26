@@ -9,12 +9,12 @@ import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC31
 import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
 import { RouterSwapper } from "@helpers/RouterSwapper.sol";
 
-import { IParallelizer } from "interfaces/IParallelizer.sol";
-import { ITokenP } from "interfaces/ITokenP.sol";
-import { IERC4626 } from "interfaces/external/IERC4626.sol";
+import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import { IERC4626 } from "contracts/interfaces/external/IERC4626.sol";
 
-import "utils/Constants.sol";
-import "utils/Errors.sol";
+import "../utils/Constants.sol";
+import "../utils/Errors.sol";
 
 import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
 

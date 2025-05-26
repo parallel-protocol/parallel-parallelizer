@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "interfaces/IManager.sol";
+import "contracts/interfaces/IManager.sol";
 
 import { LibHelpers } from "../../contracts/parallelizer/libraries/LibHelpers.sol";
 import { LibOracle, AggregatorV3Interface } from "../../contracts/parallelizer/libraries/LibOracle.sol";

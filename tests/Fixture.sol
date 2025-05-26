@@ -8,9 +8,9 @@ import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import { Constants, ContractType } from "@helpers/Constants.sol";
 
-import { ITokenP } from "interfaces/ITokenP.sol";
-import { IManager } from "interfaces/IManager.sol";
-import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import { IManager } from "contracts/interfaces/IManager.sol";
+import { AggregatorV3Interface } from "contracts/interfaces/external/chainlink/AggregatorV3Interface.sol";
 
 import { CHAIN_SOURCE } from "scripts/helpers/Constants.s.sol";
 
@@ -21,7 +21,8 @@ import { MockTokenPermit } from "./mock/MockTokenPermit.sol";
 import { CollateralSetup, Test } from "contracts/parallelizer/configs/Test.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol";
-import { IParallelizer, Parallelizer } from "./utils/Parallelizer.sol";
+import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
+import { Parallelizer } from "./utils/Parallelizer.sol";
 import { ConfigAccessManager } from "./utils/ConfigAccessManager.sol";
 
 contract Fixture is Parallelizer, ConfigAccessManager {

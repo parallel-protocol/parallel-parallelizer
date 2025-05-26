@@ -5,9 +5,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 //solhint-disable
 
-import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
-import { ITokenP } from "interfaces/ITokenP.sol";
-import { IParallelizer } from "interfaces/IParallelizer.sol";
+import { AggregatorV3Interface } from "contracts/interfaces/external/chainlink/AggregatorV3Interface.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { Test, stdMath, StdStorage, stdStorage } from "@forge-std/Test.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol";

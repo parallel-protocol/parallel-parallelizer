@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IAccessManager } from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
-import { ITokenP } from "interfaces/ITokenP.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                         ENUMS                                                      

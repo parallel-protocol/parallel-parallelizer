@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import "interfaces/external/chainlink/AggregatorV3Interface.sol";
+import "contracts/interfaces/external/chainlink/AggregatorV3Interface.sol";
 
 import "../libraries/LibOracle.sol";
 import { LibSetters } from "../libraries/LibSetters.sol";

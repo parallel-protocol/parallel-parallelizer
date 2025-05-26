@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import { ISettersGuardian } from "interfaces/ISetters.sol";
+import { ISettersGuardian } from "contracts/interfaces/ISetters.sol";
 
 import { LibSetters } from "../libraries/LibSetters.sol";
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";

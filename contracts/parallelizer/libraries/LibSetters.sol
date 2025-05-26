@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import { LibManager } from "../libraries/LibManager.sol";
+import { LibManager } from "./LibManager.sol";
 import { LibOracle } from "./LibOracle.sol";
 import { LibStorage as s } from "./LibStorage.sol";
 import { LibDiamond } from "./LibDiamond.sol";

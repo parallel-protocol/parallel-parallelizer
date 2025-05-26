@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import { ICbETH } from "../interfaces/external/coinbase/ICbETH.sol";
-import { ISfrxETH } from "../interfaces/external/frax/ISfrxETH.sol";
-import { IStETH } from "../interfaces/external/lido/IStETH.sol";
-import { IRETH } from "../interfaces/external/rocketPool/IRETH.sol";
+import { ICbETH } from "contracts/interfaces/external/coinbase/ICbETH.sol";
+import { ISfrxETH } from "contracts/interfaces/external/frax/ISfrxETH.sol";
+import { IStETH } from "contracts/interfaces/external/lido/IStETH.sol";
+import { IRETH } from "contracts/interfaces/external/rocketPool/IRETH.sol";
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                  STORAGE SLOTS                                                  

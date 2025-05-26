@@ -4,11 +4,11 @@ pragma solidity 0.8.28;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessManaged } from "../utils/AccessManaged.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IParallelizer } from "../interfaces/IParallelizer.sol";
-import { ITokenP } from "../interfaces/ITokenP.sol";
+import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import "contracts/interfaces/IHarvester.sol";
 
 import "../utils/Errors.sol";
-import "../interfaces/IHarvester.sol";
 
 struct YieldBearingParams {
   // Address of the asset used to mint the yield bearing asset
