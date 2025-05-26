@@ -70,6 +70,11 @@ export type ParallelizerConfig = {
   redemptionSetup: RedemptionSetup;
 };
 
+export type SavingsConfig = {
+  name: string;
+  symbol: string;
+};
+
 export type ConfigData = {
   accessManager: Address;
   wallets: {
@@ -80,5 +85,8 @@ export type ConfigData = {
   };
   parallelizer: {
     [tokenP: string]: ParallelizerConfig;
+  };
+  savings: {
+    [tokenP: string]: SavingsConfig;
   };
 };

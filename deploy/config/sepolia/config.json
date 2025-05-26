@@ -36,4 +36,10 @@
       }
     }
   },
+  "savings": {
+    "usdp": {
+      "name": "Staked USDp",
+      "symbol": "sUSDp"
+    }
+  }
 }
