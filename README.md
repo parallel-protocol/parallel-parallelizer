@@ -59,6 +59,21 @@ Some changed has been made to the original Angle's Transmuter:
 
 ## Deployment Addresses
 
+### Testnet
+
+| Contract              | Explore                                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| DiamondCut Facet      | [0x9B3a8f7CEC208e247d97dEE13313690977e24459](https://sepolia.etherscan.io/address/0x9B3a8f7CEC208e247d97dEE13313690977e24459) |
+| DiamondLoupe Facet    | [0xC9B6279baa19dBB8bCc3250c89cAa093AaBA0bfc](https://sepolia.etherscan.io/address/0xC9B6279baa19dBB8bCc3250c89cAa093AaBA0bfc) |
+| Getters Facet         | [0x78BB4882b77D74aD9B04Ab71fE8e61f72595823C](https://sepolia.etherscan.io/address/0x78BB4882b77D74aD9B04Ab71fE8e61f72595823C) |
+| Redeemer Facet        | [0x57770C1721Eb35509f38210A935c8b1911db7E0e](https://sepolia.etherscan.io/address/0x57770C1721Eb35509f38210A935c8b1911db7E0e) |
+| RewardHandler Facet   | [0xad58Fc13a682a121e5fe2f8E45D4D988A7e51B0D](https://sepolia.etherscan.io/address/0xad58Fc13a682a121e5fe2f8E45D4D988A7e51B0D) |
+| SettersGovernor Facet | [0xA360E5aD9F17caff53715346888aA0d13541c2F5](https://sepolia.etherscan.io/address/0xA360E5aD9F17caff53715346888aA0d13541c2F5) |
+| SettersGuardian Facet | [0xa9C21Cf291ad935e0C9B05a55A42254fB159181d](https://sepolia.etherscan.io/address/0xa9C21Cf291ad935e0C9B05a55A42254fB159181d) |
+| Swapper Facet         | [0x1bB46FC55E3fd91Ca0F162DCC0B3ef574C8ff97E](https://sepolia.etherscan.io/address/0x1bB46FC55E3fd91Ca0F162DCC0B3ef574C8ff97E) |
+| Parallelizer USDp     | [0xd8cc2A51556Da84b5DB309e86f30Ff98B5309862](https://sepolia.etherscan.io/address/0xd8cc2A51556Da84b5DB309e86f30Ff98B5309862) |
+| sUSDp (Savings)       | [0x23D491aa7C0972087F8a607F6f4c7106a02BA95d](https://sepolia.etherscan.io/address/0x23D491aa7C0972087F8a607F6f4c7106a02BA95d) |
+
 ## Security
 
 ### Trust assumptions of the Parallelizer system

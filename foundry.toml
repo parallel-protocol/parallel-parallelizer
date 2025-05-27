@@ -51,7 +51,6 @@ mainnet = { key = "${MAINNET_ETHERSCAN_API_KEY}" }
 optimism = { key = "${OPTIMISM_ETHERSCAN_API_KEY}" }
 polygon = { key = "${POLYGON_ETHERSCAN_API_KEY}" }
 base = { key = "${BASE_ETHERSCAN_API_KEY}", url = "https://api.basescan.org/api" }
-bsc = { key = "${BSC_ETHERSCAN_API_KEY}"}
 
 [profile.dev]
 via_ir = false
