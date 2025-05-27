@@ -100,9 +100,7 @@
         "blockNumber": 8411143,
         "transactionHash": "0xfdafdff762954aa5eacde74d6d72764c9043cc2d2043b703f0aae14fab30e7e5",
         "address": "0x23D491aa7C0972087F8a607F6f4c7106a02BA95d",
-        "topics": [
-          "0x2f658b440c35314f52658ea8a740e05b284cdc84dc9ae01e891f21b8933e7cad"
-        ],
+        "topics": ["0x2f658b440c35314f52658ea8a740e05b284cdc84dc9ae01e891f21b8933e7cad"],
         "data": "0x000000000000000000000000fd28f108e95f4d41daae9dbfff707d677985998e",
         "logIndex": 384,
         "blockHash": "0x54e1a4846cfb7c834dd59b91e1ec157013a14f7af6a629d1548e05194a8a1f52"
@@ -154,9 +152,7 @@
         "blockNumber": 8411143,
         "transactionHash": "0xfdafdff762954aa5eacde74d6d72764c9043cc2d2043b703f0aae14fab30e7e5",
         "address": "0x23D491aa7C0972087F8a607F6f4c7106a02BA95d",
-        "topics": [
-          "0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2"
-        ],
+        "topics": ["0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2"],
         "data": "0x0000000000000000000000000000000000000000000000000000000000000001",
         "logIndex": 388,
         "blockHash": "0x54e1a4846cfb7c834dd59b91e1ec157013a14f7af6a629d1548e05194a8a1f52"
