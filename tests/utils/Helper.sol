@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.28;
 
-import "interfaces/IDiamondLoupe.sol";
+import "contracts/interfaces/IDiamondLoupe.sol";
 
 import { Test, stdError, Vm } from "@forge-std/Test.sol";
 import { CommonUtils } from "@helpers/CommonUtils.sol";

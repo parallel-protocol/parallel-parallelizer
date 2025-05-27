@@ -4,8 +4,8 @@ pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
-import { ITokenP } from "interfaces/ITokenP.sol";
-import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import { AggregatorV3Interface } from "contracts/interfaces/external/chainlink/AggregatorV3Interface.sol";
 
 import { MockAccessControlManager } from "tests/mock/MockAccessControlManager.sol";
 import { MockChainlinkOracle } from "tests/mock/MockChainlinkOracle.sol";

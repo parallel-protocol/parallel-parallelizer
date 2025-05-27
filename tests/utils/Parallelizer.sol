@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import { IParallelizer } from "interfaces/IParallelizer.sol";
-
+import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { DiamondProxy } from "contracts/parallelizer/DiamondProxy.sol";
 import "contracts/parallelizer/Storage.sol";
 import { DiamondCut } from "contracts/parallelizer/facets/DiamondCut.sol";

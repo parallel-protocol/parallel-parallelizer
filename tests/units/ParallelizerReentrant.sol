@@ -7,8 +7,8 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { AccessManager, IAccessManaged } from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 
-import { ITokenP } from "interfaces/ITokenP.sol";
-import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import { AggregatorV3Interface } from "contracts/interfaces/external/chainlink/AggregatorV3Interface.sol";
 
 import { MockAccessControlManager } from "../mock/MockAccessControlManager.sol";
 import { MockChainlinkOracle } from "../mock/MockChainlinkOracle.sol";
@@ -22,7 +22,8 @@ import "contracts/parallelizer/Storage.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol" as Errors;
 
-import { IParallelizer, Parallelizer } from "../utils/Parallelizer.sol";
+import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
+import { Parallelizer } from "../utils/Parallelizer.sol";
 import { ConfigAccessManager } from "../utils/ConfigAccessManager.sol";
 
 contract ParallelizerReentrantTest is Parallelizer, ConfigAccessManager {

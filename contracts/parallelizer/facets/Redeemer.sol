@@ -6,8 +6,8 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import { ITokenP } from "interfaces/ITokenP.sol";
-import { IRedeemer } from "interfaces/IRedeemer.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import { IRedeemer } from "contracts/interfaces/IRedeemer.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
 import { LibDiamond } from "../libraries/LibDiamond.sol";

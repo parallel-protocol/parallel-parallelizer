@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.28;
 
-import { ITokenP } from "interfaces/ITokenP.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 
 import { console } from "@forge-std/console.sol";
 

@@ -6,9 +6,9 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
-import { IParallelizer } from "../interfaces/IParallelizer.sol";
-import { ITokenP } from "../interfaces/ITokenP.sol";
-import { IPool } from "../interfaces/IPool.sol";
+import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import { IPool } from "contracts/interfaces/IPool.sol";
 
 import "../utils/Errors.sol";
 import "../utils/Constants.sol";

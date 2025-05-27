@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import { IParallelizerOracle } from "interfaces/IParallelizerOracle.sol";
-import { AggregatorV3Interface } from "interfaces/external/chainlink/AggregatorV3Interface.sol";
-import { IMorphoOracle } from "interfaces/external/morpho/IMorphoOracle.sol";
+import { IParallelizerOracle } from "contracts/interfaces/IParallelizerOracle.sol";
+import { AggregatorV3Interface } from "contracts/interfaces/external/chainlink/AggregatorV3Interface.sol";
+import { IMorphoOracle } from "contracts/interfaces/external/morpho/IMorphoOracle.sol";
 
 import { LibStorage as s } from "./LibStorage.sol";
 

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import { IParallelizer, Parallelizer } from "../utils/Parallelizer.sol";
+import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
+import { Parallelizer } from "../utils/Parallelizer.sol";
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { IERC1820Registry } from "./MockERC777.sol";
 

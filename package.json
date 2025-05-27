@@ -29,8 +29,11 @@
     "url": "https://github.com/ParallelProtocol/parallel-parallelizer/issues"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.1.3",
+    "@types/fs-extra": "^11.0.4",
     "dotenv": "^16.4.7",
     "forge-std": "github:foundry-rs/forge-std#v1.9.5",
+    "fs-extra": "^11.3.0",
     "hardhat": "^2.22.19",
     "hardhat-deploy": "^1.0.1",
     "prettier": "^3.5.3",

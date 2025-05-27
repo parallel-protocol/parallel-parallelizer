@@ -8,7 +8,7 @@ import {
   PermitTransferFrom,
   SignatureTransferDetails,
   TokenPermissions
-} from "interfaces/external/permit2/IPermit2.sol";
+} from "contracts/interfaces/external/permit2/IPermit2.sol";
 
 import { stdError } from "@forge-std/Test.sol";
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import { IDiamondEtherscan } from "interfaces/IDiamondEtherscan.sol";
+import { IDiamondEtherscan } from "contracts/interfaces/IDiamondEtherscan.sol";
 
 import { LibDiamondEtherscan } from "../libraries/LibDiamondEtherscan.sol";
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";

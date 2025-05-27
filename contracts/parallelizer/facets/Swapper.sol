@@ -7,10 +7,10 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import { ITokenP } from "interfaces/ITokenP.sol";
-import { ISwapper } from "interfaces/ISwapper.sol";
-import { IPermit2, PermitTransferFrom } from "interfaces/external/permit2/IPermit2.sol";
-import { SignatureTransferDetails, TokenPermissions } from "interfaces/external/permit2/IPermit2.sol";
+import { ITokenP } from "contracts/interfaces/ITokenP.sol";
+import { ISwapper } from "contracts/interfaces/ISwapper.sol";
+import { IPermit2, PermitTransferFrom } from "contracts/interfaces/external/permit2/IPermit2.sol";
+import { SignatureTransferDetails, TokenPermissions } from "contracts/interfaces/external/permit2/IPermit2.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
