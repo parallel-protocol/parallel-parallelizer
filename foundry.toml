@@ -1,24 +1,34 @@
 [profile.default]
-src = 'contract'
+src = 'contracts'
+interfaces = 'contracts/interfaces'
 out = 'out'
-test = 'test'
-libs = ['node_modules', 'lib']
+test = 'tests'
 script = 'scripts'
 cache_path = 'cache-forge'
 gas_reports = ["*"]
 via_ir = true
 sizes = true
+evm_version = "cancun"
 optimizer = true
 optimizer_runs=1000
-solc_version = '0.8.26'
+solc_version = '0.8.28'
 ffi = true
 fs_permissions = [ 
- { access = "read-write", path = "./scripts/selectors.json"},
- { access = "read-write", path = "./scripts/selectors_replace.json"}, 
- { access = "read-write", path = "./scripts/selectors_add.json"}, 
- { access = "read-write", path = "./scripts/vanity.json"}
+ { access = "read-write", path = "./libs/helpers/registry/registry.json"}
 ]
 memory_limit = 1000043554432
+
+
+[fmt]
+  bracket_spacing = true
+  int_types = "long"
+  line_length = 119
+  multiline_func_header = "all"
+  number_underscore = "thousands"
+  quote_style = "double"
+  tab_width = 2
+  wrap_comments = true
+
 
 [fuzz]
 runs = 10000
@@ -29,30 +39,18 @@ depth = 256
 
 [rpc_endpoints]
 arbitrum = "${ETH_NODE_URI_ARBITRUM}"
-gnosis = "${ETH_NODE_URI_GNOSIS}"
 mainnet = "${ETH_NODE_URI_MAINNET}"
 optimism = "${ETH_NODE_URI_OPTIMISM}"
 polygon = "${ETH_NODE_URI_POLYGON}"
 fork = "${ETH_NODE_URI_FORK}"
-avalanche = "${ETH_NODE_URI_AVALANCHE}"
-celo = "${ETH_NODE_URI_CELO}"
-polygonzkevm = "${ETH_NODE_URI_POLYGONZKEVM}"
-bsc = "${ETH_NODE_URI_BSC}"
 base = "${ETH_NODE_URI_BASE}"
-linea = "${ETH_NODE_URI_LINEA}"
 
 [etherscan]
 arbitrum = { key = "${ARBITRUM_ETHERSCAN_API_KEY}" }
-gnosis = { key = "${GNOSIS_ETHERSCAN_API_KEY}" , url = "https://api.gnosisscan.io/api"}
 mainnet = { key = "${MAINNET_ETHERSCAN_API_KEY}" }
 optimism = { key = "${OPTIMISM_ETHERSCAN_API_KEY}" }
 polygon = { key = "${POLYGON_ETHERSCAN_API_KEY}" }
-avalanche = { key = "${AVALANCHE_ETHERSCAN_API_KEY}" }
-celo = { key = "${CELO_ETHERSCAN_API_KEY}", url = "https://api.celoscan.io/api" }
 base = { key = "${BASE_ETHERSCAN_API_KEY}", url = "https://api.basescan.org/api" }
-polygon-zkevm = { key = "${POLYGONZKEVM_ETHERSCAN_API_KEY}", url = "https://api-zkevm.polygonscan.com/api" }
-bsc = { key = "${BSC_ETHERSCAN_API_KEY}"}
-linea = { key = "${LINEA_ETHERSCAN_API_KEY}"}
 
 [profile.dev]
 via_ir = false

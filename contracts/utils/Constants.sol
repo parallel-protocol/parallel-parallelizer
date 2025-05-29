@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
+pragma solidity 0.8.28;
 
-pragma solidity >=0.5.0;
-
-import { ICbETH } from "interfaces/external/coinbase/ICbETH.sol";
-import { ISfrxETH } from "interfaces/external/frax/ISfrxETH.sol";
-import { IStETH } from "interfaces/external/lido/IStETH.sol";
-import { IRETH } from "interfaces/external/rocketPool/IRETH.sol";
+import { ICbETH } from "contracts/interfaces/external/coinbase/ICbETH.sol";
+import { ISfrxETH } from "contracts/interfaces/external/frax/ISfrxETH.sol";
+import { IStETH } from "contracts/interfaces/external/lido/IStETH.sol";
+import { IRETH } from "contracts/interfaces/external/rocketPool/IRETH.sol";
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                  STORAGE SLOTS                                                  
@@ -15,9 +14,9 @@ import { IRETH } from "interfaces/external/rocketPool/IRETH.sol";
 /// @dev Equals `keccak256("diamond.standard.diamond.storage") - 1`
 bytes32 constant DIAMOND_STORAGE_POSITION = 0xc8fcad8db84d3cc18b4c41d551ea0ee66dd599cde068d998e57d5e09332c131b;
 
-/// @dev Storage position of `TransmuterStorage` structure
-/// @dev Equals `keccak256("diamond.standard.transmuter.storage") - 1`
-bytes32 constant TRANSMUTER_STORAGE_POSITION = 0xc1f2f38dde3351ac0a64934139e816326caa800303a1235dc53707d0de05d8bd;
+/// @dev Storage position of `ParallelizerStorage` structure
+/// @dev Equals `keccak256("diamond.standard.parallelizer.storage") - 1`
+bytes32 constant TRANSMUTER_STORAGE_POSITION = 0x4b2dd303f68b99d244b702089c802b6e9ea1b5d4ef61fd436d6c41abb1178c75;
 
 /// @dev Storage position of `ImplementationStorage` structure
 /// @dev Equals `keccak256("eip1967.proxy.implementation") - 1`
@@ -52,11 +51,19 @@ uint8 constant NOT_ENTERED = 1;
 uint8 constant ENTERED = 2;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                     REENTRANT                                                      
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+// Role IDs for the AccessManager
+uint64 constant GOVERNOR_ROLE = 10;
+uint64 constant GUARDIAN_ROLE = 20;
+
+/*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                COMMON ADDRESSES                                                 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
 address constant PERMIT_2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
-address constant ONE_INCH_ROUTER = 0x1111111254EEB25477B68fb85Ed929f73A960582;
+address constant ODOS_ROUTER = 0xCf5540fFFCdC3d510B18bFcA6d2b9987b0772559;
 address constant AGEUR = 0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8;
 ICbETH constant CBETH = ICbETH(0xBe9895146f7AF43049ca1c1AE358B0541Ea49704);
 IRETH constant RETH = IRETH(0xae78736Cd615f374D3085123A210448E74Fc6393);
@@ -67,5 +74,3 @@ address constant USDM = 0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C;
 address constant STEAK_USDC = 0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB;
 address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 address constant EURC = 0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c;
-
-address constant ONEINCH_ROUTER = 0x111111125421cA6dc452d289314280a0f8842A65;

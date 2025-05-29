@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
+pragma solidity 0.8.28;
 
-pragma solidity ^0.8.19;
-
+error AccessManagedUnauthorized(address caller);
 error AlreadyAdded();
 error CannotAddFunctionToDiamondThatAlreadyExists(bytes4 _selector);
 error CannotAddSelectorsToZeroAddress(bytes4[] _selectors);
@@ -12,6 +12,7 @@ error CannotReplaceFunctionThatDoesNotExists(bytes4 _selector);
 error CannotReplaceFunctionWithTheSameFunctionFromTheSameFacet(bytes4 _selector);
 error CannotReplaceImmutableFunction(bytes4 _selector);
 error ContractHasNoCode();
+error CollateralBacked();
 error FunctionNotFound(bytes4 _functionSelector);
 error IncorrectFacetCutAction(uint8 _action);
 error InitializationFunctionReverted(address _initializationContractAddress, bytes _calldata);
@@ -24,16 +25,17 @@ error InvalidParams();
 error InvalidRate();
 error InvalidSwap();
 error InvalidTokens();
+error InvalidAccessManager();
 error ManagerHasAssets();
 error NoSelectorsProvidedForFacetForCut(address _facetAddress);
 error NotAllowed();
 error NotCollateral();
 error NotGovernor();
-error NotGovernorOrGuardian();
+error NotGuardian();
 error NotTrusted();
 error NotTrustedOrGuardian();
 error NotWhitelisted();
-error OneInchSwapFailed();
+error OdosSwapFailed();
 error OracleUpdateFailed();
 error Paused();
 error ReentrantCall();
