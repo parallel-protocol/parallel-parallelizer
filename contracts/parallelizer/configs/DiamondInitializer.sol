@@ -32,6 +32,7 @@ contract DiamondInitializer {
       LibSetters.setFees(collateral.token, collateral.xBurnFee, collateral.yBurnFee, false);
       LibSetters.togglePause(collateral.token, ActionType.Mint);
       LibSetters.togglePause(collateral.token, ActionType.Burn);
+      if (collateral.targetMax) LibOracle.updateOracle(collateral.token);
     }
 
     // setRedemptionCurveParams

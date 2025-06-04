@@ -13,6 +13,7 @@ import "../Storage.sol";
 
 struct CollateralSetup {
   address token;
+  bool targetMax;
   bytes oracleConfig;
   uint64[] xMintFee;
   int64[] yMintFee;

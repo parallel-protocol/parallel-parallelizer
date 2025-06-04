@@ -22,6 +22,7 @@ export enum QuoteType {
 
 export type CollateralSetupParams = {
   token: Address;
+  targetMax: boolean;
   oracleConfig: string;
   xMintFee: bigint[];
   yMintFee: bigint[];
@@ -35,6 +36,11 @@ export type ChainlinkFeedsConfig = OracleBaseConfig & {
   circuitChainIsMultiplied: number[];
   chainlinkDecimals: number[];
   quoteType: QuoteType;
+};
+
+export type MorphoOracleConfig = OracleBaseConfig & {
+  oracleAddress: Address;
+  normalizationFactor: bigint;
 };
 
 export type Hyperparameters = {
@@ -54,7 +60,7 @@ export type RedemptionSetup = {
   yRedeemFee: bigint[];
 };
 
-export type OracleConfig = ChainlinkFeedsConfig;
+export type OracleConfig = ChainlinkFeedsConfig | MorphoOracleConfig;
 
 export type CollateralConfig = {
   token: Address;

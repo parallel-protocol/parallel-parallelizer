@@ -8,6 +8,7 @@ import {
   ChainlinkFeedsConfig,
   CollateralConfig,
   CollateralSetupParams,
+  MorphoOracleConfig,
   OracleReadType,
   RedemptionSetup,
 } from "../../utils/types";
@@ -129,7 +130,8 @@ const setUpCollateral = (collateral: CollateralConfig): CollateralSetupParams =>
 
   let readData;
   if (oracle.oracleType === OracleReadType.CHAINLINK_FEEDS) {
-    const { circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals } = oracle;
+    const { circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals } =
+      oracle as ChainlinkFeedsConfig;
     if (
       circuitChainlink.length != stalePeriods.length ||
       circuitChainlink.length != circuitChainIsMultiplied.length ||
@@ -141,6 +143,13 @@ const setUpCollateral = (collateral: CollateralConfig): CollateralSetupParams =>
       ["address[]", "uint32[]", "uint8[]", "uint8[]", "uint8"],
       [circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, oracle.quoteType],
     );
+  }
+  if (oracle.oracleType === OracleReadType.MORPHO_ORACLE) {
+    const { oracleAddress, normalizationFactor } = oracle as MorphoOracleConfig;
+    if (!oracleAddress || !normalizationFactor) {
+      throw new Error(`Morpho oracle config must have an oracle address and normalization factor`);
+    }
+    readData = abiCoder.encode(["address", "uint256"], [oracleAddress, normalizationFactor]);
   }
   let targetData = "0x";
   let hyperparametersData = "0x";
@@ -158,6 +167,7 @@ const setUpCollateral = (collateral: CollateralConfig): CollateralSetupParams =>
 
   return {
     token,
+    targetMax: oracle.targetType === OracleReadType.MAX,
     oracleConfig,
     xMintFee,
     yMintFee,
