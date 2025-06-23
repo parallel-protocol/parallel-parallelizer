@@ -35,24 +35,94 @@ const config: HardhatUserConfig = {
   },
   networks: {
     mainnet: {
-      accounts,
       url: getRpcURL("mainnet"),
       verify: getVerifyConfig("mainnet"),
+      accounts,
     },
     sepolia: {
-      accounts,
       url: getRpcURL("sepolia"),
       verify: getVerifyConfig("sepolia"),
-    },
-    arbiSepolia: {
       accounts,
-      url: getRpcURL("arbiSepolia"),
-      verify: getVerifyConfig("arbiSepolia"),
     },
     polygon: {
-      accounts,
       url: getRpcURL("polygon"),
       verify: getVerifyConfig("polygon"),
+      accounts,
+    },
+    arbiSepolia: {
+      url: getRpcURL("arbiSepolia"),
+      verify: getVerifyConfig("arbiSepolia"),
+      accounts,
+    },
+    optimism: {
+      url: getRpcURL("optimism"),
+      verify: getVerifyConfig("optimism"),
+      accounts,
+    },
+    base: {
+      url: getRpcURL("base"),
+      verify: getVerifyConfig("base"),
+      accounts,
+    },
+    arbitrum: {
+      url: getRpcURL("arbitrum"),
+      verify: getVerifyConfig("arbitrum"),
+      accounts,
+    },
+    sonic: {
+      url: getRpcURL("sonic"),
+      verify: getVerifyConfig("sonic"),
+      accounts,
+    },
+    sei: {
+      url: getRpcURL("sei"),
+      verify: getVerifyConfig("sei"),
+      accounts,
+    },
+    avalanche: {
+      url: getRpcURL("avalanche"),
+      verify: getVerifyConfig("avalanche"),
+      accounts,
+    },
+    bsc: {
+      url: getRpcURL("bsc"),
+      verify: getVerifyConfig("bsc"),
+      accounts,
+    },
+    berachain: {
+      url: getRpcURL("berachain"),
+      verify: getVerifyConfig("berachain"),
+      accounts,
+    },
+    scroll: {
+      url: getRpcURL("scroll"),
+      verify: getVerifyConfig("scroll"),
+      accounts,
+    },
+    mantle: {
+      url: getRpcURL("mantle"),
+      verify: getVerifyConfig("mantle"),
+      accounts,
+    },
+    gnosis: {
+      url: getRpcURL("gnosis"),
+      verify: getVerifyConfig("gnosis"),
+      accounts,
+    },
+    unichain: {
+      url: getRpcURL("unichain"),
+      verify: getVerifyConfig("unichain"),
+      accounts,
+    },
+    ink: {
+      url: getRpcURL("ink"),
+      verify: getVerifyConfig("ink"),
+      accounts,
+    },
+    hyperevm: {
+      url: getRpcURL("hyperevm"),
+      verify: getVerifyConfig("hyperevm"),
+      accounts,
     },
   },
   namedAccounts: {
