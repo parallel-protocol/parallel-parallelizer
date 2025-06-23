@@ -20,11 +20,9 @@ const deploy: DeployFunction = async (hre) => {
 
   assert(deployer, "Missing named deployer account");
 
-  const config = parseToConfigData(
-    JSON.parse(readFileSync(`./deploy/config/${hre.network.name}/config.json`).toString()),
-  );
+  const config = parseToConfigData(JSON.parse(readFileSync(`./deploy/config/${network.name}/config.json`).toString()));
 
-  console.log(`Network: ${hre.network.name}`);
+  console.log(`Network: ${network.name}`);
   console.log(`Deployer: ${deployer}`);
 
   const accessManager = checkAddressValid(config.accessManager, "Invalid AccessManager address");
@@ -39,6 +37,7 @@ const deploy: DeployFunction = async (hre) => {
     from: deployer,
     log: true,
     skipIfAlreadyDeployed: false,
+    gasLimit: 30000000,
   });
 
   const nonce = await network.provider.send("eth_getTransactionCount", [deployer, "latest"]);
@@ -68,10 +67,11 @@ const deploy: DeployFunction = async (hre) => {
       },
     },
     log: true,
-    skipIfAlreadyDeployed: false,
+    skipIfAlreadyDeployed: true,
+    gasLimit: 30000000,
   });
 
-  console.log(`Deployed ${contractName}_${token}, network: ${hre.network.name}, address: ${savings.address}`);
+  console.log(`Deployed ${contractName}_${token}, network: ${network.name}, address: ${savings.address}`);
 };
 
 deploy.tags = [contractName];

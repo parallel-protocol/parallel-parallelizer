@@ -1,0 +1,109 @@
+{
+  "accessManager": "0x94Ea8800444017695345156319e96bdB1E355F7a",
+  "wallets": {
+    "dao": "0x25Fc7ffa8f9da3582a36633d04804F0004706F9b"
+  },
+  "tokens": {
+    "usdp": "0x9B3a8f7CEC208e247d97dEE13313690977e24459"
+  },
+  "parallelizer": {
+    "usdp": {
+      "collaterals": [
+        {
+          "token": "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
+          "oracle": {
+            "oracleType": "CHAINLINK_FEEDS",
+            "targetType": "STABLE",
+            "quoteType": "UNIT",
+            "circuitChainlink": ["0x9B4a96210bc8D9D55b1908B465D8B0de68B7fF83"],
+            "stalePeriods": [86400],
+            "circuitChainIsMultiplied": [1],
+            "chainlinkDecimals": [8],
+            "hyperparameters": {
+              "userDeviation": 500000000000000,
+              "burnRatioDeviation": 0
+            }
+          },
+          "xMintFee": [0],
+          "yMintFee": [0],
+          "xBurnFee": [1000000000],
+          "yBurnFee": [0]
+        },
+        {
+          "token": "0xcf62F905562626CfcDD2261162a51fd02Fc9c5b6",
+          "oracle": {
+            "oracleType": "MORPHO_ORACLE",
+            "targetType": "MAX",
+            "oracleAddress": "0x0cb7dee76aa916a3666f50b044f16051c325b3e2",
+            "normalizationFactor": "1000000",
+            "hyperparameters": {
+              "userDeviation": 0,
+              "burnRatioDeviation": 500000000000000
+            }
+          },
+          "xMintFee": [0],
+          "yMintFee": [0],
+          "xBurnFee": [1000000000],
+          "yBurnFee": [500000]
+        },
+        {
+          "token": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+          "oracle": {
+            "oracleType": "CHAINLINK_FEEDS",
+            "targetType": "STABLE",
+            "quoteType": "UNIT",
+            "circuitChainlink": ["0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961"],
+            "stalePeriods": [86400],
+            "circuitChainIsMultiplied": [1],
+            "chainlinkDecimals": [8],
+            "hyperparameters": {
+              "userDeviation": 500000000000000,
+              "burnRatioDeviation": 0
+            }
+          },
+          "xMintFee": [0],
+          "yMintFee": [0],
+          "xBurnFee": [1000000000],
+          "yBurnFee": [0]
+        },
+        {
+          "token": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+          "oracle": {
+            "oracleType": "CHAINLINK_FEEDS",
+            "targetType": "MAX",
+            "quoteType": "UNIT",
+            "circuitChainlink": ["0xFF3BC18cCBd5999CE63E788A1c250a88626aD099"],
+            "stalePeriods": [86400],
+            "circuitChainIsMultiplied": [1],
+            "chainlinkDecimals": [8],
+            "hyperparameters": {
+              "userDeviation": 0,
+              "burnRatioDeviation": 500000000000000
+            }
+          },
+          "xMintFee": [0],
+          "yMintFee": [0],
+          "xBurnFee": [1000000000],
+          "yBurnFee": [500000]
+        }
+      ],
+      "redemptionSetup": {
+        "xRedeemFee": [750000000, 850000000, 950000000, 970000000],
+        "yRedeemFee": [995000000, 950000000, 950000000, 995000000]
+      }
+    }
+  },
+  "savings": {
+    "usdp": {
+      "name": "Staked USDp",
+      "symbol": "sUSDp"
+    }
+  },
+  "genericHarvester": {
+    "usdp": {
+      "swapRouter": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
+      "tokenTransferAddress": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
+      "flashloan": "0xC9B6279baa19dBB8bCc3250c89cAa093AaBA0bfc"
+    }
+  }
+}

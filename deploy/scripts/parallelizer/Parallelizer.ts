@@ -27,20 +27,17 @@ enum FacetCutAction {
 }
 
 const deploy: DeployFunction = async (hre) => {
-  const { getNamedAccounts, deployments } = hre;
+  const { getNamedAccounts, deployments, network } = hre;
 
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
   assert(deployer, "Missing named deployer account");
 
-  console.log(`Network: ${hre.network.name}`);
+  console.log(`Network: ${network.name}`);
   console.log(`Deployer: ${deployer}`);
 
-  const config = parseToConfigData(
-    JSON.parse(readFileSync(`./deploy/config/${hre.network.name}/config.json`).toString()),
-  );
-
+  const config = parseToConfigData(JSON.parse(readFileSync(`./deploy/config/${network.name}/config.json`).toString()));
   const tokenPAddress = getTokenAddressFromConfig(token, config);
   if (!tokenPAddress) throw new Error(`Token ${token} address not found in config`);
 
@@ -70,16 +67,19 @@ const deploy: DeployFunction = async (hre) => {
 
   const facets = await getFacetsWithSelectors(deployments);
   const cuts = facets.map((facet) => facet.cut);
+  console.log("Deploying Parallelizer...");
+  // console.log(callData);
   const parallelizer = await deploy(`${contractName}_${token}`, {
     contract: "DiamondProxy",
     from: deployer,
     args: [cuts, initializer.address, callData],
     log: true,
     skipIfAlreadyDeployed: true,
+    gasLimit: 8000000,
   });
 
   console.log(
-    `Deployed contract: ${contractName}_${token}, network: ${hre.network.name}, address: ${parallelizer.address}`,
+    `Deployed contract: ${contractName}_${token}, network: ${network.name}, address: ${parallelizer.address}`,
   );
 };
 
@@ -130,7 +130,7 @@ const setUpCollateral = (collateral: CollateralConfig): CollateralSetupParams =>
 
   let readData;
   if (oracle.oracleType === OracleReadType.CHAINLINK_FEEDS) {
-    const { circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals } =
+    const { circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, quoteType } =
       oracle as ChainlinkFeedsConfig;
     if (
       circuitChainlink.length != stalePeriods.length ||
@@ -141,7 +141,7 @@ const setUpCollateral = (collateral: CollateralConfig): CollateralSetupParams =>
     }
     readData = abiCoder.encode(
       ["address[]", "uint32[]", "uint8[]", "uint8[]", "uint8"],
-      [circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, oracle.quoteType],
+      [circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, quoteType],
     );
   }
   if (oracle.oracleType === OracleReadType.MORPHO_ORACLE) {
@@ -151,7 +151,9 @@ const setUpCollateral = (collateral: CollateralConfig): CollateralSetupParams =>
     }
     readData = abiCoder.encode(["address", "uint256"], [oracleAddress, normalizationFactor]);
   }
-  let targetData = "0x";
+
+  let targetData = oracle.targetType === OracleReadType.MAX ? abiCoder.encode(["uint256"], [0]) : "0x";
+
   let hyperparametersData = "0x";
   if (oracle.hyperparameters) {
     hyperparametersData = abiCoder.encode(

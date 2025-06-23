@@ -81,6 +81,12 @@ export type SavingsConfig = {
   symbol: string;
 };
 
+export type GenericHarvesterConfig = {
+  swapRouter: Address;
+  tokenTransferAddress: Address;
+  flashloan: Address;
+};
+
 export type ConfigData = {
   accessManager: Address;
   wallets: {
@@ -94,5 +100,8 @@ export type ConfigData = {
   };
   savings: {
     [tokenP: string]: SavingsConfig;
+  };
+  genericHarvester: {
+    [tokenP: string]: GenericHarvesterConfig;
   };
 };
