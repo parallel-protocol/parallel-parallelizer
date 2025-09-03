@@ -59,7 +59,73 @@ Some changed has been made to the original Angle's Transmuter:
 
 ## Deployment Addresses
 
+### Mainnet
+
+| Contract              | Explore                                                                                                                |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| DiamondCut Facet      | [0xad58Fc13a682a121e5fe2f8E45D4D988A7e51B0D](https:///etherscan.io/address/0xad58Fc13a682a121e5fe2f8E45D4D988A7e51B0D) |
+| DiamondLoupe Facet    | [0xA360E5aD9F17caff53715346888aA0d13541c2F5](https:///etherscan.io/address/0xA360E5aD9F17caff53715346888aA0d13541c2F5) |
+| Getters Facet         | [0xa9C21Cf291ad935e0C9B05a55A42254fB159181d](https:///etherscan.io/address/0xa9C21Cf291ad935e0C9B05a55A42254fB159181d) |
+| Redeemer Facet        | [0x1bB46FC55E3fd91Ca0F162DCC0B3ef574C8ff97E](https:///etherscan.io/address/0x1bB46FC55E3fd91Ca0F162DCC0B3ef574C8ff97E) |
+| RewardHandler Facet   | [0xd8cc2A51556Da84b5DB309e86f30Ff98B5309862](https:///etherscan.io/address/0xd8cc2A51556Da84b5DB309e86f30Ff98B5309862) |
+| SettersGovernor Facet | [0xeB197439D1425F3129F01F7763EC511DF2489095](https:///etherscan.io/address/0xeB197439D1425F3129F01F7763EC511DF2489095) |
+| SettersGuardian Facet | [0xc743BeDE8412228B42Ae755cD64A33Cd3ae4A92f](https:///etherscan.io/address/0xc743BeDE8412228B42Ae755cD64A33Cd3ae4A92f) |
+| Swapper Facet         | [0x506Ba37aa8e265bE445913B9c4080852277f3c5a](https:///etherscan.io/address/0x506Ba37aa8e265bE445913B9c4080852277f3c5a) |
+| Parallelizer USDp     | [0x6efeDDF9269c3683Ba516cb0e2124FE335F262a2](https:///etherscan.io/address/0x6efeDDF9269c3683Ba516cb0e2124FE335F262a2) |
+| sUSDp (Savings)       | [0x0d45b129dc868963025Db79A9074EA9c9e32Cae4](https:///etherscan.io/address/0x0d45b129dc868963025Db79A9074EA9c9e32Cae4) |
+| GenericHarvester USDp | [0x36DA06796fD9d22BCD6287b66A87FfdadB12636C](https:///etherscan.io/address/0x36DA06796fD9d22BCD6287b66A87FfdadB12636C) |
+
+### Base
+
+| Contract              | Explore                                                                                                                |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| DiamondCut Facet      | [0x15452454A9735D68df430879B2941316a09295B1](https:///basescan.org/address/0x15452454A9735D68df430879B2941316a09295B1) |
+| DiamondLoupe Facet    | [0x24CeF236056834f38e9247A1Fff6681Dd313d3aa](https:///basescan.org/address/0x24CeF236056834f38e9247A1Fff6681Dd313d3aa) |
+| Getters Facet         | [0xBE65F0F410A72BeC163dC65d46c83699e957D588](https:///basescan.org/address/0xBE65F0F410A72BeC163dC65d46c83699e957D588) |
+| Redeemer Facet        | [0xe9fe4720FA99f9b28584dA44ABB8cf91f15990e8](https:///basescan.org/address/0xe9fe4720FA99f9b28584dA44ABB8cf91f15990e8) |
+| RewardHandler Facet   | [0x2B6C7c275404e93A14A05b549AF292231D6e4DeC](https:///basescan.org/address/0x2B6C7c275404e93A14A05b549AF292231D6e4DeC) |
+| SettersGovernor Facet | [0x90e4AE8bA8C6Fd51fcED0f9331668b05c7a4Ee43](https:///basescan.org/address/0x90e4AE8bA8C6Fd51fcED0f9331668b05c7a4Ee43) |
+| SettersGuardian Facet | [0xe5C82b4F09Fd4d079757e156Db44AFD2c8032CC8](https:///basescan.org/address/0xe5C82b4F09Fd4d079757e156Db44AFD2c8032CC8) |
+| Swapper Facet         | [0xfB2D070270e9FfC2dB107D0162b47c2Ed291E3F7](https:///basescan.org/address/0xfB2D070270e9FfC2dB107D0162b47c2Ed291E3F7) |
+| Parallelizer USDp     | [0xC3BEF21Ea7dEB5C34CF33E918c8e28972C8048eD](https:///basescan.org/address/0xC3BEF21Ea7dEB5C34CF33E918c8e28972C8048eD) |
+| sUSDp (Savings)       | [0x472eD57b376fE400259FB28e5C46eB53f0E3e7E7](https:///basescan.org/address/0x472eD57b376fE400259FB28e5C46eB53f0E3e7E7) |
+| GenericHarvester USDp | [0xCa43eCFCDFBA1fED003649e946Ae6091646B410a](https:///basescan.org/address/0xCa43eCFCDFBA1fED003649e946Ae6091646B410a) |
+
+### Sonic
+
+| Contract              | Explore                                                                                                                 |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| DiamondCut Facet      | [0xe9fe4720FA99f9b28584dA44ABB8cf91f15990e8](https:///sonicscan.org/address/0xe9fe4720FA99f9b28584dA44ABB8cf91f15990e8) |
+| DiamondLoupe Facet    | [0x2B6C7c275404e93A14A05b549AF292231D6e4DeC](https:///sonicscan.org/address/0x2B6C7c275404e93A14A05b549AF292231D6e4DeC) |
+| Getters Facet         | [0x90e4AE8bA8C6Fd51fcED0f9331668b05c7a4Ee43](https:///sonicscan.org/address/0x90e4AE8bA8C6Fd51fcED0f9331668b05c7a4Ee43) |
+| Redeemer Facet        | [0xe5C82b4F09Fd4d079757e156Db44AFD2c8032CC8](https:///sonicscan.org/address/0xe5C82b4F09Fd4d079757e156Db44AFD2c8032CC8) |
+| RewardHandler Facet   | [0xfB2D070270e9FfC2dB107D0162b47c2Ed291E3F7](https:///sonicscan.org/address/0xfB2D070270e9FfC2dB107D0162b47c2Ed291E3F7) |
+| SettersGovernor Facet | [0xC3BEF21Ea7dEB5C34CF33E918c8e28972C8048eD](https:///sonicscan.org/address/0xC3BEF21Ea7dEB5C34CF33E918c8e28972C8048eD) |
+| SettersGuardian Facet | [0xCa43eCFCDFBA1fED003649e946Ae6091646B410a](https:///sonicscan.org/address/0xCa43eCFCDFBA1fED003649e946Ae6091646B410a) |
+| Swapper Facet         | [0xA65821FfE86E6Eb613DAa1F70AF350C5A21759dF](https:///sonicscan.org/address/0xA65821FfE86E6Eb613DAa1F70AF350C5A21759dF) |
+| Parallelizer USDp     | [0xBEFBAe2330186F031b469e26283aCc66bb5F8826](https:///sonicscan.org/address/0xBEFBAe2330186F031b469e26283aCc66bb5F8826) |
+| sUSDp (Savings)       | [0xe8a3DA6f5ed1cf04c58ac7f6A7383641e877517b](https:///sonicscan.org/address/0xe8a3DA6f5ed1cf04c58ac7f6A7383641e877517b) |
+| GenericHarvester USDp | [0x120805265fA944834DC6e930De2995768806a9d2](https:///sonicscan.org/address/0x120805265fA944834DC6e930De2995768806a9d2) |
+
+#### HyperEVM
+
+| Contract              | Explore                                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| DiamondCut Facet      | [0xA65821FfE86E6Eb613DAa1F70AF350C5A21759dF](https:///www.hyperscan.com/address/0xA65821FfE86E6Eb613DAa1F70AF350C5A21759dF) |
+| DiamondLoupe Facet    | [0xBEFBAe2330186F031b469e26283aCc66bb5F8826](https:///www.hyperscan.com/address/0xBEFBAe2330186F031b469e26283aCc66bb5F8826) |
+| Getters Facet         | [0x120805265fA944834DC6e930De2995768806a9d2](https:///www.hyperscan.com/address/0x120805265fA944834DC6e930De2995768806a9d2) |
+| Redeemer Facet        | [0xF92eD96C7bEc4aD46FF7937Cae633c907EBDf594](https:///www.hyperscan.com/address/0xF92eD96C7bEc4aD46FF7937Cae633c907EBDf594) |
+| RewardHandler Facet   | [0xa5d9CAA2EF06D39d5992b5046e2DEFFf6D5Cbd18](https:///www.hyperscan.com/address/0xa5d9CAA2EF06D39d5992b5046e2DEFFf6D5Cbd18) |
+| SettersGovernor Facet | [0x472eD57b376fE400259FB28e5C46eB53f0E3e7E7](https:///www.hyperscan.com/address/0x472eD57b376fE400259FB28e5C46eB53f0E3e7E7) |
+| SettersGuardian Facet | [0xaE2Fb66d1989EC1684fF095B75D151Ae8E403E2e](https:///www.hyperscan.com/address/0xaE2Fb66d1989EC1684fF095B75D151Ae8E403E2e) |
+| Swapper Facet         | [0x1b2741dB9F46a0411852e4cC28dDC476851b5179](https:///www.hyperscan.com/address/0x1b2741dB9F46a0411852e4cC28dDC476851b5179) |
+| Parallelizer USDp     | [0x1250304F66404cd153fA39388DDCDAec7E0f1707](https:///www.hyperscan.com/address/0x1250304F66404cd153fA39388DDCDAec7E0f1707) |
+| sUSDp (Savings)       | [0x9B3a8f7CEC208e247d97dEE13313690977e24459](https:///www.hyperscan.com/address/0x9B3a8f7CEC208e247d97dEE13313690977e24459) |
+| GenericHarvester USDp | [0x57770C1721Eb35509f38210A935c8b1911db7E0e](https:///www.hyperscan.com/address/0x57770C1721Eb35509f38210A935c8b1911db7E0e) |
+
 ### Testnet
+
+#### Sepolia
 
 | Contract              | Explore                                                                                                                       |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |

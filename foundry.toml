@@ -40,6 +40,8 @@ depth = 256
 [rpc_endpoints]
 arbitrum = "${ETH_NODE_URI_ARBITRUM}"
 mainnet = "${ETH_NODE_URI_MAINNET}"
+hyperevm = "${ETH_NODE_URI_HYPEREVM}"
+sonic-mainnet= "${ETH_NODE_URI_SONIC}"
 optimism = "${ETH_NODE_URI_OPTIMISM}"
 polygon = "${ETH_NODE_URI_POLYGON}"
 fork = "${ETH_NODE_URI_FORK}"
