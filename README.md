@@ -123,6 +123,20 @@ Some changed has been made to the original Angle's Transmuter:
 | sUSDp (Savings)       | [0x9B3a8f7CEC208e247d97dEE13313690977e24459](https:///www.hyperscan.com/address/0x9B3a8f7CEC208e247d97dEE13313690977e24459) |
 | GenericHarvester USDp | [0x57770C1721Eb35509f38210A935c8b1911db7E0e](https:///www.hyperscan.com/address/0x57770C1721Eb35509f38210A935c8b1911db7E0e) |
 
+#### Avalanche
+
+| Contract              | Explore                                                                                                                    |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| DiamondCut Facet      | [0x657acB8A3BF9383e561565d422ea9b9A90ce0052](https:///www.snowscan.xyz/address/0x657acB8A3BF9383e561565d422ea9b9A90ce0052) |
+| DiamondLoupe Facet    | [0x23D491aa7C0972087F8a607F6f4c7106a02BA95d](https:///www.snowscan.xyz/address/0x23D491aa7C0972087F8a607F6f4c7106a02BA95d) |
+| Getters Facet         | [0xF6Cc47E981ED5902BE382dbe7B54e3696De22dBb](https:///www.snowscan.xyz/address/0xF6Cc47E981ED5902BE382dbe7B54e3696De22dBb) |
+| Redeemer Facet        | [0x6efeDDF9269c3683Ba516cb0e2124FE335F262a2](https:///www.snowscan.xyz/address/0x6efeDDF9269c3683Ba516cb0e2124FE335F262a2) |
+| RewardHandler Facet   | [0x36DA06796fD9d22BCD6287b66A87FfdadB12636C](https:///www.snowscan.xyz/address/0x36DA06796fD9d22BCD6287b66A87FfdadB12636C) |
+| SettersGovernor Facet | [0x5bEADA21a6B9Cb229117B3EA2C0D1594785013A2](https:///www.snowscan.xyz/address/0x5bEADA21a6B9Cb229117B3EA2C0D1594785013A2) |
+| SettersGuardian Facet | [0xbBC90E685C4a66EBBDC71a3A1437d3111e43Fe84](https:///www.snowscan.xyz/address/0xbBC90E685C4a66EBBDC71a3A1437d3111e43Fe84) |
+| Swapper Facet         | [0x57265a3D7db8f4a4a155eadF6c7326926caC1490](https:///www.snowscan.xyz/address/0x57265a3D7db8f4a4a155eadF6c7326926caC1490) |
+| Parallelizer USDp     | [0x41d58951cbd12D4Ef49b0437897677bbF5547C80](https:///www.snowscan.xyz/address/0x41d58951cbd12D4Ef49b0437897677bbF5547C80) |
+
 ### Testnet
 
 #### Sepolia
