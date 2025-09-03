@@ -8,7 +8,7 @@ import { Savings } from "contracts/savings/Savings.sol";
 import "./Base.s.sol";
 
 contract SetSavingRoles is BaseScript {
-  address saving = 0x23D491aa7C0972087F8a607F6f4c7106a02BA95d;
+  address saving = 0x9B3a8f7CEC208e247d97dEE13313690977e24459;
 
   function run() public broadcast {
     bytes4[] memory guardianSelectors = new bytes4[](3);
@@ -17,7 +17,7 @@ contract SetSavingRoles is BaseScript {
     guardianSelectors[2] = Savings.setRate.selector;
     accessManager.setTargetFunctionRole(saving, guardianSelectors, Roles.GUARDIAN_ROLE);
 
-    bytes4[] memory governorSelectors = new bytes4[](5);
+    bytes4[] memory governorSelectors = new bytes4[](3);
     governorSelectors[0] = SavingsNameable.setNameAndSymbol.selector;
     governorSelectors[1] = Savings.setMaxRate.selector;
     governorSelectors[2] = UUPSUpgradeable.upgradeToAndCall.selector;
