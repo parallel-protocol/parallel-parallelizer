@@ -1,79 +1,86 @@
 import assert from "assert";
-import { ethers, utils } from "ethers";
+import { deployScript, artifacts } from "@rocketh";
 
-import { type DeployFunction } from "hardhat-deploy/types";
 import { checkAddressValid, parseToConfigData } from "../utils";
 import { readFileSync } from "fs";
 
 import { IERC20Abi } from "../abis/IERC20";
+import { getContractAddress } from "viem";
 
 const contractName = "Savings";
 
 const token = "USDp";
 const initialDivider = "1";
 
-const deploy: DeployFunction = async (hre) => {
-  const { getNamedAccounts, deployments, network } = hre;
+export default deployScript(
+  async ({ namedAccounts, network, deploy, deployViaProxy, viem, read, execute }) => {
+    const { deployer } = namedAccounts;
+    const chainName = network.chain.name;
+    assert(deployer, "Missing named deployer account");
+    console.log(`Network: ${chainName} \nDeployer: ${deployer} \nDeploying : ${contractName}`);
 
-  const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+    const config = parseToConfigData(
+      JSON.parse(readFileSync(`./deploy/config/${network.name.toLowerCase()}/config.json`).toString()),
+    );
 
-  assert(deployer, "Missing named deployer account");
+    const accessManager = checkAddressValid(config.accessManager, "Invalid AccessManager address");
+    const tokenP = checkAddressValid(
+      config.tokens[token.toLowerCase() as keyof typeof config.tokens],
+      "Invalid tokenP address",
+    );
+    const savingsConfig = config.savings[token.toLowerCase() as keyof typeof config.savings];
 
-  const config = parseToConfigData(JSON.parse(readFileSync(`./deploy/config/${network.name}/config.json`).toString()));
+    const nonce = await viem.publicClient.getTransactionCount({
+      address: deployer,
+    });
 
-  console.log(`Network: ${network.name}`);
-  console.log(`Deployer: ${deployer}`);
+    const futureAddress = getContractAddress({
+      from: deployer,
+      nonce: BigInt(nonce + 1),
+    });
 
-  const accessManager = checkAddressValid(config.accessManager, "Invalid AccessManager address");
-  const tokenP = checkAddressValid(
-    config.tokens[token.toLowerCase() as keyof typeof config.tokens],
-    "Invalid tokenP address",
-  );
-  const savingsConfig = config.savings[token.toLowerCase() as keyof typeof config.savings];
+    const allowance = (await viem.publicClient.readContract({
+      abi: IERC20Abi,
+      address: tokenP,
+      functionName: "allowance",
+      args: [deployer, futureAddress],
+    })) as bigint;
 
-  // Deploy the implementation contract if it doesn't exist
-  await deploy("SavingsNameable", {
-    from: deployer,
-    log: true,
-    skipIfAlreadyDeployed: false,
-    gasLimit: 30000000,
-  });
+    if (allowance < BigInt(1e18)) {
+      console.log("Approving allowance for future address of 1e18");
+      const { request } = await viem.publicClient.simulateContract({
+        account: deployer,
+        address: tokenP,
+        abi: IERC20Abi,
+        functionName: "approve",
+        args: [futureAddress, BigInt(1e18)],
+      });
+      const hash = await viem.walletClient.writeContract(request);
+      await viem.publicClient.waitForTransactionReceipt({ hash });
+    }
 
-  const nonce = await network.provider.send("eth_getTransactionCount", [deployer, "latest"]);
-
-  const futureAddress = utils.getContractAddress({
-    from: deployer,
-    nonce: parseInt(nonce, 16) + 1,
-  });
-
-  const signer = await deployments.getSigner(deployer);
-  const tokenPContract = new ethers.Contract(tokenP, IERC20Abi, signer);
-  const allowance = await tokenPContract.allowance(deployer, futureAddress);
-  if (BigInt(allowance) < BigInt(1e18)) {
-    console.log("Approving allowance for future address of 1e18");
-    const tx = await tokenPContract.approve(futureAddress, utils.parseUnits(initialDivider, 18));
-    await tx.wait();
-  }
-
-  const savings = await deploy(`${contractName}_${token}`, {
-    from: deployer,
-    proxy: {
-      proxyContract: "UUPS",
-      implementationName: "SavingsNameable",
-      execute: {
-        methodName: "initialize",
-        args: [accessManager, tokenP, savingsConfig.name, savingsConfig.symbol, initialDivider],
+    const savings = await deployViaProxy(
+      `${contractName}_${token}`,
+      {
+        account: deployer,
+        artifact: artifacts.SavingsNameable,
       },
-    },
-    log: true,
-    skipIfAlreadyDeployed: true,
-    gasLimit: 30000000,
-  });
+      {
+        proxyContract: "UUPS",
+        execute: "initialize",
+        linkedData: {
+          _authority: accessManager,
+          asset_: tokenP,
+          name_: savingsConfig.name,
+          symbol_: savingsConfig.symbol,
+          divizer: initialDivider,
+        },
+      },
+    );
 
-  console.log(`Deployed ${contractName}_${token}, network: ${network.name}, address: ${savings.address}`);
-};
-
-deploy.tags = [contractName];
-
-export default deploy;
+    console.log(`Deployed ${contractName}_${token}, network: ${network.name}, address: ${savings.address}`);
+  },
+  {
+    tags: [contractName],
+  },
+);
