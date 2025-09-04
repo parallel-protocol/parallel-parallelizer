@@ -2,6 +2,7 @@
   "name": "parallel-parallelizer",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "scripts": {
     "ci:coverage": "forge coverage --report lcov --ir-minimum && bun run lcov:clean",
     "coverage": "FOUNDRY_PROFILE=dev forge coverage --report lcov --ir-minimum && bun run lcov:clean && bun run lcov:generate-html",
