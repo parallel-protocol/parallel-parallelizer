@@ -1,31 +1,24 @@
 import assert from "assert";
-
-import { type DeployFunction } from "hardhat-deploy/types";
+import { deployScript, artifacts } from "@rocketh";
 
 const contractName = "Swapper";
 
-const deploy: DeployFunction = async (hre) => {
-  const { getNamedAccounts, deployments } = hre;
+export default deployScript(
+  async ({ namedAccounts, network, deploy }) => {
+    const { deployer } = namedAccounts;
+    const chainName = network.chain.name;
+    assert(deployer, "Missing named deployer account");
+    console.log(`Network: ${chainName} \n Deployer: ${deployer} \n Deploying facet: ${contractName}`);
 
-  const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+    const swapper = await deploy(contractName, {
+      account: deployer,
+      artifact: artifacts.Swapper,
+      args: [],
+    });
 
-  assert(deployer, "Missing named deployer account");
-
-  console.log(`Network: ${hre.network.name}`);
-  console.log(`Deployer: ${deployer}`);
-
-  console.log(`Deploying facet ${contractName}...`);
-
-  const swapper = await deploy(contractName, {
-    from: deployer,
-    log: true,
-    skipIfAlreadyDeployed: true,
-  });
-
-  console.log(`Deployed facet: ${contractName}, network: ${hre.network.name}, address: ${swapper.address}`);
-};
-
-deploy.tags = ["Facets", contractName];
-
-export default deploy;
+    console.log(`Deployed facet: ${contractName}, network: ${chainName}, address: ${swapper.address}`);
+  },
+  {
+    tags: ["Facets", contractName],
+  },
+);

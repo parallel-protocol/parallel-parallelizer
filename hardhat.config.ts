@@ -1,133 +1,121 @@
 import "dotenv/config";
-import "hardhat-deploy";
-import "@nomicfoundation/hardhat-foundry";
 
-import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from "hardhat/types";
+import HardhatNodeTestRunner from "@nomicfoundation/hardhat-node-test-runner";
+import HardhatViem from "@nomicfoundation/hardhat-viem";
+import HardhatNetworkHelpers from "@nomicfoundation/hardhat-network-helpers";
+import HardhatKeystore from "@nomicfoundation/hardhat-keystore";
+import HardhatDeploy from "hardhat-deploy";
+
+import { HardhatUserConfig } from "hardhat/types/config";
 
 import { getRpcURL } from "./utils/getRpcURL";
-import { getVerifyConfig } from "./utils/getVerifyConfig";
 
-const accounts: HttpNetworkAccountsUserConfig | undefined = process.env.PRIVATE_KEY
-  ? [process.env.PRIVATE_KEY]
-  : undefined;
-
-if (!accounts) {
-  throw new Error(
-    "Could not find PRIVATE_KEY environment variables. It will not be possible to execute transactions in your example.",
-  );
-}
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+if (!PRIVATE_KEY) throw new Error("PRIVATE_KEY is not set");
+const accounts = [PRIVATE_KEY];
 
 const config: HardhatUserConfig = {
+  plugins: [HardhatNodeTestRunner, HardhatViem, HardhatNetworkHelpers, HardhatKeystore, HardhatDeploy],
   solidity: {
     compilers: [
       {
         version: "0.8.28",
         settings: {
           evmVersion: "cancun",
+          viaIR: true,
           optimizer: {
             enabled: true,
             runs: 1_000,
           },
-          viaIR: true,
         },
       },
     ],
   },
   networks: {
     mainnet: {
+      type: "http",
       url: getRpcURL("mainnet"),
-      verify: getVerifyConfig("mainnet"),
       accounts,
     },
     sepolia: {
+      type: "http",
       url: getRpcURL("sepolia"),
-      verify: getVerifyConfig("sepolia"),
       accounts,
     },
     polygon: {
+      type: "http",
       url: getRpcURL("polygon"),
-      verify: getVerifyConfig("polygon"),
       accounts,
     },
     arbiSepolia: {
+      type: "http",
       url: getRpcURL("arbiSepolia"),
-      verify: getVerifyConfig("arbiSepolia"),
       accounts,
     },
     optimism: {
+      type: "http",
       url: getRpcURL("optimism"),
-      verify: getVerifyConfig("optimism"),
       accounts,
     },
     base: {
+      type: "http",
       url: getRpcURL("base"),
-      verify: getVerifyConfig("base"),
       accounts,
     },
     arbitrum: {
+      type: "http",
       url: getRpcURL("arbitrum"),
-      verify: getVerifyConfig("arbitrum"),
       accounts,
     },
     sonic: {
+      type: "http",
       url: getRpcURL("sonic"),
-      verify: getVerifyConfig("sonic"),
       accounts,
     },
     sei: {
+      type: "http",
       url: getRpcURL("sei"),
-      verify: getVerifyConfig("sei"),
       accounts,
     },
     avalanche: {
+      type: "http",
       url: getRpcURL("avalanche"),
-      verify: getVerifyConfig("avalanche"),
       accounts,
     },
     bsc: {
+      type: "http",
       url: getRpcURL("bsc"),
-      verify: getVerifyConfig("bsc"),
       accounts,
     },
     berachain: {
+      type: "http",
       url: getRpcURL("berachain"),
-      verify: getVerifyConfig("berachain"),
       accounts,
     },
     scroll: {
+      type: "http",
       url: getRpcURL("scroll"),
-      verify: getVerifyConfig("scroll"),
-      accounts,
-    },
-    mantle: {
-      url: getRpcURL("mantle"),
-      verify: getVerifyConfig("mantle"),
       accounts,
     },
     gnosis: {
+      type: "http",
       url: getRpcURL("gnosis"),
-      verify: getVerifyConfig("gnosis"),
       accounts,
     },
     unichain: {
+      type: "http",
       url: getRpcURL("unichain"),
-      verify: getVerifyConfig("unichain"),
       accounts,
     },
     ink: {
+      type: "http",
       url: getRpcURL("ink"),
-      verify: getVerifyConfig("ink"),
       accounts,
     },
     hyperevm: {
+      type: "http",
       url: getRpcURL("hyperevm"),
-      verify: getVerifyConfig("hyperevm"),
       accounts,
-    },
-  },
-  namedAccounts: {
-    deployer: {
-      default: 0,
     },
   },
 };

@@ -1,6 +1,7 @@
 @forge-std/=node_modules/forge-std/src/
 @stringutils/=libs/stringutils/
 @helpers/=libs/helpers/
-@prb-math/=lib/prb-math/src/
 @openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
 @openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/
+
+contracts/=contracts/

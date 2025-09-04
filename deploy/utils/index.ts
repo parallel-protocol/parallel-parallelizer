@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { isAddress, zeroAddress } from "viem";
 import { Address, ConfigData, Hyperparameters, OracleReadType, QuoteType } from "./types";
 
 // return token address defined in config.tokens
@@ -23,7 +23,7 @@ export const checkAddressValid = (address: Address, label: string) => {
 };
 
 export const isAddressValid = (address: string) => {
-  return ethers.utils.isAddress(address) && ethers.constants.AddressZero !== address;
+  return isAddress(address) && zeroAddress !== address;
 };
 
 export const parseToConfigData = (config: any): ConfigData => {

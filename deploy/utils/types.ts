@@ -32,7 +32,7 @@ export type CollateralSetupParams = {
 
 export type ChainlinkFeedsConfig = OracleBaseConfig & {
   circuitChainlink: Address[];
-  stalePeriods: bigint[];
+  stalePeriods: number[];
   circuitChainIsMultiplied: number[];
   chainlinkDecimals: number[];
   quoteType: QuoteType;

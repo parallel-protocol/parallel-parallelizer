@@ -1,31 +1,25 @@
 import assert from "assert";
-
-import { type DeployFunction } from "hardhat-deploy/types";
+import { deployScript, artifacts } from "@rocketh";
 
 const contractName = "DiamondEtherscan";
 
-const deploy: DeployFunction = async (hre) => {
-  const { getNamedAccounts, deployments } = hre;
+export default deployScript(
+  async ({ namedAccounts, network, deploy }) => {
+    const { deployer } = namedAccounts;
+    const chainName = network.chain.name;
+    assert(deployer, "Missing named deployer account");
 
-  const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+    console.log(`Network: ${chainName} \n Deployer: ${deployer} \n Deploying facet: ${contractName}`);
 
-  assert(deployer, "Missing named deployer account");
+    const diamondEtherscan = await deploy(contractName, {
+      account: deployer,
+      artifact: artifacts.DiamondEtherscan,
+      args: [],
+    });
 
-  console.log(`Network: ${hre.network.name}`);
-  console.log(`Deployer: ${deployer}`);
-
-  console.log(`Deploying facet ${contractName}...`);
-
-  const diamondEtherscan = await deploy(contractName, {
-    from: deployer,
-    skipIfAlreadyDeployed: true,
-    log: true,
-  });
-
-  console.log(`Deployed facet: ${contractName}, network: ${hre.network.name}, address: ${diamondEtherscan.address}`);
-};
-
-deploy.tags = [contractName];
-
-export default deploy;
+    console.log(`Deployed facet: ${contractName}, network: ${chainName}, address: ${diamondEtherscan.address}`);
+  },
+  {
+    tags: ["Facets", contractName],
+  },
+);
