@@ -13,7 +13,7 @@ const token = "USDp";
 const initialDivider = "1";
 
 export default deployScript(
-  async ({ namedAccounts, network, deploy, deployViaProxy, viem, read, execute }) => {
+  async ({ namedAccounts, network, deployViaProxy, viem }) => {
     const { deployer } = namedAccounts;
     const chainName = network.chain.name;
     assert(deployer, "Missing named deployer account");
@@ -67,13 +67,12 @@ export default deployScript(
       },
       {
         proxyContract: "UUPS",
-        execute: "initialize",
+        execute: {
+          methodName: "initialize",
+          args: [accessManager, tokenP, savingsConfig.name, savingsConfig.symbol, initialDivider],
+        },
         linkedData: {
-          _authority: accessManager,
-          asset_: tokenP,
-          name_: savingsConfig.name,
-          symbol_: savingsConfig.symbol,
-          divizer: initialDivider,
+          args: [accessManager, tokenP, savingsConfig.name, savingsConfig.symbol, initialDivider],
         },
       },
     );

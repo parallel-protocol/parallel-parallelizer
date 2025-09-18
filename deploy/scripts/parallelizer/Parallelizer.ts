@@ -1,6 +1,6 @@
 import assert from "assert";
 import { deployScript, artifacts } from "@rocketh";
-import { Abi, encodeFunctionData, encodePacked, Hex, toFunctionSelector } from "viem";
+import { Abi, encodeAbiParameters, encodeFunctionData, Hex, parseAbiParameters, toFunctionSelector } from "viem";
 
 import {
   ChainlinkFeedsConfig,
@@ -54,7 +54,7 @@ export default deployScript(
 
     const redemptionSetup = setUpRedemption(parallelizerConfig.redemptionSetup);
 
-    const initializer = await get("DiamondInitializer");
+    const initializer = get("DiamondInitializer");
     const callData = encodeFunctionData({
       abi: initializer.abi,
       functionName: "initialize",
@@ -63,7 +63,6 @@ export default deployScript(
     const facets = await getFacetsWithSelectors(get);
 
     const cuts = facets.map((facet) => facet.cut);
-    console.log({ cuts });
     const parallelizer = await deploy(`${contractName}_${token}`, {
       artifact: artifacts.DiamondProxy,
       account: deployer,
@@ -129,33 +128,41 @@ const setUpCollateral = (collateral: CollateralConfig): CollateralSetupParams =>
     ) {
       throw new Error(`Chainlink feeds config must have the same length`);
     }
-    readData = encodePacked(
-      ["address[]", "uint32[]", "uint8[]", "uint8[]", "uint8"],
-      [circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, quoteType],
-    );
+
+    readData = encodeAbiParameters(parseAbiParameters("address[], uint32[], uint8[], uint8[], uint8"), [
+      circuitChainlink,
+      stalePeriods,
+      circuitChainIsMultiplied,
+      chainlinkDecimals,
+      quoteType,
+    ]);
   }
   if (oracle.oracleType === OracleReadType.MORPHO_ORACLE) {
     const { oracleAddress, normalizationFactor } = oracle as MorphoOracleConfig;
     if (!oracleAddress || !normalizationFactor) {
       throw new Error(`Morpho oracle config must have an oracle address and normalization factor`);
     }
-    readData = encodePacked(["address", "uint256"], [oracleAddress, normalizationFactor]);
+    readData = encodeAbiParameters(parseAbiParameters("address, uint256"), [oracleAddress, normalizationFactor]);
   }
 
-  let targetData: Hex = oracle.targetType === OracleReadType.MAX ? encodePacked(["uint256"], [0n]) : "0x";
+  let targetData: Hex =
+    oracle.targetType === OracleReadType.MAX ? encodeAbiParameters(parseAbiParameters("uint256"), [0n]) : "0x";
 
   let hyperparametersData: Hex = "0x";
   if (oracle.hyperparameters) {
-    hyperparametersData = encodePacked(
-      ["uint128", "uint128"],
-      [oracle.hyperparameters.userDeviation, oracle.hyperparameters.burnRatioDeviation],
-    );
+    hyperparametersData = encodeAbiParameters(parseAbiParameters("uint128, uint128"), [
+      oracle.hyperparameters.userDeviation,
+      oracle.hyperparameters.burnRatioDeviation,
+    ]);
   }
 
-  const oracleConfig = encodePacked(
-    ["uint8", "uint8", "bytes", "bytes", "bytes"],
-    [oracle.oracleType, oracle.targetType, readData, targetData, hyperparametersData],
-  );
+  const oracleConfig = encodeAbiParameters(parseAbiParameters("uint8, uint8, bytes, bytes, bytes"), [
+    oracle.oracleType,
+    oracle.targetType,
+    readData,
+    targetData,
+    hyperparametersData,
+  ]);
 
   return {
     token,
