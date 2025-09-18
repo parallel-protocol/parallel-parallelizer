@@ -30,12 +30,12 @@
           "yBurnFee": [0]
         },
         {
-          "token": "0x92ebF5A1fB4061B45222a6d76ACCF4698bdE4b95",
+          "token": "0xA19ebd8f9114519bF947671021c01d152c3777E4",
           "oracle": {
             "oracleType": "MORPHO_ORACLE",
             "targetType": "MAX",
-            "oracleAddress": "0x53e3d987b9398bafe165494832f6f2821d756e64",
-            "normalizationFactor": 1000000,
+            "oracleAddress": "0xdfc5a5084f31065d22adfa4ad2b099dad342d10a",
+            "normalizationFactor": 1000000000000000000,
             "hyperparameters": {
               "userDeviation": 0,
               "burnRatioDeviation": 500000000000000
@@ -44,7 +44,7 @@
           "xMintFee": [0],
           "yMintFee": [0],
           "xBurnFee": [1000000000],
-          "yBurnFee": [0]
+          "yBurnFee": [500000]
         },
         {
           "token": "0x80Eede496655FB9047dd39d9f418d5483ED600df",
