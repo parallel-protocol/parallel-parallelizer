@@ -21,7 +21,8 @@
     "lint": "bun run lint:sol && bun run prettier:check",
     "lint:sol": "bun solhint \"{scripts,contracts,tests}/**/*.sol\"",
     "prettier:check": "prettier --check \"**/*.{json,md,yml}\" --ignore-path \".prettierignore\"",
-    "prettier:write": "prettier --write \"**/*.{json,md,yml}\" --ignore-path \".prettierignore\""
+    "prettier:write": "prettier --write \"**/*.{json,md,yml}\" --ignore-path \".prettierignore\"",
+    "verify": "rocketh-verify etherscan"
   },
   "keywords": [],
   "author": "Parallel Labs, Inc.",
@@ -37,7 +38,7 @@
     "@rocketh/deploy": "^0.14.0",
     "@rocketh/doc": "^0.14.4",
     "@rocketh/export": "^0.14.4",
-    "@rocketh/proxy": "^0.14.0",
+    "@rocketh/proxy": "^0.14.1",
     "@rocketh/read-execute": "^0.14.0",
     "@rocketh/signer": "^0.14.0",
     "@rocketh/verifier": "^0.14.4",
