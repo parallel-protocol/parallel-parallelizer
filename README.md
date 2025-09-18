@@ -136,6 +136,7 @@ Some changed has been made to the original Angle's Transmuter:
 | SettersGuardian Facet | [0xbBC90E685C4a66EBBDC71a3A1437d3111e43Fe84](https:///www.snowscan.xyz/address/0xbBC90E685C4a66EBBDC71a3A1437d3111e43Fe84) |
 | Swapper Facet         | [0x57265a3D7db8f4a4a155eadF6c7326926caC1490](https:///www.snowscan.xyz/address/0x57265a3D7db8f4a4a155eadF6c7326926caC1490) |
 | Parallelizer USDp     | [0x41d58951cbd12D4Ef49b0437897677bbF5547C80](https:///www.snowscan.xyz/address/0x41d58951cbd12D4Ef49b0437897677bbF5547C80) |
+| sUSDp (Savings)       | [0x9d92c21205383651610f90722131655a5b8ed3e0](https:///www.snowscan.xyz/address/0x9d92c21205383651610f90722131655a5b8ed3e0) |
 | GenericHarvester USDp | [0x0d45b129dc868963025db79a9074ea9c9e32cae4](https:///www.snowscan.xyz/address/0x0d45b129dc868963025db79a9074ea9c9e32cae4) |
 
 ### Testnet
