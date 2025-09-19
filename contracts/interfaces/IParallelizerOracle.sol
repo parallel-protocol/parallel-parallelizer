@@ -4,8 +4,8 @@ pragma solidity 0.8.28;
 /// @title IParallelizerOracle
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This interface is an authorized fork of Angle's `IParallelizerOracle` interface
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IParallelizerOracle.sol
+/// @dev This interface is an authorized fork of Angle's `ITransmuterOracle` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/ITransmuterOracle.sol
 interface IParallelizerOracle {
   /// @notice Reads the oracle value for asset to use in a redemption to compute the collateral ratio
   function readRedemption() external view returns (uint256);
