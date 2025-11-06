@@ -7,7 +7,7 @@ import { ISettersGuardian, ISettersGovernor } from "contracts/interfaces/ISetter
 import { IDiamondEtherscan } from "contracts/interfaces/IDiamondEtherscan.sol";
 
 contract SetParallelizerRoles is BaseScript {
-  address parallelizer = 0xd8cc2A51556Da84b5DB309e86f30Ff98B5309862;
+  address parallelizer = 0x1250304F66404cd153fA39388DDCDAec7E0f1707;
 
   function run() public broadcast {
     bytes4[] memory guardianSelectors = new bytes4[](6);

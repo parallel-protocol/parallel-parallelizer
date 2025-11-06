@@ -1,0 +1,72 @@
+{
+  "accessManager": "0xfD28f108e95f4D41daAE9dbfFf707D677985998E",
+  "wallets": {
+    "dao": "0x5C1232b4F5fdb34d487C934ADF5d4e5c01fE34be"
+  },
+  "tokens": {
+    "usdp": "0xBE65F0F410A72BeC163dC65d46c83699e957D588"
+  },
+  "parallelizer": {
+    "usdp": {
+      "collaterals": [
+        {
+          "token": "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
+          "oracle": {
+            "oracleType": "CHAINLINK_FEEDS",
+            "targetType": "STABLE",
+            "quoteType": "UNIT",
+            "circuitChainlink": ["0xcA727511c9d542AAb9eF406d24E5bbbE4567c22d"],
+            "stalePeriods": [86400],
+            "circuitChainIsMultiplied": [1],
+            "chainlinkDecimals": [8],
+            "hyperparameters": {
+              "userDeviation": 500000000000000,
+              "burnRatioDeviation": 0
+            }
+          },
+          "xMintFee": [0],
+          "yMintFee": [0],
+          "xBurnFee": [1000000000],
+          "yBurnFee": [0]
+        },
+        {
+          "token": "0x211Cc4DD073734dA055fbF44a2b4667d5E5fE5d2",
+          "oracle": {
+            "oracleType": "CHAINLINK_FEEDS",
+            "targetType": "MAX",
+            "quoteType": "UNIT",
+            "circuitChainlink": ["0x243507C8C114618d7C8AD94b51118dB7b4e32ECe"],
+            "stalePeriods": [86400],
+            "circuitChainIsMultiplied": [1],
+            "chainlinkDecimals": [8],
+            "hyperparameters": {
+              "userDeviation": 0,
+              "burnRatioDeviation": 500000000000000
+            }
+          },
+          "xMintFee": [0],
+          "yMintFee": [0],
+          "xBurnFee": [1000000000],
+          "yBurnFee": [500000]
+        }
+      ],
+      "redemptionSetup": {
+        "xRedeemFee": [750000000, 850000000, 950000000, 970000000],
+        "yRedeemFee": [995000000, 950000000, 950000000, 995000000]
+      }
+    }
+  },
+  "savings": {
+    "usdp": {
+      "name": "Staked USDp",
+      "symbol": "sUSDp"
+    }
+  },
+  "genericHarvester": {
+    "usdp": {
+      "swapRouter": "0x744489ee3d540777a66f2cf297479745e0852f7a",
+      "tokenTransferAddress": "0x744489ee3d540777a66f2cf297479745e0852f7a",
+      "flashloan": "0x15452454A9735D68df430879B2941316a09295B1"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { isAddress, zeroAddress } from "viem";
 import { Address, ConfigData, Hyperparameters, OracleReadType, QuoteType } from "./types";
 
 // return token address defined in config.tokens
@@ -23,7 +23,7 @@ export const checkAddressValid = (address: Address, label: string) => {
 };
 
 export const isAddressValid = (address: string) => {
-  return ethers.utils.isAddress(address) && ethers.constants.AddressZero !== address;
+  return isAddress(address) && zeroAddress !== address;
 };
 
 export const parseToConfigData = (config: any): ConfigData => {
@@ -42,7 +42,7 @@ export const parseToConfigData = (config: any): ConfigData => {
             if (!(oracle.targetType in OracleReadType)) {
               throw new Error(`${token} Invalid target type: ${oracle.targetType}`);
             }
-            if (!(oracle.quoteType in QuoteType)) {
+            if (oracle.quoteType && !(oracle.quoteType in QuoteType)) {
               throw new Error(`${token} Invalid quote type: ${oracle.quoteType}`);
             }
             if (xMintFee.length !== yMintFee.length) {
@@ -64,10 +64,10 @@ export const parseToConfigData = (config: any): ConfigData => {
               token,
               oracle: {
                 ...oracle,
-                quoteType: QuoteType[oracle.quoteType as keyof typeof QuoteType],
+                quoteType: oracle.quoteType ? QuoteType[oracle.quoteType as keyof typeof QuoteType] : undefined,
                 oracleType: OracleReadType[oracle.oracleType as keyof typeof OracleReadType],
                 targetType: OracleReadType[oracle.targetType as keyof typeof OracleReadType],
-                stalePeriods: oracle.stalePeriods.map((x: string | number) => BigInt(x)),
+                stalePeriods: oracle.stalePeriods ? oracle.stalePeriods.map((x: string | number) => BigInt(x)) : [],
                 hyperparameters: hyperparameters,
               },
               xMintFee: xMintFee.map((x: string | number) => BigInt(x)),

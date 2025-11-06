@@ -22,6 +22,7 @@ export enum QuoteType {
 
 export type CollateralSetupParams = {
   token: Address;
+  targetMax: boolean;
   oracleConfig: string;
   xMintFee: bigint[];
   yMintFee: bigint[];
@@ -31,10 +32,15 @@ export type CollateralSetupParams = {
 
 export type ChainlinkFeedsConfig = OracleBaseConfig & {
   circuitChainlink: Address[];
-  stalePeriods: bigint[];
+  stalePeriods: number[];
   circuitChainIsMultiplied: number[];
   chainlinkDecimals: number[];
   quoteType: QuoteType;
+};
+
+export type MorphoOracleConfig = OracleBaseConfig & {
+  oracleAddress: Address;
+  normalizationFactor: bigint;
 };
 
 export type Hyperparameters = {
@@ -54,7 +60,7 @@ export type RedemptionSetup = {
   yRedeemFee: bigint[];
 };
 
-export type OracleConfig = ChainlinkFeedsConfig;
+export type OracleConfig = ChainlinkFeedsConfig | MorphoOracleConfig;
 
 export type CollateralConfig = {
   token: Address;
@@ -75,6 +81,12 @@ export type SavingsConfig = {
   symbol: string;
 };
 
+export type GenericHarvesterConfig = {
+  swapRouter: Address;
+  tokenTransferAddress: Address;
+  flashloan: Address;
+};
+
 export type ConfigData = {
   accessManager: Address;
   wallets: {
@@ -88,5 +100,8 @@ export type ConfigData = {
   };
   savings: {
     [tokenP: string]: SavingsConfig;
+  };
+  genericHarvester: {
+    [tokenP: string]: GenericHarvesterConfig;
   };
 };
