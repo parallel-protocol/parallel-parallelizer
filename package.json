@@ -28,7 +28,7 @@
   "author": "Parallel Labs, Inc.",
   "license": "BUSL-1.1",
   "bugs": {
-    "url": "https://github.com/ParallelProtocol/parallel-parallelizer/issues"
+    "url": "https://github.com/parallel-protocol/parallel-parallelizer/issues"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-keystore": "^3.0.1",
