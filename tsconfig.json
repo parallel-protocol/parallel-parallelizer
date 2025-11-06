@@ -2,12 +2,18 @@
   "exclude": ["node_modules"],
   "include": ["./hardhat.config.ts", "./scripts", "./deploy"],
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "lib": ["es2023"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "es2022",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "outDir": "dist",
+    "rootDir": ".",
+    "paths": {
+      "@rocketh": ["./rocketh.ts"],
+      "@generated/*": ["./generated/*"]
+    }
   }
 }

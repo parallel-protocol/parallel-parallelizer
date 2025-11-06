@@ -13,7 +13,6 @@ import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { IERC4626 } from "contracts/interfaces/external/IERC4626.sol";
 
-import "../utils/Constants.sol";
 import "../utils/Errors.sol";
 
 import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";

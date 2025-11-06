@@ -13,8 +13,8 @@ import { ISwapper } from "./ISwapper.sol";
 /// @title IParallelizer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev This interface is an authorized fork of Angle's `IParallelizer` interface
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/IParallelizer.sol
+/// @dev This interface is an authorized fork of Angle's `ITransmuter` interface
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/interfaces/ITransmuter.sol
 interface IParallelizer is
   IDiamondCut,
   IDiamondEtherscan,

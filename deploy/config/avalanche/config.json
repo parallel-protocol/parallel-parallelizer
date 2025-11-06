@@ -1,0 +1,69 @@
+{
+  "accessManager": "0xfD28f108e95f4D41daAE9dbfFf707D677985998E",
+  "wallets": {
+    "dao": "0xC5201FFE258a95Af986E7cD1fcaD54f3f63f2C95"
+  },
+  "tokens": {
+    "usdp": "0x9eE1963f05553eF838604Dd39403be21ceF26AA4"
+  },
+  "parallelizer": {
+    "usdp": {
+      "collaterals": [
+        {
+          "token": "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e",
+          "oracle": {
+            "oracleType": "CHAINLINK_FEEDS",
+            "targetType": "STABLE",
+            "quoteType": "UNIT",
+            "circuitChainlink": ["0xF096872672F44d6EBA71458D74fe67F9a77a23B9"],
+            "stalePeriods": [86400],
+            "circuitChainIsMultiplied": [1],
+            "chainlinkDecimals": [8],
+            "hyperparameters": {
+              "userDeviation": 500000000000000,
+              "burnRatioDeviation": 0
+            }
+          },
+          "xMintFee": [0],
+          "yMintFee": [0],
+          "xBurnFee": [1000000000],
+          "yBurnFee": [0]
+        },
+        {
+          "token": "0x7aca67a6856BF532A7B2deA9B20253F08bc9A85A",
+          "oracle": {
+            "oracleType": "MORPHO_ORACLE",
+            "targetType": "MAX",
+            "oracleAddress": "0x2d9C5D08ece400698F0914db418DF1AF110C4aF2",
+            "normalizationFactor": 1000000000000000000,
+            "hyperparameters": {
+              "userDeviation": 0,
+              "burnRatioDeviation": 500000000000000
+            }
+          },
+          "xMintFee": [0],
+          "yMintFee": [0],
+          "xBurnFee": [1000000000],
+          "yBurnFee": [500000]
+        }
+      ],
+      "redemptionSetup": {
+        "xRedeemFee": [750000000, 850000000, 950000000, 970000000],
+        "yRedeemFee": [995000000, 950000000, 950000000, 995000000]
+      }
+    }
+  },
+  "savings": {
+    "usdp": {
+      "name": "Staked USDp",
+      "symbol": "sUSDp"
+    }
+  },
+  "genericHarvester": {
+    "usdp": {
+      "swapRouter": "0x88de50b233052e4fb783d4f6db78cc34fea3e9fc",
+      "tokenTransferAddress": "0x88de50b233052e4fb783d4f6db78cc34fea3e9fc",
+      "flashloan": "0x9e0DCF7a33bBde6689560C5c807dd2a3dF991277"
+    }
+  }
+}
