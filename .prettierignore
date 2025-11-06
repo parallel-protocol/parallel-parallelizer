@@ -4,3 +4,7 @@ contracts/transmuter/Layout.sol
 lib
 cache
 out
+deployments
+cache-forge
+broadcast
+artifacts
