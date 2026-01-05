@@ -11,6 +11,8 @@ import { Constants, ContractType } from "@helpers/Constants.sol";
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { IManager } from "contracts/interfaces/IManager.sol";
 import { AggregatorV3Interface } from "contracts/interfaces/external/chainlink/AggregatorV3Interface.sol";
+import { SavingsNameable } from "contracts/savings/nameable/SavingsNameable.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import { CHAIN_SOURCE } from "scripts/helpers/Constants.s.sol";
 
@@ -24,8 +26,9 @@ import "contracts/utils/Errors.sol";
 import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { Parallelizer } from "./utils/Parallelizer.sol";
 import { ConfigAccessManager } from "./utils/ConfigAccessManager.sol";
+import { SavingsUtils } from "./utils/Savings.sol";
 
-contract Fixture is Parallelizer, ConfigAccessManager {
+contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
   ITokenP public tokenP;
 
   IERC20 public eurA;

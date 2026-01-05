@@ -39,8 +39,8 @@ contract BaseActor is Test {
   address internal _currentActor;
 
   ITokenP tokenP;
-  IParallelizer internal _transmuter;
-  IParallelizer internal _transmuterSplit;
+  IParallelizer internal _parallelizer;
+  IParallelizer internal _parallelizerSplit;
   address[] internal _collaterals;
   AggregatorV3Interface[] internal _oracles;
   uint256[] internal _maxTokenAmount;
@@ -70,8 +70,8 @@ contract BaseActor is Test {
       actors.push(actor);
     }
     nbrActor = _nbrActor;
-    _transmuter = parallelizer;
-    _transmuterSplit = transmuterSplit;
+    _parallelizer = parallelizer;
+    _parallelizerSplit = transmuterSplit;
     tokenP = ITokenP(parallelizer.tokenP());
     _collaterals = collaterals;
     _oracles = oracles;
