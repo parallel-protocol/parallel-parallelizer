@@ -125,4 +125,13 @@ interface IGetters {
   /// being consumed. Prevents denial of service for delayed restricted calls in the case that the contract performs
   /// attacker controlled calls.
   function isConsumingScheduledOp() external view returns (bytes4);
+
+  /// @notice Returns the payees and their shares
+  function getPayees() external view returns (address[] memory, uint256[] memory);
+
+  /// @notice Returns the total shares of the payees
+  function getTotalShares() external view returns (uint256);
+
+  /// @notice Returns the shares of a payee
+  function getShares(address payee) external view returns (uint256);
 }

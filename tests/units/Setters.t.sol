@@ -1486,3 +1486,89 @@ contract Test_Setters_SetStablecoinCap is Fixture {
     assertEq(parallelizer.getStablecoinCap(address(eurY)), 1 ether);
   }
 }
+
+contract Test_Setters_UpdatePayees is Fixture {
+  event PayeeAdded(address indexed payee, uint256 shares);
+
+  function test_UpdatePayees_NoAvailableIncome_Success() public {
+    address[] memory payees = new address[](2);
+    payees[0] = address(alice);
+    payees[1] = address(bob);
+    uint256[] memory shares = new uint256[](2);
+    shares[0] = 1 ether;
+    shares[1] = 2 ether;
+
+    hoax(governor);
+    vm.expectEmit(address(parallelizer));
+    emit PayeeAdded(address(alice), 1 ether);
+    vm.expectEmit(address(parallelizer));
+    emit PayeeAdded(address(bob), 2 ether);
+    parallelizer.updatePayees(payees, shares);
+
+    assertEq(parallelizer.getShares(address(alice)), 1 ether);
+    assertEq(parallelizer.getShares(address(bob)), 2 ether);
+    assertEq(parallelizer.getTotalShares(), 3 ether);
+  }
+
+  modifier initializePayees() {
+    address[] memory payees = new address[](1);
+    payees[0] = address(alice);
+    uint256[] memory shares = new uint256[](1);
+    shares[0] = 1 ether;
+    hoax(governor);
+    parallelizer.updatePayees(payees, shares);
+    _;
+  }
+
+  function test_UpdatePayees_WithAvailableIncome_Success() public initializePayees {
+    address[] memory payees = new address[](2);
+    payees[0] = address(alice);
+    payees[1] = address(bob);
+    uint256[] memory shares = new uint256[](2);
+    shares[0] = 1 ether;
+    shares[1] = 2 ether;
+
+    tokenP.mint(address(parallelizer), 3 ether);
+
+    hoax(governor);
+    parallelizer.updatePayees(payees, shares);
+
+    assertEq(tokenP.balanceOf(address(parallelizer)), 0);
+    assertEq(tokenP.balanceOf(address(alice)), 3 ether);
+    assertEq(tokenP.balanceOf(address(bob)), 0);
+  }
+
+  function test_UpdatePayees_RevertWhen_InvalidLengths() public {
+    hoax(governor);
+    vm.expectRevert(Errors.InvalidLengths.selector);
+    parallelizer.updatePayees(new address[](0), new uint256[](1));
+  }
+
+  function test_UpdatePayees_RevertWhen_ArrayLengthMismatch() public {
+    hoax(governor);
+    vm.expectRevert(Errors.ArrayLengthMismatch.selector);
+    parallelizer.updatePayees(new address[](1), new uint256[](2));
+  }
+
+  function test_UpdatePayees_RevertWhen_ShareIsZero() public {
+    address[] memory payees = new address[](2);
+    payees[0] = address(alice);
+    payees[1] = address(bob);
+    uint256[] memory shares = new uint256[](2);
+    shares[0] = 1 ether;
+    shares[1] = 0;
+    hoax(governor);
+    vm.expectRevert(Errors.ZeroAmount.selector);
+    parallelizer.updatePayees(payees, shares);
+  }
+
+  function test_UpdatePayees_RevertWhen_NotAuthorized() public {
+    address[] memory payees = new address[](1);
+    payees[0] = address(alice);
+    uint256[] memory shares = new uint256[](1);
+    shares[0] = 1 ether;
+    vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, alice));
+    hoax(alice);
+    parallelizer.updatePayees(payees, shares);
+  }
+}

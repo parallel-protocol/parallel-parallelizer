@@ -206,4 +206,26 @@ contract Getters is IGetters {
   function isConsumingScheduledOp() external view returns (bytes4) {
     return s.transmuterStorage().consumingSchedule ? this.isConsumingScheduledOp.selector : bytes4(0);
   }
+
+  /// @inheritdoc IGetters
+  function getPayees() external view returns (address[] memory, uint256[] memory) {
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    address[] memory payees = new address[](ts.payees.length);
+    uint256[] memory shares = new uint256[](ts.payees.length);
+    for (uint256 i = 0; i < ts.payees.length; i++) {
+      payees[i] = ts.payees[i];
+      shares[i] = ts.shares[ts.payees[i]];
+    }
+    return (payees, shares);
+  }
+
+  /// @inheritdoc IGetters
+  function getTotalShares() external view returns (uint256) {
+    return s.transmuterStorage().totalShares;
+  }
+
+  /// @inheritdoc IGetters
+  function getShares(address payee) external view returns (uint256) {
+    return s.transmuterStorage().shares[payee];
+  }
 }
