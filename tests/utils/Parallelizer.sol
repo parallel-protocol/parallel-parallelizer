@@ -13,6 +13,7 @@ import { RewardHandler } from "contracts/parallelizer/facets/RewardHandler.sol";
 import { SettersGovernor } from "contracts/parallelizer/facets/SettersGovernor.sol";
 import { SettersGuardian } from "contracts/parallelizer/facets/SettersGuardian.sol";
 import { Swapper } from "contracts/parallelizer/facets/Swapper.sol";
+import { Surplus } from "contracts/parallelizer/facets/Surplus.sol";
 import "contracts/utils/Errors.sol";
 import { DummyDiamondImplementation } from "scripts/generated/DummyDiamondImplementation.sol";
 
@@ -55,6 +56,9 @@ abstract contract Parallelizer is Helper {
 
     facetNames.push("Swapper");
     facetAddressList.push(address(new Swapper()));
+
+    facetNames.push("Surplus");
+    facetAddressList.push(address(new Surplus()));
 
     // Build appropriate payload
     uint256 n = facetNames.length;
