@@ -1572,3 +1572,24 @@ contract Test_Setters_UpdatePayees is Fixture {
     parallelizer.updatePayees(payees, shares);
   }
 }
+
+contract Test_Setters_UpdateSlippageTolerance is Fixture {
+  function test_UpdateSlippageTolerance_RevertWhen_InvalidSlippageTolerance() public {
+    hoax(governor);
+    vm.expectRevert(Errors.InvalidRate.selector);
+    parallelizer.updateSlippageTolerance(address(eurA), BASE_9 + 1);
+  }
+
+  function test_UpdateSlippageTolerance_Success() public {
+    uint256 slippageTolerance = BASE_9 / 2;
+    hoax(governor);
+    parallelizer.updateSlippageTolerance(address(eurA), slippageTolerance);
+    assertEq(parallelizer.getSlippageTolerance(address(eurA)), slippageTolerance);
+  }
+
+  function test_UpdateSlippageTolerance_RevertWhen_NotAuthorized() public {
+    vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, alice));
+    hoax(alice);
+    parallelizer.updateSlippageTolerance(address(eurA), BASE_9 / 2);
+  }
+}

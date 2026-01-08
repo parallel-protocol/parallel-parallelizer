@@ -121,4 +121,9 @@ contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
   function updatePayees(address[] memory _payees, uint256[] memory _shares) external restricted {
     LibSetters.updatePayees(_payees, _shares);
   }
+
+  /// @inheritdoc ISettersGovernor
+  function updateSlippageTolerance(address collateral, uint256 slippageTolerance) external restricted {
+    LibSetters.updateSlippageTolerance(collateral, slippageTolerance);
+  }
 }

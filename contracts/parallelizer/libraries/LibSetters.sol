@@ -253,6 +253,13 @@ library LibSetters {
     ts.totalShares = _totalShares;
   }
 
+  /// @notice Internal version of `updateSlippageTolerance`
+  function updateSlippageTolerance(address collateral, uint256 slippageTolerance) internal {
+    if (slippageTolerance > BASE_9) revert InvalidRate();
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    ts.slippageTolerance[collateral] = slippageTolerance;
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     HELPERS                                                     
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/

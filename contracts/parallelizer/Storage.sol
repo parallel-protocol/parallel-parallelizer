@@ -134,7 +134,7 @@ struct ParallelizerStorage {
   mapping(WhitelistType => mapping(address => uint256)) isWhitelistedForType; // Whether an address is whitelisted for
     // a specific whitelist type
   // Used for the surplus distribution
-  mapping(address => uint96) slippageTollerance;
+  mapping(address => uint256) slippageTolerance;
   uint256 lastReleasedAt;
   uint256 totalShares; // The total shares of the totalShares for all payees
   address[] payees; // The addresses of the payees
