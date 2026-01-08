@@ -228,4 +228,9 @@ contract Getters is IGetters {
   function getShares(address payee) external view returns (uint256) {
     return s.transmuterStorage().shares[payee];
   }
+
+  /// @inheritdoc IGetters
+  function getSlippageTolerance(address collateral) external view returns (uint256) {
+    return s.transmuterStorage().slippageTolerance[collateral];
+  }
 }
