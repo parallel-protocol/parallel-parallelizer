@@ -4,8 +4,7 @@ pragma solidity 0.8.28;
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import { ISurplus } from "contracts/interfaces/ISurplus.sol";
-
+import { LibSurplus } from "./LibSurplus.sol";
 import { LibManager } from "./LibManager.sol";
 import { LibOracle } from "./LibOracle.sol";
 import { LibStorage as s } from "./LibStorage.sol";
@@ -241,9 +240,12 @@ library LibSetters {
     if (_payees.length == 0) revert InvalidLengths();
     if (_payees.length != _shares.length) revert ArrayLengthMismatch();
     /// @dev Distribute the fees before updating the fee receivers.
-    try ISurplus(address(this)).release() { } catch { }
-
     ParallelizerStorage storage ts = s.transmuterStorage();
+    uint256 income = ts.tokenP.balanceOf(address(this));
+    if (income > 0 && ts.payees.length > 0) {
+      LibSurplus.release(income, ts.payees);
+    }
+
     delete ts.payees;
     uint256 _totalShares = 0;
     uint256 i = 0;

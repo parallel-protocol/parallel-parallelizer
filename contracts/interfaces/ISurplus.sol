@@ -18,13 +18,4 @@ interface ISurplus {
   /// @return payees The addresses of the payees
   /// @return amounts The amounts released to the payees
   function release() external returns (address[] memory payees, uint256[] memory amounts);
-
-  /// @notice Computes the surplus of a collateral.
-  /// @param collateral The collateral address to compute the surplus of.
-  /// @return collateralSurplus The collateral surplus amount.
-  /// @return stableSurplus The surplus in stable amount.
-  function getCollateralSurplus(address collateral)
-    external
-    view
-    returns (uint256 collateralSurplus, uint256 stableSurplus);
 }

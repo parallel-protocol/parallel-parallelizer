@@ -135,10 +135,19 @@ interface IGetters {
   /// @notice Returns the shares of a payee
   function getShares(address payee) external view returns (uint256);
 
+  /// @notice Returns the last time the income was released to the payees
+  function getLastReleasedAt() external view returns (uint256);
+
   /// @notice Returns the slippage tolerance for a `collateral` for the surplus
   /// @dev Maximum slippage tolerance is 1e9 (100%)
   function getSlippageTolerance(address collateral) external view returns (uint256);
 
-  /// @notice Returns the last time the income was released to the payees
-  function getLastReleasedAt() external view returns (uint256);
+  /// @notice Computes the surplus of a collateral.
+  /// @param collateral The collateral address to compute the surplus of.
+  /// @return collateralSurplus The collateral surplus amount.
+  /// @return stableSurplus The surplus in stable amount.
+  function getCollateralSurplus(address collateral)
+    external
+    view
+    returns (uint256 collateralSurplus, uint256 stableSurplus);
 }

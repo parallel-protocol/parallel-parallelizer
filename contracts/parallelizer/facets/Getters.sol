@@ -6,6 +6,7 @@ import { IGetters } from "contracts/interfaces/IGetters.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
 import { LibGetters } from "../libraries/LibGetters.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
+import { LibSurplus } from "../libraries/LibSurplus.sol";
 import { LibWhitelist } from "../libraries/LibWhitelist.sol";
 
 import "../../utils/Constants.sol";
@@ -237,5 +238,14 @@ contract Getters is IGetters {
   /// @inheritdoc IGetters
   function getLastReleasedAt() external view returns (uint256) {
     return s.transmuterStorage().lastReleasedAt;
+  }
+
+  /// @inheritdoc IGetters
+  function getCollateralSurplus(address collateral)
+    external
+    view
+    returns (uint256 collateralSurplus, uint256 stableSurplus)
+  {
+    return LibSurplus._computeCollateralSurplus(collateral);
   }
 }
