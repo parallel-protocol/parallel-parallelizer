@@ -35,6 +35,7 @@ contract Surplus is AccessManagedModifiers, ISurplus {
   /// @inheritdoc ISurplus
   function processSurplus(address collateral)
     external
+    restricted
     returns (uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount)
   {
     ParallelizerStorage storage ts = s.transmuterStorage();
@@ -60,7 +61,7 @@ contract Surplus is AccessManagedModifiers, ISurplus {
   /// @notice Releases the income to the payees
   /// @return payees The addresses of the payees
   /// @return amounts The amounts released to the payees
-  function release() external nonReentrant returns (address[] memory payees, uint256[] memory) {
+  function release() external nonReentrant restricted returns (address[] memory payees, uint256[] memory) {
     ParallelizerStorage storage ts = s.transmuterStorage();
     uint256 income = ts.tokenP.balanceOf(address(this));
     if (income == 0) revert ZeroAmount();
