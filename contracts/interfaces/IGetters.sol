@@ -138,4 +138,7 @@ interface IGetters {
   /// @notice Returns the slippage tolerance for a `collateral` for the surplus
   /// @dev Maximum slippage tolerance is 1e9 (100%)
   function getSlippageTolerance(address collateral) external view returns (uint256);
+
+  /// @notice Returns the last time the income was released to the payees
+  function getLastReleasedAt() external view returns (uint256);
 }

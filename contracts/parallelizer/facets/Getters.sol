@@ -233,4 +233,9 @@ contract Getters is IGetters {
   function getSlippageTolerance(address collateral) external view returns (uint256) {
     return s.transmuterStorage().slippageTolerance[collateral];
   }
+
+  /// @inheritdoc IGetters
+  function getLastReleasedAt() external view returns (uint256) {
+    return s.transmuterStorage().lastReleasedAt;
+  }
 }
