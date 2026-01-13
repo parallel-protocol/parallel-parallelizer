@@ -13,8 +13,8 @@ contract ReentrantRedeemGetCollateralRatio {
   IParallelizer parallelizer;
   IERC1820Registry registry;
 
-  constructor(IParallelizer _transmuter, IERC1820Registry _registry) {
-    parallelizer = _transmuter;
+  constructor(IParallelizer _parallelizer, IERC1820Registry _registry) {
+    parallelizer = _parallelizer;
     registry = _registry;
   }
 
@@ -52,8 +52,8 @@ contract ReentrantRedeemSwap {
   IERC20 tokenP;
   IERC20 collateral;
 
-  constructor(IParallelizer _transmuter, IERC1820Registry _registry, IERC20 _tokenP, IERC20 _collateral) {
-    parallelizer = _transmuter;
+  constructor(IParallelizer _parallelizer, IERC1820Registry _registry, IERC20 _tokenP, IERC20 _collateral) {
+    parallelizer = _parallelizer;
     registry = _registry;
     tokenP = _tokenP;
     collateral = _collateral;

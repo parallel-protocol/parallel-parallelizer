@@ -3,5 +3,6 @@
 @helpers/=libs/helpers/
 @openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
 @openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/
+@prb/math/=node_modules/@prb/math/src/
 
 contracts/=contracts/

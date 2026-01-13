@@ -79,7 +79,7 @@ abstract contract Parallelizer is Helper {
   )
     public
     virtual
-    returns (IParallelizer _transmuter)
+    returns (IParallelizer _parallelizer)
   {
     // Build appropriate payload
     uint256 n = facetNames.length;
@@ -93,8 +93,8 @@ abstract contract Parallelizer is Helper {
     }
 
     // Deploy diamond
-    _transmuter = IParallelizer(address(new DiamondProxy(cut, _init, _calldata)));
+    _parallelizer = IParallelizer(address(new DiamondProxy(cut, _init, _calldata)));
 
-    return _transmuter;
+    return _parallelizer;
   }
 }

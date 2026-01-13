@@ -51,30 +51,30 @@ contract Trader is BaseActor {
       testS.tokenIn = collateral;
       testS.tokenOut = address(tokenP);
       testS.amountIn = amount * 10 ** IERC20Metadata(collateral).decimals();
-      testS.amountOut = _transmuter.quoteIn(testS.amountIn, testS.tokenIn, testS.tokenOut);
+      testS.amountOut = _parallelizer.quoteIn(testS.amountIn, testS.tokenIn, testS.tokenOut);
     } else if (quoteType == QuoteType.BurnExactInput) {
       console.log("Burn - Input");
       testS.tokenIn = address(tokenP);
       testS.tokenOut = collateral;
       testS.amountIn = bound(amount * BASE_18, 1, tokenP.balanceOf(_currentActor));
-      testS.amountOut = _transmuter.quoteIn(testS.amountIn, testS.tokenIn, testS.tokenOut);
+      testS.amountOut = _parallelizer.quoteIn(testS.amountIn, testS.tokenIn, testS.tokenOut);
     } else if (quoteType == QuoteType.MintExactOutput) {
       console.log("Mint - Output");
       testS.tokenIn = collateral;
       testS.tokenOut = address(tokenP);
       testS.amountOut = amount * BASE_18;
-      testS.amountIn = _transmuter.quoteOut(testS.amountOut, testS.tokenIn, testS.tokenOut);
+      testS.amountIn = _parallelizer.quoteOut(testS.amountOut, testS.tokenIn, testS.tokenOut);
     } else if (quoteType == QuoteType.BurnExactOutput) {
       console.log("Burn - Output");
       testS.tokenIn = address(tokenP);
       testS.tokenOut = collateral;
       testS.amountOut = amount * 10 ** IERC20Metadata(collateral).decimals();
-      testS.amountIn = _transmuter.quoteOut(testS.amountOut, testS.tokenIn, testS.tokenOut);
+      testS.amountIn = _parallelizer.quoteOut(testS.amountOut, testS.tokenIn, testS.tokenOut);
       uint256 actorBalance = tokenP.balanceOf(_currentActor);
       // we need to decrease the amountOut wanted
       if (actorBalance < testS.amountIn) {
         testS.amountIn = actorBalance;
-        testS.amountOut = _transmuter.quoteIn(actorBalance, testS.tokenIn, testS.tokenOut);
+        testS.amountOut = _parallelizer.quoteIn(actorBalance, testS.tokenIn, testS.tokenOut);
       }
     }
 
@@ -85,9 +85,9 @@ contract Trader is BaseActor {
 
     // If burning we can't burn more than the reserves
     if (quoteType == QuoteType.BurnExactInput || quoteType == QuoteType.BurnExactOutput) {
-      (uint256 stablecoinsFromCollateral, uint256 totalStables) = _transmuter.getIssuedByCollateral(collateral);
+      (uint256 stablecoinsFromCollateral, uint256 totalStables) = _parallelizer.getIssuedByCollateral(collateral);
       if (
-        testS.amountOut > IERC20(testS.tokenOut).balanceOf(address(_transmuter))
+        testS.amountOut > IERC20(testS.tokenOut).balanceOf(address(_parallelizer))
           || testS.amountIn > stablecoinsFromCollateral || testS.amountIn > totalStables
       ) {
         return (0, 0);
@@ -102,21 +102,21 @@ contract Trader is BaseActor {
     }
 
     // Approval only usefull for QuoteType.MintExactInput and QuoteType.MintExactOutput
-    IERC20(testS.tokenIn).approve(address(_transmuter), testS.amountIn);
-    IERC20(testS.tokenIn).approve(address(_transmuterSplit), testS.amountIn);
+    IERC20(testS.tokenIn).approve(address(_parallelizer), testS.amountIn);
+    IERC20(testS.tokenIn).approve(address(_parallelizerSplit), testS.amountIn);
 
     // Memory previous balances
     uint256 balanceTokenp = tokenP.balanceOf(_currentActor);
     uint256 balanceCollateral = IERC20(collateral).balanceOf(_currentActor);
-    (uint64 prevCollateralRatio,) = _transmuter.getCollateralRatio();
+    (uint64 prevCollateralRatio,) = _parallelizer.getCollateralRatio();
 
     // Swap
     if (quoteType == QuoteType.MintExactInput || quoteType == QuoteType.BurnExactInput) {
-      _transmuter.swapExactInput(
+      _parallelizer.swapExactInput(
         testS.amountIn, testS.amountOut, testS.tokenIn, testS.tokenOut, _currentActor, block.timestamp + 1 hours
       );
     } else {
-      _transmuter.swapExactOutput(
+      _parallelizer.swapExactOutput(
         testS.amountOut, testS.amountIn, testS.tokenIn, testS.tokenOut, _currentActor, block.timestamp + 1 hours
       );
     }
@@ -126,14 +126,14 @@ contract Trader is BaseActor {
       assertEq(tokenP.balanceOf(_currentActor), balanceTokenp + testS.amountOut);
       // if it is a mint and the previous collateral ratio was lower than  it should always increase the
       // collateral ratio
-      (uint64 collateralRatio,) = _transmuter.getCollateralRatio();
+      (uint64 collateralRatio,) = _parallelizer.getCollateralRatio();
       if (prevCollateralRatio <= BASE_9) assertGe(collateralRatio, prevCollateralRatio);
       else assertGe(collateralRatio, BASE_9);
     } else {
       assertEq(IERC20(collateral).balanceOf(_currentActor), balanceCollateral + testS.amountOut);
       assertEq(tokenP.balanceOf(_currentActor), balanceTokenp - testS.amountIn);
       // if it is a burn it should always increase the collateral ratio
-      (uint64 collateralRatio,) = _transmuter.getCollateralRatio();
+      (uint64 collateralRatio,) = _parallelizer.getCollateralRatio();
       assertGe(collateralRatio, prevCollateralRatio);
     }
 
