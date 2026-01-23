@@ -481,8 +481,7 @@ contract OracleTest is Fixture, FunctionUtils {
         Storage.OracleReadType readType = Storage.OracleReadType.MORPHO_ORACLE;
         Storage.OracleReadType targetType = Storage.OracleReadType.MAX;
         bytes memory readData = abi.encode(address(morphoOracle), 10 ** normalizers[i]);
-        bytes memory targetData =
-          abi.encode((baseValues[i] * 1e36) / 10 ** normalizers[i], uint96(block.timestamp), 0, 1 days);
+        bytes memory targetData = abi.encode((baseValues[i] * 1e36) / 10 ** normalizers[i]);
         parallelizer.setOracle(
           _collaterals[i], abi.encode(readType, targetType, readData, targetData, abi.encode(uint128(0), uint128(0)))
         );

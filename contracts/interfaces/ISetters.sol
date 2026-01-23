@@ -55,6 +55,15 @@ interface ISettersGovernor {
 
   /// @notice Update oracle data for a given `collateral`
   function updateOracle(address collateral) external;
+
+  /// @notice Updates the payees and their shares
+  function updatePayees(address[] memory _payees, uint256[] memory _shares) external;
+
+  /// @notice Updates the slippage tolerance for a `collateral`
+  /// @dev Maximum slippage tolerance is 1e9 (100%)
+  /// @dev The slippage tolerance is used to compute the minimum expected amount of stablecoins to be received when
+  /// calling the `processSurplus` function
+  function updateSlippageTolerance(address collateral, uint256 slippageTolerance) external;
 }
 
 /// @title ISettersGovernor

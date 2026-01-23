@@ -11,11 +11,17 @@ export default deployScript(
 
     console.log(`Network: ${chainName} \n Deployer: ${deployer} \n Deploying facet: ${contractName}`);
 
-    const diamondEtherscan = await deploy(contractName, {
-      account: deployer,
-      artifact: artifacts.DiamondEtherscan,
-      args: [],
-    });
+    const diamondEtherscan = await deploy(
+      contractName,
+      {
+        account: deployer,
+        artifact: artifacts.DiamondEtherscan,
+        args: [],
+      },
+      {
+        skipIfAlreadyDeployed: true,
+      },
+    );
 
     console.log(`Deployed facet: ${contractName}, network: ${chainName}, address: ${diamondEtherscan.address}`);
   },

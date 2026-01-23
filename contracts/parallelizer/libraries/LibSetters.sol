@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
+import { LibSurplus } from "./LibSurplus.sol";
 import { LibManager } from "./LibManager.sol";
 import { LibOracle } from "./LibOracle.sol";
 import { LibStorage as s } from "./LibStorage.sol";
@@ -35,6 +36,7 @@ library LibSetters {
   event StablecoinCapSet(address indexed collateral, uint256 stablecoinCap);
   event TrustedToggled(address indexed sender, bool isTrusted, TrustedType trustedType);
   event WhitelistStatusToggled(WhitelistType whitelistType, address indexed who, uint256 whitelistStatus);
+  event PayeeAdded(address indexed payee, uint256 shares);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ONLY GOVERNOR ACTIONS                                              
@@ -233,6 +235,33 @@ library LibSetters {
     emit StablecoinCapSet(collateral, stablecoinCap);
   }
 
+  /// @notice Internal version of `updatePayees`
+  function updatePayees(address[] memory _payees, uint256[] memory _shares) internal {
+    if (_payees.length == 0) revert InvalidLengths();
+    if (_payees.length != _shares.length) revert ArrayLengthMismatch();
+    /// @dev Distribute the fees before updating the fee receivers.
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    uint256 income = ts.tokenP.balanceOf(address(this));
+    if (income > 0 && ts.payees.length > 0) {
+      LibSurplus.release(income, ts.payees);
+    }
+
+    delete ts.payees;
+    uint256 _totalShares = 0;
+    uint256 i = 0;
+    for (; i < _payees.length; ++i) {
+      _totalShares += _addPayee(_payees[i], _shares[i]);
+    }
+    ts.totalShares = _totalShares;
+  }
+
+  /// @notice Internal version of `updateSlippageTolerance`
+  function updateSlippageTolerance(address collateral, uint256 slippageTolerance) internal {
+    if (slippageTolerance > BASE_9) revert InvalidRate();
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    ts.slippageTolerance[collateral] = slippageTolerance;
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     HELPERS                                                     
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -290,5 +319,18 @@ library LibSetters {
         }
       }
     }
+  }
+
+  /// @notice Add a new fee receiver.
+  /// @param _payee The address of the fee receiver.
+  /// @param _shares The number of shares assigned to the fee receiver.
+  function _addPayee(address _payee, uint256 _shares) internal returns (uint256) {
+    if (_shares == 0) revert ZeroAmount();
+    ParallelizerStorage storage ts = s.transmuterStorage();
+
+    ts.payees.push(_payee);
+    ts.shares[_payee] = _shares;
+    emit PayeeAdded(_payee, _shares);
+    return _shares;
   }
 }
