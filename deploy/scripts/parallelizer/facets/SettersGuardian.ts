@@ -10,11 +10,17 @@ export default deployScript(
     assert(deployer, "Missing named deployer account");
     console.log(`Network: ${chainName} \n Deployer: ${deployer} \n Deploying facet: ${contractName}`);
 
-    const settersGuardian = await deploy(contractName, {
-      account: deployer,
-      artifact: artifacts.SettersGuardian,
-      args: [],
-    });
+    const settersGuardian = await deploy(
+      contractName,
+      {
+        account: deployer,
+        artifact: artifacts.SettersGuardian,
+        args: [],
+      },
+      {
+        skipIfAlreadyDeployed: true,
+      },
+    );
 
     console.log(`Deployed facet: ${contractName}, network: ${chainName}, address: ${settersGuardian.address}`);
   },

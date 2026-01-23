@@ -10,11 +10,17 @@ export default deployScript(
     assert(deployer, "Missing named deployer account");
     console.log(`Network: ${chainName} \n Deployer: ${deployer} \n Deploying facet: ${contractName}`);
 
-    const redeemer = await deploy(contractName, {
-      account: deployer,
-      artifact: artifacts.Redeemer,
-      args: [],
-    });
+    const redeemer = await deploy(
+      contractName,
+      {
+        account: deployer,
+        artifact: artifacts.Redeemer,
+        args: [],
+      },
+      {
+        skipIfAlreadyDeployed: true,
+      },
+    );
 
     console.log(`Deployed facet: ${contractName}, network: ${chainName}, address: ${redeemer.address}`);
   },
