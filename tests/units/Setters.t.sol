@@ -1520,6 +1520,31 @@ contract Test_Setters_UpdatePayees is Fixture {
     _;
   }
 
+  function test_UpdatePayees_ClearsStaleShares() public {
+    address[] memory payees = new address[](2);
+    payees[0] = address(alice);
+    payees[1] = address(bob);
+    uint256[] memory shares = new uint256[](2);
+    shares[0] = 1 ether;
+    shares[1] = 2 ether;
+    hoax(governor);
+    parallelizer.updatePayees(payees, shares, false);
+    assertEq(parallelizer.getShares(address(bob)), 2 ether);
+
+    address[] memory newPayees = new address[](1);
+    newPayees[0] = address(alice);
+    uint256[] memory newShares = new uint256[](1);
+    newShares[0] = 3 ether;
+    hoax(governor);
+    parallelizer.updatePayees(newPayees, newShares, false);
+
+    assertEq(parallelizer.getShares(address(bob)), 0);
+    assertEq(parallelizer.getShares(address(alice)), 3 ether);
+    assertEq(parallelizer.getTotalShares(), 3 ether);
+    (address[] memory currentPayees,) = parallelizer.getPayees();
+    assertEq(currentPayees.length, 1);
+  }
+
   function test_UpdatePayees_WithAvailableIncome_Success() public initializePayees {
     address[] memory payees = new address[](2);
     payees[0] = address(alice);
@@ -1578,6 +1603,18 @@ contract Test_Setters_UpdatePayees is Fixture {
     // Income was NOT released because skipRelease = true
     assertEq(tokenP.balanceOf(address(parallelizer)), 3 ether);
     assertEq(tokenP.balanceOf(address(alice)), 0);
+  }
+
+  function test_UpdatePayees_RevertWhen_TooManyPayees() public {
+    address[] memory payees = new address[](11);
+    uint256[] memory shares = new uint256[](11);
+    for (uint256 i = 0; i < 11; ++i) {
+      payees[i] = address(uint160(i + 1));
+      shares[i] = 1 ether;
+    }
+    hoax(governor);
+    vm.expectRevert(Errors.InvalidLengths.selector);
+    parallelizer.updatePayees(payees, shares, false);
   }
 
   function test_UpdatePayees_RevertWhen_DuplicatePayee() public {

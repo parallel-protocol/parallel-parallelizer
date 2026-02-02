@@ -238,7 +238,7 @@ library LibSetters {
 
   /// @notice Internal version of `updatePayees`
   function updatePayees(address[] memory _payees, uint256[] memory _shares, bool _skipRelease) internal {
-    if (_payees.length == 0) revert InvalidLengths();
+    if (_payees.length == 0 || _payees.length > MAX_PAYEES) revert InvalidLengths();
     if (_payees.length != _shares.length) revert ArrayLengthMismatch();
     /// @dev Distribute the fees before updating the fee receivers.
     ParallelizerStorage storage ts = s.transmuterStorage();
@@ -249,6 +249,10 @@ library LibSetters {
       }
     }
 
+    // Zero out stale shares for old payees
+    for (uint256 i = 0; i < ts.payees.length; ++i) {
+      ts.shares[ts.payees[i]] = 0;
+    }
     delete ts.payees;
     uint256 _totalShares = 0;
     uint256 i = 0;
