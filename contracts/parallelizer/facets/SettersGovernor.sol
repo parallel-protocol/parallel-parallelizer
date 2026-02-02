@@ -100,6 +100,7 @@ contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
     LibSetters.setOracle(collateral, oracleConfig);
   }
 
+  /// @inheritdoc ISettersGovernor
   function updateOracle(address collateral) external {
     if (s.transmuterStorage().isSellerTrusted[msg.sender] == 0) revert NotTrusted();
     LibOracle.updateOracle(collateral);
