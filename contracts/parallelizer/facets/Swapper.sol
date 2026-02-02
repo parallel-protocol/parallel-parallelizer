@@ -168,7 +168,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, block.timestamp);
     if (mint) {
       amountOut = _quoteMintExactInput(collatInfo, amountIn);
-      _checkHardCaps(collatInfo, amountOut, ts.normalizer);
+      uint256 normalizedAmount = amountOut.mulDiv(BASE_27, ts.normalizer, Math.Rounding.Ceil);
+      _checkHardCaps(collatInfo, normalizedAmount, ts.normalizer);
     } else {
       amountOut = _quoteBurnExactInput(tokenOut, collatInfo, amountIn);
       _checkAmounts(tokenOut, collatInfo, amountOut);
@@ -180,7 +181,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     ParallelizerStorage storage ts = s.transmuterStorage();
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, block.timestamp);
     if (mint) {
-      _checkHardCaps(collatInfo, amountOut, ts.normalizer);
+      uint256 normalizedAmount = amountOut.mulDiv(BASE_27, ts.normalizer, Math.Rounding.Ceil);
+      _checkHardCaps(collatInfo, normalizedAmount, ts.normalizer);
       return _quoteMintExactOutput(collatInfo, amountOut);
     } else {
       _checkAmounts(tokenOut, collatInfo, amountOut);
@@ -492,8 +494,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   }
 
   /// @notice Checks whether there is enough space left to mint from this collateral
-  function _checkHardCaps(Collateral storage collatInfo, uint256 amount, uint256 normalizer) internal view {
-    if (amount + (collatInfo.normalizedStables * normalizer) / BASE_27 > collatInfo.stablecoinCap) {
+  function _checkHardCaps(Collateral storage collatInfo, uint256 normalizedDelta, uint256 normalizer) internal view {
+    if ((uint256(collatInfo.normalizedStables) + normalizedDelta) * normalizer / BASE_27 > collatInfo.stablecoinCap) {
       revert InvalidSwap();
     }
   }
