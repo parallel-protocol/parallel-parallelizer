@@ -10,6 +10,7 @@ import { IGetters } from "contracts/interfaces/IGetters.sol";
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 
 import { LibOracle } from "../libraries/LibOracle.sol";
+import { LibGetters } from "../libraries/LibGetters.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
 import { LibSurplus } from "../libraries/LibSurplus.sol";
@@ -41,6 +42,8 @@ contract Surplus is AccessManagedModifiers, ISurplus {
     issuedAmount = ISwapper(address(this)).swapExactInput(
       collateralSurplus, minExpectedAmount, collateral, address(ts.tokenP), address(this), block.timestamp
     );
+    (uint64 collatRatio,,,,) = LibGetters.getCollateralRatio();
+    if (collatRatio < uint64(BASE_9)) revert Undercollateralized();
     emit SurplusProcessed(collateralSurplus, stableSurplus, issuedAmount);
   }
 

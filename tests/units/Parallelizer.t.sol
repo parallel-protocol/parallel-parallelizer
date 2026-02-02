@@ -122,6 +122,43 @@ contract TestParallelizer is Fixture {
     parallelizer.processSurplus(address(eurA));
   }
 
+  modifier setZeroMintFeesOnAllCollaterals() {
+    _setZeroMintFees(address(eurA));
+    _setZeroMintFees(address(eurB));
+    _setZeroMintFees(address(eurY));
+    _;
+  }
+
+  modifier mintTokenPFromAllCollaterals() {
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+    _mintZeroFee(address(eurB), 100 * 1e12);
+    _mintZeroFee(address(eurY), 100 * BASE_18);
+    _;
+  }
+
+  function test_ProcessSurplus_RevertWhen_SurplusProcessingMakesProtocolUndercollateralized()
+    public
+    setZeroMintFeesOnAllCollaterals
+    mintTokenPFromAllCollaterals
+  {
+    (uint64 crBefore,) = parallelizer.getCollateralRatio();
+    assertTrue(crBefore >= BASE_9, "ProcessSurplus: Protocol should be healthy before surplus processing");
+
+    _setSlippageTolerance(address(eurB), 1e8);
+
+    // set eurB is a yield-bearing asset
+    _setOracleMaxTarget(address(eurB), address(oracleB), 1.08e18);
+    // eurB appreciates to 1.08 to generate surplus
+    MockChainlinkOracle(address(oracleB)).setLatestAnswer(int256(1.08e8));
+    // eurA depegs to 0.95 to make the protocol at risk
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.95e8));
+
+    vm.startPrank(governor);
+    vm.expectRevert(Undercollateralized.selector);
+    parallelizer.processSurplus(address(eurB));
+    vm.stopPrank();
+  }
+
   ///---------------------------------
   /// Test Release
   ///---------------------------------
@@ -149,6 +186,53 @@ contract TestParallelizer is Fixture {
   /// Helpers
   ///---------------------------------
 
+  function _setZeroMintFees(address collateral) internal {
+    vm.startPrank(guardian);
+    uint64[] memory xMintFee = new uint64[](1);
+    xMintFee[0] = uint64(0);
+    int64[] memory yMintFee = new int64[](1);
+    yMintFee[0] = int64(0);
+    parallelizer.setFees(collateral, xMintFee, yMintFee, true);
+    vm.stopPrank();
+  }
+
+  function _mintZeroFee(address collateral, uint256 amount) internal {
+    vm.startPrank(governor);
+    deal(collateral, governor, amount);
+    IERC20(collateral).approve(address(parallelizer), amount);
+    parallelizer.swapExactInput(amount, 0, collateral, address(tokenP), governor, block.timestamp + 1 hours);
+    vm.stopPrank();
+  }
+
+  function _setOracleMaxTarget(address collateral, address oracle, uint256 maxPrice) internal {
+    AggregatorV3Interface[] memory circuitChainlink = new AggregatorV3Interface[](1);
+    uint32[] memory stalePeriods = new uint32[](1);
+    uint8[] memory circuitChainIsMultiplied = new uint8[](1);
+    uint8[] memory chainlinkDecimals = new uint8[](1);
+    circuitChainlink[0] = AggregatorV3Interface(oracle);
+    stalePeriods[0] = 1 hours;
+    circuitChainIsMultiplied[0] = 1;
+    chainlinkDecimals[0] = 8;
+    OracleQuoteType quoteType = OracleQuoteType.UNIT;
+    bytes memory readData =
+      abi.encode(circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, quoteType);
+    bytes memory targetData = abi.encode(maxPrice);
+    vm.startPrank(governor);
+    parallelizer.setOracle(
+      collateral,
+      abi.encode(
+        OracleReadType.CHAINLINK_FEEDS, OracleReadType.MAX, readData, targetData, abi.encode(uint128(0), uint128(0))
+      )
+    );
+    vm.stopPrank();
+  }
+
+  function _setSlippageTolerance(address collateral, uint256 tolerance) internal {
+    vm.startPrank(governor);
+    parallelizer.updateSlippageTolerance(collateral, tolerance);
+    vm.stopPrank();
+  }
+
   modifier swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle() {
     _swapSomeCollateralToTokenPAndUpdatOracleToMorphoOracle();
     _;
@@ -169,8 +253,7 @@ contract TestParallelizer is Fixture {
   }
 
   modifier updateSlippageToleranceTo1e7() {
-    vm.startPrank(governor);
-    parallelizer.updateSlippageTolerance(address(eurA), 1e7);
+    _setSlippageTolerance(address(eurA), 1e7);
     _;
   }
 

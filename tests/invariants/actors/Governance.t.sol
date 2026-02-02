@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import "contracts/utils/Constants.sol";
+import "contracts/utils/Errors.sol";
 import { BaseActor, IParallelizer, AggregatorV3Interface, IERC20, IERC20Metadata } from "./BaseActor.t.sol";
 import { MockChainlinkOracle } from "tests/mock/MockChainlinkOracle.sol";
 import "../../utils/FunctionUtils.sol";
@@ -9,6 +10,14 @@ import "../../utils/FunctionUtils.sol";
 contract Governance is BaseActor, FunctionUtils {
   uint64 public collateralRatio;
   uint64 public collateralRatioSplit;
+
+  uint256 public totalSurplusProcessed;
+  uint256 public successfulSurplusCalls;
+  uint256 public undercollateralizedReverts;
+  uint256 public totalIncomeReleased;
+  uint256 public releaseCallCount;
+  bool public lastReleaseProportional = true;
+  bool public surplusCausedUndercollateralization;
 
   constructor(
     IParallelizer parallelizer,
@@ -94,14 +103,44 @@ contract Governance is BaseActor, FunctionUtils {
     _parallelizerSplit.setFees(_collaterals[collatNumber], xFeeMint, yFeeMint, true);
   }
 
-  // function updateTimestamp(uint256 elapseTimestamp) public countCall("timestamp") {
-  //     elapseTimestamp = bound(elapseTimestamp, 0, 1 days);
-  //     skip(elapseTimestamp);
-  //     for (uint256 i; i < _oracles.length; i++) {
-  //         (, int256 value, , , ) = _oracles[i].latestRoundData();
-  //         MockChainlinkOracle(address(_oracles[i])).setLatestAnswer(value);
-  //     }
-  // }
+  function processSurplus(uint256 collatNumber) public useActor(0) countCall("processSurplus") {
+    collatNumber = bound(collatNumber, 0, _collaterals.length - 1);
+    try _parallelizer.processSurplus(_collaterals[collatNumber]) returns (uint256, uint256, uint256 issuedAmount) {
+      totalSurplusProcessed += issuedAmount;
+      successfulSurplusCalls++;
+      // CR must be >= BASE_9 immediately after successful processSurplus
+      (uint64 cr,) = _parallelizer.getCollateralRatio();
+      if (cr < uint64(BASE_9)) {
+        surplusCausedUndercollateralization = true;
+      }
+    } catch (bytes memory reason) {
+      if (reason.length >= 4 && bytes4(reason) == Undercollateralized.selector) {
+        undercollateralizedReverts++;
+      }
+    }
+  }
+
+  function release() public useActor(0) countCall("release") {
+    uint256 income = tokenP.balanceOf(address(_parallelizer));
+    if (income == 0) return;
+
+    try _parallelizer.release() returns (address[] memory payees, uint256[] memory amounts) {
+      releaseCallCount++;
+      uint256 totalShares = _parallelizer.getTotalShares();
+      uint256 totalDistributed;
+      bool proportional = true;
+
+      for (uint256 i; i < payees.length; i++) {
+        totalDistributed += amounts[i];
+        uint256 expectedAmount = (income * _parallelizer.getShares(payees[i])) / totalShares;
+        if (amounts[i] > expectedAmount + 1 || amounts[i] + 1 < expectedAmount) {
+          proportional = false;
+        }
+      }
+      totalIncomeReleased += totalDistributed;
+      lastReleaseProportional = proportional;
+    } catch { }
+  }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     UTILS                                                      

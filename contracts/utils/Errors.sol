@@ -49,3 +49,4 @@ error ZeroAmount();
 error SwapError();
 error SlippageTooHigh();
 error InsufficientFunds();
+error Undercollateralized();
