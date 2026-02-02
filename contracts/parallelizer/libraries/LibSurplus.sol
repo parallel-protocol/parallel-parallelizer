@@ -82,7 +82,8 @@ library LibSurplus {
     uint256 oracleValue = LibOracle.readMint(collatInfo.oracleConfig);
     uint256 totalCollateralValue =
       LibHelpers.convertDecimalTo(oracleValue * currentCollateralBalance, 18 + collatInfo.decimals, 18);
-    stableSurplus = totalCollateralValue - collatInfo.normalizedStables;
+    uint256 stablesBacked = (uint256(collatInfo.normalizedStables) * ts.normalizer) / BASE_27;
+    stableSurplus = totalCollateralValue - stablesBacked;
     collateralSurplus = LibHelpers.convertDecimalTo((stableSurplus * BASE_18) / oracleValue, 18, collatInfo.decimals);
   }
 

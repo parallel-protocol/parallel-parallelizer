@@ -159,6 +159,32 @@ contract TestParallelizer is Fixture {
     vm.stopPrank();
   }
 
+  function test_ProcessSurplus_RevertWhen_NormalizerNotBase27_OvercountsSurplus()
+    public
+    setZeroMintFeesOnAllCollaterals
+  {
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+
+    // increase normalizer by 10%
+    vm.startPrank(governor);
+    parallelizer.toggleTrusted(governor, TrustedType.Updater);
+    parallelizer.updateNormalizer(10e18, true);
+    vm.stopPrank();
+
+    (uint256 actualStables,) = parallelizer.getIssuedByCollateral(address(eurA));
+    assertEq(actualStables, 110e18, "ProcessSurplus: denormalized stables should be 110e18");
+
+    // set eurA as yield-bearing asset
+    _setOracleMaxTarget(address(eurA), address(oracleA), 1.08e18);
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.08e8));
+    _setSlippageTolerance(address(eurA), 1e8);
+
+    vm.startPrank(governor);
+    vm.expectRevert();
+    parallelizer.processSurplus(address(eurA));
+    vm.stopPrank();
+  }
+
   ///---------------------------------
   /// Test Release
   ///---------------------------------
