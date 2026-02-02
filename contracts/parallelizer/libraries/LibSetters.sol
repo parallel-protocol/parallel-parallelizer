@@ -252,6 +252,9 @@ library LibSetters {
     uint256 _totalShares = 0;
     uint256 i = 0;
     for (; i < _payees.length; ++i) {
+      for (uint256 j = 0; j < i; ++j) {
+        if (_payees[j] == _payees[i]) revert AlreadyAdded();
+      }
       _totalShares += _addPayee(_payees[i], _shares[i]);
     }
     ts.totalShares = _totalShares;

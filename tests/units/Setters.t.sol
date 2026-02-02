@@ -1580,6 +1580,18 @@ contract Test_Setters_UpdatePayees is Fixture {
     assertEq(tokenP.balanceOf(address(alice)), 0);
   }
 
+  function test_UpdatePayees_RevertWhen_DuplicatePayee() public {
+    address[] memory payees = new address[](2);
+    payees[0] = address(alice);
+    payees[1] = address(alice);
+    uint256[] memory shares = new uint256[](2);
+    shares[0] = 1 ether;
+    shares[1] = 2 ether;
+    hoax(governor);
+    vm.expectRevert(Errors.AlreadyAdded.selector);
+    parallelizer.updatePayees(payees, shares, false);
+  }
+
   function test_UpdatePayees_RevertWhen_NotAuthorized() public {
     address[] memory payees = new address[](1);
     payees[0] = address(alice);
