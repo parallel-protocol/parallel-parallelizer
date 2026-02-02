@@ -10,6 +10,7 @@ import { MockAccessControlManager } from "tests/mock/MockAccessControlManager.so
 import { MockChainlinkOracle } from "tests/mock/MockChainlinkOracle.sol";
 import { MockTokenPermit } from "tests/mock/MockTokenPermit.sol";
 import { MockMorphoOracle } from "tests/mock/MockMorphoOracle.sol";
+import { MockManager } from "tests/mock/MockManager.sol";
 import { IGetters } from "contracts/interfaces/IGetters.sol";
 
 import { Test } from "contracts/parallelizer/configs/Test.sol";
@@ -183,6 +184,33 @@ contract TestParallelizer is Fixture {
     vm.expectRevert();
     parallelizer.processSurplus(address(eurA));
     vm.stopPrank();
+  }
+
+  function test_GetCollateralSurplus_WorksForManagedCollateral() public setZeroMintFeesOnAllCollaterals {
+    // Set up eurA as managed collateral
+    MockManager manager = new MockManager(address(eurA));
+    IERC20[] memory subCollaterals = new IERC20[](1);
+    subCollaterals[0] = eurA;
+    manager.setSubCollaterals(subCollaterals, "");
+    ManagerStorage memory managerData = ManagerStorage({
+      subCollaterals: subCollaterals,
+      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+    });
+    vm.prank(governor);
+    parallelizer.setCollateralManager(address(eurA), true, managerData);
+
+    // Mint tokenP from eurA — tokens flow to the manager, not the parallelizer
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+    assertEq(eurA.balanceOf(address(parallelizer)), 0, "Tokens should be at manager");
+    assertGt(eurA.balanceOf(address(manager)), 0, "Manager should hold tokens");
+
+    // set eurA as yield-bearing asset
+    _setOracleMaxTarget(address(eurA), address(oracleA), 1.08e18);
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.08e8));
+
+    (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
+    assertGt(collateralSurplus, 0, "ProcessSurplus: managed collateral should report surplus");
+    assertGt(stableSurplus, 0, "ProcessSurplus: managed collateral should report stable surplus");
   }
 
   ///---------------------------------

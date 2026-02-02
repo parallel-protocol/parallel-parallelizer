@@ -5,6 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
+import { LibManager } from "../libraries/LibManager.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
@@ -76,9 +77,14 @@ library LibSurplus {
     view
     returns (uint256 collateralSurplus, uint256 stableSurplus)
   {
-    uint256 currentCollateralBalance = IERC20(collateral).balanceOf(address(this));
     ParallelizerStorage storage ts = s.transmuterStorage();
     Collateral storage collatInfo = ts.collaterals[collateral];
+    uint256 currentCollateralBalance;
+    if (collatInfo.isManaged > 0) {
+      (, currentCollateralBalance) = LibManager.totalAssets(collatInfo.managerData.config);
+    } else {
+      currentCollateralBalance = IERC20(collateral).balanceOf(address(this));
+    }
     uint256 oracleValue = LibOracle.readMint(collatInfo.oracleConfig);
     uint256 totalCollateralValue =
       LibHelpers.convertDecimalTo(oracleValue * currentCollateralBalance, 18 + collatInfo.decimals, 18);
