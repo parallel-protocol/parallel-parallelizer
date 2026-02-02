@@ -37,6 +37,7 @@ library LibSetters {
   event TrustedToggled(address indexed sender, bool isTrusted, TrustedType trustedType);
   event WhitelistStatusToggled(WhitelistType whitelistType, address indexed who, uint256 whitelistStatus);
   event PayeeAdded(address indexed payee, uint256 shares);
+  event SlippageToleranceUpdated(address indexed collateral, uint256 slippageTolerance);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ONLY GOVERNOR ACTIONS                                              
@@ -265,6 +266,7 @@ library LibSetters {
     if (slippageTolerance > BASE_9) revert InvalidRate();
     ParallelizerStorage storage ts = s.transmuterStorage();
     ts.slippageTolerance[collateral] = slippageTolerance;
+    emit SlippageToleranceUpdated(collateral, slippageTolerance);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

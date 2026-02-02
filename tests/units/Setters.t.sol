@@ -1604,6 +1604,8 @@ contract Test_Setters_UpdatePayees is Fixture {
 }
 
 contract Test_Setters_UpdateSlippageTolerance is Fixture {
+  event SlippageToleranceUpdated(address indexed collateral, uint256 slippageTolerance);
+
   function test_UpdateSlippageTolerance_RevertWhen_InvalidSlippageTolerance() public {
     hoax(governor);
     vm.expectRevert(Errors.InvalidRate.selector);
@@ -1612,6 +1614,8 @@ contract Test_Setters_UpdateSlippageTolerance is Fixture {
 
   function test_UpdateSlippageTolerance_Success() public {
     uint256 slippageTolerance = BASE_9 / 2;
+    vm.expectEmit(address(parallelizer));
+    emit SlippageToleranceUpdated(address(eurA), slippageTolerance);
     hoax(governor);
     parallelizer.updateSlippageTolerance(address(eurA), slippageTolerance);
     assertEq(parallelizer.getSlippageTolerance(address(eurA)), slippageTolerance);
