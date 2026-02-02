@@ -38,7 +38,7 @@ contract Surplus is AccessManagedModifiers, ISurplus {
     (collateralSurplus, stableSurplus) = LibSurplus._computeCollateralSurplus(collateral);
     if (collateralSurplus == 0) revert ZeroAmount();
     uint256 minExpectedAmount = LibSurplus._minExpectedAmount(stableSurplus, ts.slippageTolerance[collateral]);
-    IERC20(collateral).approve(address(this), collateralSurplus);
+    IERC20(collateral).forceApprove(address(this), collateralSurplus);
     issuedAmount = ISwapper(address(this)).swapExactInput(
       collateralSurplus, minExpectedAmount, collateral, address(ts.tokenP), address(this), block.timestamp
     );
