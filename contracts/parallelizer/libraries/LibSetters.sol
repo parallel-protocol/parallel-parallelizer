@@ -236,14 +236,16 @@ library LibSetters {
   }
 
   /// @notice Internal version of `updatePayees`
-  function updatePayees(address[] memory _payees, uint256[] memory _shares) internal {
+  function updatePayees(address[] memory _payees, uint256[] memory _shares, bool _skipRelease) internal {
     if (_payees.length == 0) revert InvalidLengths();
     if (_payees.length != _shares.length) revert ArrayLengthMismatch();
     /// @dev Distribute the fees before updating the fee receivers.
     ParallelizerStorage storage ts = s.transmuterStorage();
-    uint256 income = ts.tokenP.balanceOf(address(this));
-    if (income > 0 && ts.payees.length > 0) {
-      LibSurplus.release(income, ts.payees);
+    if (!_skipRelease) {
+      uint256 income = ts.tokenP.balanceOf(address(this));
+      if (income > 0 && ts.payees.length > 0) {
+        LibSurplus.release(income, ts.payees);
+      }
     }
 
     delete ts.payees;

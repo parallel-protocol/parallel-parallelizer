@@ -57,7 +57,10 @@ interface ISettersGovernor {
   function updateOracle(address collateral) external;
 
   /// @notice Updates the payees and their shares
-  function updatePayees(address[] memory _payees, uint256[] memory _shares) external;
+  /// @param _payees The new payee addresses
+  /// @param _shares The new shares for each payee
+  /// @param _skipRelease If true, skips the automatic income release before updating
+  function updatePayees(address[] memory _payees, uint256[] memory _shares, bool _skipRelease) external;
 
   /// @notice Updates the slippage tolerance for a `collateral`
   /// @dev Maximum slippage tolerance is 1e9 (100%)

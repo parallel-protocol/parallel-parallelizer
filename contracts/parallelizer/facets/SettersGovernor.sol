@@ -118,8 +118,8 @@ contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
   }
 
   /// @inheritdoc ISettersGovernor
-  function updatePayees(address[] memory _payees, uint256[] memory _shares) external restricted {
-    LibSetters.updatePayees(_payees, _shares);
+  function updatePayees(address[] memory _payees, uint256[] memory _shares, bool _skipRelease) external restricted {
+    LibSetters.updatePayees(_payees, _shares, _skipRelease);
   }
 
   /// @inheritdoc ISettersGovernor

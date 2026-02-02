@@ -373,6 +373,6 @@ contract TestParallelizer is Fixture {
     uint256[] memory shares = new uint256[](2);
     shares[0] = 1 ether;
     shares[1] = 9 ether;
-    parallelizer.updatePayees(payees, shares);
+    parallelizer.updatePayees(payees, shares, false);
   }
 }
