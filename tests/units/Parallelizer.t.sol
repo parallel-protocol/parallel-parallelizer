@@ -119,7 +119,7 @@ contract TestParallelizer is Fixture {
 
   function test_ProcessSurplus_RevertWhen_NoSurplus() public {
     vm.startPrank(governor);
-    vm.expectRevert(ZeroAmount.selector);
+    vm.expectRevert(ZeroSurplusAmount.selector);
     parallelizer.processSurplus(address(eurA));
   }
 
@@ -184,6 +184,17 @@ contract TestParallelizer is Fixture {
     vm.expectRevert();
     parallelizer.processSurplus(address(eurA));
     vm.stopPrank();
+  }
+
+  function test_GetCollateralSurplus_RevertWhen_NoSurplus_ZeroSurplusAmount() public setZeroMintFeesOnAllCollaterals {
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+
+    // Drop oracle below 1.0 so totalCollateralValue < stablesBacked
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.99e8));
+
+    // Should revert with ZeroSurplusAmount, not arithmetic underflow
+    vm.expectRevert(ZeroSurplusAmount.selector);
+    parallelizer.getCollateralSurplus(address(eurA));
   }
 
   function test_GetCollateralSurplus_WorksForManagedCollateral() public setZeroMintFeesOnAllCollaterals {
