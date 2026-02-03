@@ -72,9 +72,6 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     EXTERNAL ACTION FUNCTIONS                                            
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-  // For the four functions below, a value of `0` for the `deadline` parameters means that there will be no timestamp
-  // check for when the swap is actually executed.
-
   /// @inheritdoc ISwapper
   /// @dev `msg.sender` must have approved this contract for at least `amountIn` for `tokenIn` for mint transactions
   function swapExactInput(
