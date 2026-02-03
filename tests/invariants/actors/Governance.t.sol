@@ -105,7 +105,7 @@ contract Governance is BaseActor, FunctionUtils {
 
   function processSurplus(uint256 collatNumber) public useActor(0) countCall("processSurplus") {
     collatNumber = bound(collatNumber, 0, _collaterals.length - 1);
-    try _parallelizer.processSurplus(_collaterals[collatNumber]) returns (uint256, uint256, uint256 issuedAmount) {
+    try _parallelizer.processSurplus(_collaterals[collatNumber], 0) returns (uint256, uint256, uint256 issuedAmount) {
       totalSurplusProcessed += issuedAmount;
       successfulSurplusCalls++;
       // CR must be >= BASE_9 immediately after successful processSurplus

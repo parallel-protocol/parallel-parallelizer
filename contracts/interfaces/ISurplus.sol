@@ -7,10 +7,14 @@ pragma solidity 0.8.28;
 interface ISurplus {
   /// @dev This function will swap the surplus of a collateral for the stable asset link to the protocol.
   /// @param collateral The collateral address to process the surplus of.
-  /// @return collateralSurplus The surplus of the collateral.
+  /// @param maxCollateralAmount The maximum amount of collateral to process. If 0, processes the full surplus.
+  /// @return collateralSurplus The surplus of the collateral actually processed.
   /// @return stableSurplus The surplus amount in stable calculated from the collateral surplus.
   /// @return issuedAmount The amount of newly issued stablecoins from the collateral swapped
-  function processSurplus(address collateral)
+  function processSurplus(
+    address collateral,
+    uint256 maxCollateralAmount
+  )
     external
     returns (uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount);
 

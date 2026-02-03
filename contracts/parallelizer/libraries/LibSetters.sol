@@ -38,6 +38,7 @@ library LibSetters {
   event WhitelistStatusToggled(WhitelistType whitelistType, address indexed who, uint256 whitelistStatus);
   event PayeeAdded(address indexed payee, uint256 shares);
   event SlippageToleranceUpdated(address indexed collateral, uint256 slippageTolerance);
+  event SurplusBufferRatioUpdated(uint64 surplusBufferRatio);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ONLY GOVERNOR ACTIONS                                              
@@ -273,8 +274,16 @@ library LibSetters {
     emit SlippageToleranceUpdated(collateral, slippageTolerance);
   }
 
+  /// @notice Internal version of `updateSurplusBufferRatio`
+  function updateSurplusBufferRatio(uint64 _surplusBufferRatio) internal {
+    if (_surplusBufferRatio < uint64(BASE_9)) revert InvalidParam();
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    ts.surplusBufferRatio = _surplusBufferRatio;
+    emit SurplusBufferRatioUpdated(_surplusBufferRatio);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    HELPERS                                                     
+    HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Checks the fee values given for the `mint`, `burn`, and `redeem` functions

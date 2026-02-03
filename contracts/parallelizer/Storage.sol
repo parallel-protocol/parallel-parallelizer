@@ -135,6 +135,7 @@ struct ParallelizerStorage {
     // a specific whitelist type
   // Used for the surplus distribution
   mapping(address => uint256) slippageTolerance;
+  uint64 surplusBufferRatio; // Minimum collateral ratio required after surplus processing
   uint256 lastReleasedAt;
   uint256 totalShares; // The total shares of the totalShares for all payees
   address[] payees; // The addresses of the payees

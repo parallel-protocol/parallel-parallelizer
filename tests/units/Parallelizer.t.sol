@@ -101,10 +101,11 @@ contract TestParallelizer is Fixture {
     updateSlippageToleranceTo1e7
   {
     vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
     uint256 amountOut = parallelizer.quoteIn(collateralSurplus, address(eurA), address(tokenP));
 
-    parallelizer.processSurplus(address(eurA));
+    parallelizer.processSurplus(address(eurA), 0);
     assertEq(tokenP.balanceOf(address(parallelizer)), amountOut);
   }
 
@@ -113,14 +114,45 @@ contract TestParallelizer is Fixture {
     swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
   {
     vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert(TooSmallAmountOut.selector);
-    parallelizer.processSurplus(address(eurA));
+    parallelizer.processSurplus(address(eurA), 0);
   }
 
   function test_ProcessSurplus_RevertWhen_NoSurplus() public {
     vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert(ZeroSurplusAmount.selector);
-    parallelizer.processSurplus(address(eurA));
+    parallelizer.processSurplus(address(eurA), 0);
+  }
+
+  function test_ProcessSurplus_RevertWhen_SurplusBufferRatioNotSet()
+    public
+    swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
+    updateSlippageToleranceTo1e7
+  {
+    vm.startPrank(governor);
+    vm.expectRevert(InvalidParam.selector);
+    parallelizer.processSurplus(address(eurA), 0);
+  }
+
+  function test_ProcessSurplus_WithAmount_CapsCollateralSwapped()
+    public
+    swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
+    updateSlippageToleranceTo1e7
+  {
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+    (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
+
+    // Process only half the surplus
+    uint256 halfSurplus = collateralSurplus / 2;
+    uint256 amountOut = parallelizer.quoteIn(halfSurplus, address(eurA), address(tokenP));
+
+    (uint256 processedCollateral,, uint256 issuedAmount) = parallelizer.processSurplus(address(eurA), halfSurplus);
+    assertEq(processedCollateral, halfSurplus);
+    assertEq(issuedAmount, amountOut);
+    assertEq(tokenP.balanceOf(address(parallelizer)), amountOut);
   }
 
   modifier setZeroMintFeesOnAllCollaterals() {
@@ -155,8 +187,29 @@ contract TestParallelizer is Fixture {
     MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.95e8));
 
     vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert(Undercollateralized.selector);
-    parallelizer.processSurplus(address(eurB));
+    parallelizer.processSurplus(address(eurB), 0);
+    vm.stopPrank();
+  }
+
+  function test_ProcessSurplus_RevertWhen_CRDropsBelowSurplusBufferRatio()
+    public
+    setZeroMintFeesOnAllCollaterals
+    mintTokenPFromAllCollaterals
+  {
+    _setSlippageTolerance(address(eurB), 1e8);
+
+    // set eurB as yield-bearing asset
+    _setOracleMaxTarget(address(eurB), address(oracleB), 1.08e18);
+    // eurB appreciates to 1.08 to generate surplus
+    MockChainlinkOracle(address(oracleB)).setLatestAnswer(int256(1.08e8));
+
+    // Set a high buffer ratio (1.05) — CR after surplus will be above 1.0 but below 1.05
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(1.05e9));
+    vm.expectRevert(Undercollateralized.selector);
+    parallelizer.processSurplus(address(eurB), 0);
     vm.stopPrank();
   }
 
@@ -181,8 +234,9 @@ contract TestParallelizer is Fixture {
     _setSlippageTolerance(address(eurA), 1e8);
 
     vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert();
-    parallelizer.processSurplus(address(eurA));
+    parallelizer.processSurplus(address(eurA), 0);
     vm.stopPrank();
   }
 
@@ -326,7 +380,8 @@ contract TestParallelizer is Fixture {
     _swapSomeCollateralToTokenPAndUpdatOracleToMorphoOracle();
     vm.startPrank(governor);
     parallelizer.updateSlippageTolerance(address(eurA), 1e7);
-    parallelizer.processSurplus(address(eurA));
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+    parallelizer.processSurplus(address(eurA), 0);
     _;
   }
 

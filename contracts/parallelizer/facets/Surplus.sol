@@ -29,21 +29,29 @@ contract Surplus is AccessManagedModifiers, ISurplus {
   event SurplusProcessed(uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount);
 
   /// @inheritdoc ISurplus
-  function processSurplus(address collateral)
+  function processSurplus(
+    address collateral,
+    uint256 maxCollateralAmount
+  )
     external
     restricted
     returns (uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount)
   {
     ParallelizerStorage storage ts = s.transmuterStorage();
+    if (ts.surplusBufferRatio == 0) revert InvalidParam();
     (collateralSurplus, stableSurplus) = LibSurplus._computeCollateralSurplus(collateral);
     if (collateralSurplus == 0) revert ZeroAmount();
+    if (maxCollateralAmount > 0 && maxCollateralAmount < collateralSurplus) {
+      stableSurplus = (stableSurplus * maxCollateralAmount) / collateralSurplus;
+      collateralSurplus = maxCollateralAmount;
+    }
     uint256 minExpectedAmount = LibSurplus._minExpectedAmount(stableSurplus, ts.slippageTolerance[collateral]);
     IERC20(collateral).forceApprove(address(this), collateralSurplus);
     issuedAmount = ISwapper(address(this)).swapExactInput(
       collateralSurplus, minExpectedAmount, collateral, address(ts.tokenP), address(this), block.timestamp
     );
     (uint64 collatRatio,,,,) = LibGetters.getCollateralRatio();
-    if (collatRatio < uint64(BASE_9)) revert Undercollateralized();
+    if (collatRatio < ts.surplusBufferRatio) revert Undercollateralized();
     emit SurplusProcessed(collateralSurplus, stableSurplus, issuedAmount);
   }
 

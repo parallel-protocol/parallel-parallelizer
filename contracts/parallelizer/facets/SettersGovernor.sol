@@ -127,4 +127,9 @@ contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
   function updateSlippageTolerance(address collateral, uint256 slippageTolerance) external restricted {
     LibSetters.updateSlippageTolerance(collateral, slippageTolerance);
   }
+
+  /// @inheritdoc ISettersGovernor
+  function updateSurplusBufferRatio(uint64 _surplusBufferRatio) external restricted {
+    LibSetters.updateSurplusBufferRatio(_surplusBufferRatio);
+  }
 }

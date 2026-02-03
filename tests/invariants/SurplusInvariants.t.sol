@@ -86,6 +86,7 @@ contract SurplusInvariants is Fixture {
     parallelizer.updateSlippageTolerance(address(eurA), 1e8);
     parallelizer.updateSlippageTolerance(address(eurB), 1e8);
     parallelizer.updateSlippageTolerance(address(eurY), 1e8);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.stopPrank();
 
     {

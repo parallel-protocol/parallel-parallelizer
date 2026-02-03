@@ -67,6 +67,11 @@ interface ISettersGovernor {
   /// @dev The slippage tolerance is used to compute the minimum expected amount of stablecoins to be received when
   /// calling the `processSurplus` function
   function updateSlippageTolerance(address collateral, uint256 slippageTolerance) external;
+
+  /// @notice Updates the surplus buffer ratio
+  /// @dev The surplus buffer ratio is the minimum collateral ratio required after surplus processing
+  /// @param _surplusBufferRatio The new surplus buffer ratio in BASE_9
+  function updateSurplusBufferRatio(uint64 _surplusBufferRatio) external;
 }
 
 /// @title ISettersGovernor
