@@ -21,7 +21,7 @@ contract BasicInvariants is Fixture {
   uint256 internal constant _NUM_TRADER = 2;
   uint256 internal constant _NUM_ARB = 2;
 
-  IParallelizer transmuterSplit;
+  IParallelizer parallelizerSplit;
 
   Trader internal _traderHandler;
   Arbitrager internal _arbitragerHandler;
@@ -36,7 +36,7 @@ contract BasicInvariants is Fixture {
 
     // Deploy another parallelizer to check the independant path property
     config = address(new Test());
-    transmuterSplit = deployReplicaParallelizer(
+    parallelizerSplit = deployReplicaParallelizer(
       config,
       abi.encodeWithSelector(
         Test.initialize.selector,
@@ -50,10 +50,10 @@ contract BasicInvariants is Fixture {
 
     vm.startPrank(governor);
     accessManager.setTargetFunctionRole(
-      address(transmuterSplit), getParallelizerGovernorSelectorAccess(), GOVERNOR_ROLE
+      address(parallelizerSplit), getParallelizerGovernorSelectorAccess(), GOVERNOR_ROLE
     );
     accessManager.setTargetFunctionRole(
-      address(transmuterSplit), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE
+      address(parallelizerSplit), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE
     );
     vm.stopPrank();
 
@@ -71,7 +71,7 @@ contract BasicInvariants is Fixture {
       yFeeRedemption[3] = int64(int256(1e9));
       vm.startPrank(guardian);
       parallelizer.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
-      transmuterSplit.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
+      parallelizerSplit.setRedemptionCurveParams(xFeeRedemption, yFeeRedemption);
       vm.stopPrank();
     }
 
@@ -85,9 +85,9 @@ contract BasicInvariants is Fixture {
     _oracles.push(oracleB);
     _oracles.push(oracleY);
 
-    _traderHandler = new Trader(parallelizer, transmuterSplit, _collaterals, _oracles, _NUM_TRADER);
-    _arbitragerHandler = new Arbitrager(parallelizer, transmuterSplit, _collaterals, _oracles, _NUM_ARB);
-    _governanceHandler = new Governance(parallelizer, transmuterSplit, _collaterals, _oracles);
+    _traderHandler = new Trader(parallelizer, parallelizerSplit, _collaterals, _oracles, _NUM_TRADER);
+    _arbitragerHandler = new Arbitrager(parallelizer, parallelizerSplit, _collaterals, _oracles, _NUM_ARB);
+    _governanceHandler = new Governance(parallelizer, parallelizerSplit, _collaterals, _oracles);
 
     vm.startPrank(governor);
     accessManager.grantRole(GOVERNOR_ROLE, _governanceHandler.actors(0), 0);
@@ -96,7 +96,7 @@ contract BasicInvariants is Fixture {
 
     vm.startPrank(guardian);
     // Label newly created addresses
-    vm.label(address(transmuterSplit), "ParallelizerSplit");
+    vm.label(address(parallelizerSplit), "ParallelizerSplit");
     for (uint256 i; i < _NUM_ARB; i++) {
       vm.label(_arbitragerHandler.actors(i), string.concat("Arbi ", Strings.toString(i)));
     }
@@ -166,7 +166,7 @@ contract BasicInvariants is Fixture {
 
   function invariant_Supply() public {
     uint256 stablecoinIssued = parallelizer.getTotalIssued();
-    uint256 stablecoinIssuedSplit = transmuterSplit.getTotalIssued();
+    uint256 stablecoinIssuedSplit = parallelizerSplit.getTotalIssued();
 
     uint256 balance;
     for (uint256 i = 0; i < _traderHandler.nbrActor(); i++) {
