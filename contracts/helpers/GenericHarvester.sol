@@ -138,6 +138,8 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     bytes memory callData;
     address tokenOut;
     address tokenIn;
+    uint256 amountOut;
+    uint256 amountStableOut;
     {
       address yieldBearingAsset;
       address asset;
@@ -153,23 +155,25 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
         tokenOut = asset;
       }
     }
-    // Capture balance before first swap to detect leftovers
-    uint256 tokenInBalanceBefore = IERC20(tokenIn).balanceOf(address(this));
 
-    uint256 amountOut =
-      parallelizer.swapExactInput(amount, 0, address(tokenP), tokenIn, address(this), block.timestamp);
+    {
+      // Capture balance before first swap to detect leftovers
+      uint256 tokenInBalanceBefore = IERC20(tokenIn).balanceOf(address(this));
 
-    // Swap to tokenIn
-    amountOut = _swapToTokenOut(typeAction, tokenIn, tokenOut, amountOut, swapType, callData);
+      amountOut = parallelizer.swapExactInput(amount, 0, address(tokenP), tokenIn, address(this), block.timestamp);
 
-    // Ensure router consumed all tokens
-    uint256 tokenInBalanceFinal = IERC20(tokenIn).balanceOf(address(this));
-    if (tokenInBalanceFinal > tokenInBalanceBefore) {
-      revert RouterDidNotConsumeAllTokens();
+      // Swap to tokenIn
+      amountOut = _swapToTokenOut(typeAction, tokenIn, tokenOut, amountOut, swapType, callData);
+
+      // Ensure router consumed all tokens
+      uint256 tokenInBalanceFinal = IERC20(tokenIn).balanceOf(address(this));
+      if (tokenInBalanceFinal > tokenInBalanceBefore) {
+        revert RouterDidNotConsumeAllTokens();
+      }
     }
 
     _adjustAllowance(tokenOut, address(parallelizer), amountOut);
-    uint256 amountStableOut =
+    amountStableOut =
       parallelizer.swapExactInput(amountOut, minAmountOut, tokenOut, address(tokenP), address(this), block.timestamp);
     if (amount > amountStableOut) {
       budget[sender] -= amount - amountStableOut; // Will revert if not enough funds
