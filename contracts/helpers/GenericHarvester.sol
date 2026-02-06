@@ -153,12 +153,19 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
         tokenOut = asset;
       }
     }
+
+    uint256 tokenInBalanceBefore = IERC20(tokenIn).balanceOf(address(this));
+
     uint256 amountOut =
       parallelizer.swapExactInput(amount, 0, address(tokenP), tokenIn, address(this), block.timestamp);
 
     // Swap to tokenIn
     amountOut = _swapToTokenOut(typeAction, tokenIn, tokenOut, amountOut, swapType, callData);
 
+    //  Ensure router consumed all tokens 
+    if (IERC20(tokenIn).balanceOf(address(this)) > tokenInBalanceBefore) {
+      revert RouterDidNotConsumeAllTokens();
+    }
     _adjustAllowance(tokenOut, address(parallelizer), amountOut);
     uint256 amountStableOut =
       parallelizer.swapExactInput(amountOut, minAmountOut, tokenOut, address(tokenP), address(this), block.timestamp);

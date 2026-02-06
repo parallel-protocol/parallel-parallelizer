@@ -47,4 +47,5 @@ error ZeroAddress();
 error ZeroAmount();
 error SwapError();
 error SlippageTooHigh();
+error RouterDidNotConsumeAllTokens();
 error InsufficientFunds();
