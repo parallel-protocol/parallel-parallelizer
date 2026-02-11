@@ -9,7 +9,7 @@ import { SavingsNameable } from "contracts/savings/nameable/SavingsNameable.sol"
 import { BaseSavings } from "contracts/savings/BaseSavings.sol";
 import { BaseHarvester } from "contracts/helpers/BaseHarvester.sol";
 import { MultiBlockHarvester } from "contracts/helpers/MultiBlockHarvester.sol";
-import { GenericHarvester } from "contracts/helpers/GenericHarvester.sol";
+import { GenericRebalancer } from "contracts/helpers/GenericRebalancer.sol";
 import { SettersGuardian } from "contracts/parallelizer/facets/SettersGuardian.sol";
 import { SettersGovernor } from "contracts/parallelizer/facets/SettersGovernor.sol";
 import { DiamondEtherscan } from "contracts/parallelizer/facets/DiamondEtherscan.sol";
@@ -72,10 +72,10 @@ abstract contract ConfigAccessManager is Helper {
     return selectors;
   }
 
-  function getGovernorGenericHarvesterSelectorAccess() internal pure returns (bytes4[] memory) {
+  function getGovernorGenericRebalancerSelectorAccess() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = GenericHarvester.setTokenTransferAddress.selector;
-    selectors[1] = GenericHarvester.setSwapRouter.selector;
+    selectors[0] = GenericRebalancer.setTokenTransferAddress.selector;
+    selectors[1] = GenericRebalancer.setSwapRouter.selector;
     return selectors;
   }
 

@@ -27,9 +27,9 @@ import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { Parallelizer } from "./utils/Parallelizer.sol";
 import { ConfigAccessManager } from "./utils/ConfigAccessManager.sol";
 import { SavingsUtils } from "./utils/Savings.sol";
-import { GenericHarvesterUtils } from "./utils/GenericHarvesterUtils.sol";
+import { GenericRebalancerUtils } from "./utils/GenericRebalancerUtils.sol";
 
-contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager, GenericHarvesterUtils {
+contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager, GenericRebalancerUtils {
   ITokenP public tokenP;
 
   IERC20 public eurA;
