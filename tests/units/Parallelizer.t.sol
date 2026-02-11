@@ -258,8 +258,7 @@ contract TestParallelizer is Fixture {
     subCollaterals[0] = eurA;
     manager.setSubCollaterals(subCollaterals, "");
     ManagerStorage memory managerData = ManagerStorage({
-      subCollaterals: subCollaterals,
-      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
     });
     vm.prank(governor);
     parallelizer.setCollateralManager(address(eurA), true, managerData);
@@ -276,6 +275,114 @@ contract TestParallelizer is Fixture {
     (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
     assertGt(collateralSurplus, 0, "ProcessSurplus: managed collateral should report surplus");
     assertGt(stableSurplus, 0, "ProcessSurplus: managed collateral should report stable surplus");
+  }
+
+  function test_ProcessSurplus_Success_ForManagedCollateral() public setZeroMintFeesOnAllCollaterals {
+    // Set up eurA as managed collateral
+    MockManager manager = new MockManager(address(eurA));
+    IERC20[] memory subCollaterals = new IERC20[](1);
+    subCollaterals[0] = eurA;
+    manager.setSubCollaterals(subCollaterals, "");
+    ManagerStorage memory managerData = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+    });
+    vm.prank(governor);
+    parallelizer.setCollateralManager(address(eurA), true, managerData);
+
+    // Mint tokenP from eurA — tokens flow to the manager
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+    uint256 managerBalanceBefore = eurA.balanceOf(address(manager));
+    assertEq(eurA.balanceOf(address(parallelizer)), 0, "Tokens should be at manager");
+    assertEq(managerBalanceBefore, 100 * BASE_6, "Manager should hold tokens");
+
+    // Set eurA as yield-bearing asset and appreciate to 1.08
+    _setOracleMaxTarget(address(eurA), address(oracleA), 1.08e18);
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.08e8));
+    _setSlippageTolerance(address(eurA), 1e8);
+
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+
+    (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
+    uint256 amountOut = parallelizer.quoteIn(collateralSurplus, address(eurA), address(tokenP));
+
+    (uint256 processedCollateral,, uint256 issuedAmount) = parallelizer.processSurplus(address(eurA), 0);
+    assertEq(processedCollateral, collateralSurplus, "Should process full surplus");
+    assertEq(issuedAmount, amountOut, "Issued amount should match quote");
+    assertEq(tokenP.balanceOf(address(parallelizer)), issuedAmount, "Should have minted tokenP");
+    assertEq(eurA.balanceOf(address(manager)), managerBalanceBefore, "Manager balance should be unchanged");
+    assertEq(eurA.balanceOf(address(parallelizer)), 0, "Parallelizer should have no collateral left");
+    vm.stopPrank();
+  }
+
+  function test_ProcessSurplus_WithAmount_CapsCollateralSwapped_ForManagedCollateral()
+    public
+    setZeroMintFeesOnAllCollaterals
+  {
+    // Set up eurA as managed collateral
+    MockManager manager = new MockManager(address(eurA));
+    IERC20[] memory subCollaterals = new IERC20[](1);
+    subCollaterals[0] = eurA;
+    manager.setSubCollaterals(subCollaterals, "");
+    ManagerStorage memory managerData = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+    });
+    vm.prank(governor);
+    parallelizer.setCollateralManager(address(eurA), true, managerData);
+
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+
+    _setOracleMaxTarget(address(eurA), address(oracleA), 1.08e18);
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.08e8));
+    _setSlippageTolerance(address(eurA), 1e8);
+
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+
+    (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
+    uint256 halfSurplus = collateralSurplus / 2;
+    uint256 amountOut = parallelizer.quoteIn(halfSurplus, address(eurA), address(tokenP));
+
+    (uint256 processedCollateral,, uint256 issuedAmount) = parallelizer.processSurplus(address(eurA), halfSurplus);
+    assertEq(processedCollateral, halfSurplus, "Should process only half surplus");
+    assertEq(issuedAmount, amountOut, "Issued amount should match quote for half");
+    vm.stopPrank();
+  }
+
+  function test_ProcessSurplus_MaintainsCR_ForManagedCollateral()
+    public
+    setZeroMintFeesOnAllCollaterals
+    mintTokenPFromAllCollaterals
+  {
+    MockManager manager = new MockManager(address(eurA));
+    IERC20[] memory subCollaterals = new IERC20[](1);
+    subCollaterals[0] = eurA;
+    manager.setSubCollaterals(subCollaterals, "");
+    ManagerStorage memory managerData = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+    });
+    vm.prank(governor);
+    parallelizer.setCollateralManager(address(eurA), true, managerData);
+
+    // Note: eurA tokens are still in parallelizer from prior mint, move them to manager
+    uint256 parallelizerBalance = eurA.balanceOf(address(parallelizer));
+    vm.prank(address(parallelizer));
+    eurA.transfer(address(manager), parallelizerBalance);
+
+    _setOracleMaxTarget(address(eurA), address(oracleA), 1.08e18);
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.08e8));
+    _setSlippageTolerance(address(eurA), 1e8);
+
+    (uint64 crBefore,) = parallelizer.getCollateralRatio();
+
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+    parallelizer.processSurplus(address(eurA), 0);
+    vm.stopPrank();
+
+    (uint64 crAfter,) = parallelizer.getCollateralRatio();
+    assertGe(crAfter, uint64(BASE_9), "CR should remain above surplus buffer ratio");
+    assertLe(crAfter, crBefore, "CR should decrease or stay the same after surplus processing");
   }
 
   ///---------------------------------

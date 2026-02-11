@@ -12,6 +12,7 @@ import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
 import { LibGetters } from "../libraries/LibGetters.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
+import { LibManager } from "../libraries/LibManager.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
 import { LibSurplus } from "../libraries/LibSurplus.sol";
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
@@ -46,10 +47,15 @@ contract Surplus is AccessManagedModifiers, ISurplus {
       collateralSurplus = maxCollateralAmount;
     }
     uint256 minExpectedAmount = LibSurplus._minExpectedAmount(stableSurplus, ts.slippageTolerance[collateral]);
+    Collateral storage collatInfo = ts.collaterals[collateral];
+    if (collatInfo.isManaged > 0) {
+      LibManager.release(collateral, address(this), collateralSurplus, collatInfo.managerData.config);
+    }
     IERC20(collateral).forceApprove(address(this), collateralSurplus);
-    issuedAmount = ISwapper(address(this)).swapExactInput(
-      collateralSurplus, minExpectedAmount, collateral, address(ts.tokenP), address(this), block.timestamp
-    );
+    issuedAmount = ISwapper(address(this))
+      .swapExactInput(
+        collateralSurplus, minExpectedAmount, collateral, address(ts.tokenP), address(this), block.timestamp
+      );
     (uint64 collatRatio,,,,) = LibGetters.getCollateralRatio();
     if (collatRatio < ts.surplusBufferRatio) revert Undercollateralized();
     emit SurplusProcessed(collateralSurplus, stableSurplus, issuedAmount);
