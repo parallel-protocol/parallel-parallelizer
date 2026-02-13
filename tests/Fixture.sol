@@ -53,6 +53,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
   address public charlie;
   address public dylan;
   address public sweeper;
+  address public treasury;
 
   function setUp() public virtual {
     alice = vm.addr(1);
@@ -63,6 +64,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
     governor = address(uint160(uint256(keccak256(abi.encodePacked("governor")))));
     guardian = address(uint160(uint256(keccak256(abi.encodePacked("guardian")))));
     governorAndGuardian = address(uint160(uint256(keccak256(abi.encodePacked("governorAndGuardian")))));
+    treasury = address(uint160(uint256(keccak256(abi.encodePacked("treasury")))));
 
     vm.label(governor, "Governor");
     vm.label(guardian, "Guardian");
@@ -72,6 +74,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
     vm.label(charlie, "Charlie");
     vm.label(dylan, "Dylan");
     vm.label(sweeper, "Sweeper");
+    vm.label(treasury, "Treasury");
 
     deployAccessManager(governor, governor, guardian, governorAndGuardian);
 

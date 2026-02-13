@@ -128,6 +128,19 @@ contract RewardHandlerTest is Fixture {
     vm.stopPrank();
   }
 
+  function test_RevertWhen_SellRewards_TokenPSold() public {
+    bytes memory payload =
+      abi.encodeWithSelector(MockOdosRouter.swap.selector, 100, 100, address(tokenP), address(eurA));
+    vm.startPrank(governor);
+
+    deal(address(tokenP), address(parallelizer), 100);
+    deal(address(eurA), address(odos), 100);
+    parallelizer.changeAllowance(IERC20(address(tokenP)), address(odos), 100);
+    vm.expectRevert(Errors.InvalidTokens.selector);
+    parallelizer.sellRewards(0, payload);
+    vm.stopPrank();
+  }
+
   function test_SellRewards_WithOneTokenIncreaseAndTrusted() public {
     bytes memory payload =
       abi.encodeWithSelector(MockOdosRouter.swap.selector, 100, 100, address(tokenA), address(eurA));
