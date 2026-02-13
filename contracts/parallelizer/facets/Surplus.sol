@@ -10,7 +10,9 @@ import { IGetters } from "contracts/interfaces/IGetters.sol";
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 
 import { LibOracle } from "../libraries/LibOracle.sol";
+import { LibGetters } from "../libraries/LibGetters.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
+import { LibManager } from "../libraries/LibManager.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
 import { LibSurplus } from "../libraries/LibSurplus.sol";
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
@@ -28,19 +30,34 @@ contract Surplus is AccessManagedModifiers, ISurplus {
   event SurplusProcessed(uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount);
 
   /// @inheritdoc ISurplus
-  function processSurplus(address collateral)
+  function processSurplus(
+    address collateral,
+    uint256 maxCollateralAmount
+  )
     external
     restricted
     returns (uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount)
   {
     ParallelizerStorage storage ts = s.transmuterStorage();
+    if (ts.surplusBufferRatio == 0) revert InvalidParam();
     (collateralSurplus, stableSurplus) = LibSurplus._computeCollateralSurplus(collateral);
     if (collateralSurplus == 0) revert ZeroAmount();
+    if (maxCollateralAmount > 0 && maxCollateralAmount < collateralSurplus) {
+      stableSurplus = (stableSurplus * maxCollateralAmount) / collateralSurplus;
+      collateralSurplus = maxCollateralAmount;
+    }
     uint256 minExpectedAmount = LibSurplus._minExpectedAmount(stableSurplus, ts.slippageTolerance[collateral]);
-    IERC20(collateral).approve(address(this), collateralSurplus);
-    issuedAmount = ISwapper(address(this)).swapExactInput(
-      collateralSurplus, minExpectedAmount, collateral, address(ts.tokenP), address(this), block.timestamp
-    );
+    Collateral storage collatInfo = ts.collaterals[collateral];
+    if (collatInfo.isManaged > 0) {
+      LibManager.release(collateral, address(this), collateralSurplus, collatInfo.managerData.config);
+    }
+    IERC20(collateral).forceApprove(address(this), collateralSurplus);
+    issuedAmount = ISwapper(address(this))
+      .swapExactInput(
+        collateralSurplus, minExpectedAmount, collateral, address(ts.tokenP), address(this), block.timestamp
+      );
+    (uint64 collatRatio,,,,) = LibGetters.getCollateralRatio();
+    if (collatRatio < ts.surplusBufferRatio) revert Undercollateralized();
     emit SurplusProcessed(collateralSurplus, stableSurplus, issuedAmount);
   }
 

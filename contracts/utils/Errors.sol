@@ -46,6 +46,8 @@ error TooLate();
 error TooSmallAmountOut();
 error ZeroAddress();
 error ZeroAmount();
+error ZeroSurplusAmount();
 error SwapError();
 error SlippageTooHigh();
 error InsufficientFunds();
+error Undercollateralized();

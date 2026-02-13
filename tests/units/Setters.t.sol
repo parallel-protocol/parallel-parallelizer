@@ -1503,7 +1503,7 @@ contract Test_Setters_UpdatePayees is Fixture {
     emit PayeeAdded(address(alice), 1 ether);
     vm.expectEmit(address(parallelizer));
     emit PayeeAdded(address(bob), 2 ether);
-    parallelizer.updatePayees(payees, shares);
+    parallelizer.updatePayees(payees, shares, false);
 
     assertEq(parallelizer.getShares(address(alice)), 1 ether);
     assertEq(parallelizer.getShares(address(bob)), 2 ether);
@@ -1516,8 +1516,33 @@ contract Test_Setters_UpdatePayees is Fixture {
     uint256[] memory shares = new uint256[](1);
     shares[0] = 1 ether;
     hoax(governor);
-    parallelizer.updatePayees(payees, shares);
+    parallelizer.updatePayees(payees, shares, false);
     _;
+  }
+
+  function test_UpdatePayees_ClearsStaleShares() public {
+    address[] memory payees = new address[](2);
+    payees[0] = address(alice);
+    payees[1] = address(bob);
+    uint256[] memory shares = new uint256[](2);
+    shares[0] = 1 ether;
+    shares[1] = 2 ether;
+    hoax(governor);
+    parallelizer.updatePayees(payees, shares, false);
+    assertEq(parallelizer.getShares(address(bob)), 2 ether);
+
+    address[] memory newPayees = new address[](1);
+    newPayees[0] = address(alice);
+    uint256[] memory newShares = new uint256[](1);
+    newShares[0] = 3 ether;
+    hoax(governor);
+    parallelizer.updatePayees(newPayees, newShares, false);
+
+    assertEq(parallelizer.getShares(address(bob)), 0);
+    assertEq(parallelizer.getShares(address(alice)), 3 ether);
+    assertEq(parallelizer.getTotalShares(), 3 ether);
+    (address[] memory currentPayees,) = parallelizer.getPayees();
+    assertEq(currentPayees.length, 1);
   }
 
   function test_UpdatePayees_WithAvailableIncome_Success() public initializePayees {
@@ -1531,7 +1556,7 @@ contract Test_Setters_UpdatePayees is Fixture {
     tokenP.mint(address(parallelizer), 3 ether);
 
     hoax(governor);
-    parallelizer.updatePayees(payees, shares);
+    parallelizer.updatePayees(payees, shares, false);
 
     assertEq(tokenP.balanceOf(address(parallelizer)), 0);
     assertEq(tokenP.balanceOf(address(alice)), 3 ether);
@@ -1541,13 +1566,13 @@ contract Test_Setters_UpdatePayees is Fixture {
   function test_UpdatePayees_RevertWhen_InvalidLengths() public {
     hoax(governor);
     vm.expectRevert(Errors.InvalidLengths.selector);
-    parallelizer.updatePayees(new address[](0), new uint256[](1));
+    parallelizer.updatePayees(new address[](0), new uint256[](1), false);
   }
 
   function test_UpdatePayees_RevertWhen_ArrayLengthMismatch() public {
     hoax(governor);
     vm.expectRevert(Errors.ArrayLengthMismatch.selector);
-    parallelizer.updatePayees(new address[](1), new uint256[](2));
+    parallelizer.updatePayees(new address[](1), new uint256[](2), false);
   }
 
   function test_UpdatePayees_RevertWhen_ShareIsZero() public {
@@ -1559,7 +1584,49 @@ contract Test_Setters_UpdatePayees is Fixture {
     shares[1] = 0;
     hoax(governor);
     vm.expectRevert(Errors.ZeroAmount.selector);
-    parallelizer.updatePayees(payees, shares);
+    parallelizer.updatePayees(payees, shares, false);
+  }
+
+  function test_UpdatePayees_SkipRelease_DoesNotDistributeIncome() public initializePayees {
+    address[] memory payees = new address[](2);
+    payees[0] = address(alice);
+    payees[1] = address(bob);
+    uint256[] memory shares = new uint256[](2);
+    shares[0] = 1 ether;
+    shares[1] = 2 ether;
+
+    tokenP.mint(address(parallelizer), 3 ether);
+
+    hoax(governor);
+    parallelizer.updatePayees(payees, shares, true);
+
+    // Income was NOT released because skipRelease = true
+    assertEq(tokenP.balanceOf(address(parallelizer)), 3 ether);
+    assertEq(tokenP.balanceOf(address(alice)), 0);
+  }
+
+  function test_UpdatePayees_RevertWhen_TooManyPayees() public {
+    address[] memory payees = new address[](11);
+    uint256[] memory shares = new uint256[](11);
+    for (uint256 i = 0; i < 11; ++i) {
+      payees[i] = address(uint160(i + 1));
+      shares[i] = 1 ether;
+    }
+    hoax(governor);
+    vm.expectRevert(Errors.InvalidLengths.selector);
+    parallelizer.updatePayees(payees, shares, false);
+  }
+
+  function test_UpdatePayees_RevertWhen_DuplicatePayee() public {
+    address[] memory payees = new address[](2);
+    payees[0] = address(alice);
+    payees[1] = address(alice);
+    uint256[] memory shares = new uint256[](2);
+    shares[0] = 1 ether;
+    shares[1] = 2 ether;
+    hoax(governor);
+    vm.expectRevert(Errors.AlreadyAdded.selector);
+    parallelizer.updatePayees(payees, shares, false);
   }
 
   function test_UpdatePayees_RevertWhen_NotAuthorized() public {
@@ -1569,11 +1636,13 @@ contract Test_Setters_UpdatePayees is Fixture {
     shares[0] = 1 ether;
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, alice));
     hoax(alice);
-    parallelizer.updatePayees(payees, shares);
+    parallelizer.updatePayees(payees, shares, false);
   }
 }
 
 contract Test_Setters_UpdateSlippageTolerance is Fixture {
+  event SlippageToleranceUpdated(address indexed collateral, uint256 slippageTolerance);
+
   function test_UpdateSlippageTolerance_RevertWhen_InvalidSlippageTolerance() public {
     hoax(governor);
     vm.expectRevert(Errors.InvalidRate.selector);
@@ -1582,6 +1651,8 @@ contract Test_Setters_UpdateSlippageTolerance is Fixture {
 
   function test_UpdateSlippageTolerance_Success() public {
     uint256 slippageTolerance = BASE_9 / 2;
+    vm.expectEmit(address(parallelizer));
+    emit SlippageToleranceUpdated(address(eurA), slippageTolerance);
     hoax(governor);
     parallelizer.updateSlippageTolerance(address(eurA), slippageTolerance);
     assertEq(parallelizer.getSlippageTolerance(address(eurA)), slippageTolerance);

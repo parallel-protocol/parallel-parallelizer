@@ -37,6 +37,8 @@ library LibSetters {
   event TrustedToggled(address indexed sender, bool isTrusted, TrustedType trustedType);
   event WhitelistStatusToggled(WhitelistType whitelistType, address indexed who, uint256 whitelistStatus);
   event PayeeAdded(address indexed payee, uint256 shares);
+  event SlippageToleranceUpdated(address indexed collateral, uint256 slippageTolerance);
+  event SurplusBufferRatioUpdated(uint64 surplusBufferRatio);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ONLY GOVERNOR ACTIONS                                              
@@ -236,20 +238,29 @@ library LibSetters {
   }
 
   /// @notice Internal version of `updatePayees`
-  function updatePayees(address[] memory _payees, uint256[] memory _shares) internal {
-    if (_payees.length == 0) revert InvalidLengths();
+  function updatePayees(address[] memory _payees, uint256[] memory _shares, bool _skipRelease) internal {
+    if (_payees.length == 0 || _payees.length > MAX_PAYEES) revert InvalidLengths();
     if (_payees.length != _shares.length) revert ArrayLengthMismatch();
     /// @dev Distribute the fees before updating the fee receivers.
     ParallelizerStorage storage ts = s.transmuterStorage();
-    uint256 income = ts.tokenP.balanceOf(address(this));
-    if (income > 0 && ts.payees.length > 0) {
-      LibSurplus.release(income, ts.payees);
+    if (!_skipRelease) {
+      uint256 income = ts.tokenP.balanceOf(address(this));
+      if (income > 0 && ts.payees.length > 0) {
+        LibSurplus.release(income, ts.payees);
+      }
     }
 
+    // Zero out stale shares for old payees
+    for (uint256 i = 0; i < ts.payees.length; ++i) {
+      ts.shares[ts.payees[i]] = 0;
+    }
     delete ts.payees;
     uint256 _totalShares = 0;
     uint256 i = 0;
     for (; i < _payees.length; ++i) {
+      for (uint256 j = 0; j < i; ++j) {
+        if (_payees[j] == _payees[i]) revert AlreadyAdded();
+      }
       _totalShares += _addPayee(_payees[i], _shares[i]);
     }
     ts.totalShares = _totalShares;
@@ -260,10 +271,19 @@ library LibSetters {
     if (slippageTolerance > BASE_9) revert InvalidRate();
     ParallelizerStorage storage ts = s.transmuterStorage();
     ts.slippageTolerance[collateral] = slippageTolerance;
+    emit SlippageToleranceUpdated(collateral, slippageTolerance);
+  }
+
+  /// @notice Internal version of `updateSurplusBufferRatio`
+  function updateSurplusBufferRatio(uint64 _surplusBufferRatio) internal {
+    if (_surplusBufferRatio < uint64(BASE_9)) revert InvalidParam();
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    ts.surplusBufferRatio = _surplusBufferRatio;
+    emit SurplusBufferRatioUpdated(_surplusBufferRatio);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    HELPERS                                                     
+    HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Checks the fee values given for the `mint`, `burn`, and `redeem` functions

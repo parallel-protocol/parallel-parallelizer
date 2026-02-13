@@ -57,13 +57,21 @@ interface ISettersGovernor {
   function updateOracle(address collateral) external;
 
   /// @notice Updates the payees and their shares
-  function updatePayees(address[] memory _payees, uint256[] memory _shares) external;
+  /// @param _payees The new payee addresses
+  /// @param _shares The new shares for each payee
+  /// @param _skipRelease If true, skips the automatic income release before updating
+  function updatePayees(address[] memory _payees, uint256[] memory _shares, bool _skipRelease) external;
 
   /// @notice Updates the slippage tolerance for a `collateral`
   /// @dev Maximum slippage tolerance is 1e9 (100%)
   /// @dev The slippage tolerance is used to compute the minimum expected amount of stablecoins to be received when
   /// calling the `processSurplus` function
   function updateSlippageTolerance(address collateral, uint256 slippageTolerance) external;
+
+  /// @notice Updates the surplus buffer ratio
+  /// @dev The surplus buffer ratio is the minimum collateral ratio required after surplus processing
+  /// @param _surplusBufferRatio The new surplus buffer ratio in BASE_9
+  function updateSurplusBufferRatio(uint64 _surplusBufferRatio) external;
 }
 
 /// @title ISettersGovernor
