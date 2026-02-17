@@ -9,6 +9,7 @@ import { IRedeemer } from "./IRedeemer.sol";
 import { IRewardHandler } from "./IRewardHandler.sol";
 import { ISettersGovernor, ISettersGuardian } from "./ISetters.sol";
 import { ISwapper } from "./ISwapper.sol";
+import { ISurplus } from "./ISurplus.sol";
 
 /// @title IParallelizer
 /// @author Cooper Labs
@@ -24,5 +25,6 @@ interface IParallelizer is
   IRewardHandler,
   ISettersGovernor,
   ISettersGuardian,
-  ISwapper
+  ISwapper,
+  ISurplus
 { }

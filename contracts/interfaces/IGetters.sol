@@ -125,4 +125,29 @@ interface IGetters {
   /// being consumed. Prevents denial of service for delayed restricted calls in the case that the contract performs
   /// attacker controlled calls.
   function isConsumingScheduledOp() external view returns (bytes4);
+
+  /// @notice Returns the payees and their shares
+  function getPayees() external view returns (address[] memory, uint256[] memory);
+
+  /// @notice Returns the total shares of the payees
+  function getTotalShares() external view returns (uint256);
+
+  /// @notice Returns the shares of a payee
+  function getShares(address payee) external view returns (uint256);
+
+  /// @notice Returns the last time the income was released to the payees
+  function getLastReleasedAt() external view returns (uint256);
+
+  /// @notice Returns the slippage tolerance for a `collateral` for the surplus
+  /// @dev Maximum slippage tolerance is 1e9 (100%)
+  function getSlippageTolerance(address collateral) external view returns (uint256);
+
+  /// @notice Computes the surplus of a collateral.
+  /// @param collateral The collateral address to compute the surplus of.
+  /// @return collateralSurplus The collateral surplus amount.
+  /// @return stableSurplus The surplus in stable amount.
+  function getCollateralSurplus(address collateral)
+    external
+    view
+    returns (uint256 collateralSurplus, uint256 stableSurplus);
 }

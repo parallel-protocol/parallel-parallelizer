@@ -1,7 +1,7 @@
 import assert from "assert";
 import { deployScript, artifacts } from "@rocketh";
 
-const contractName = "Swapper";
+const contractName = "Surplus";
 
 export default deployScript(
   async ({ namedAccounts, network, deploy }) => {
@@ -14,7 +14,7 @@ export default deployScript(
       contractName,
       {
         account: deployer,
-        artifact: artifacts.Swapper,
+        artifact: artifacts.Surplus,
         args: [],
       },
       {

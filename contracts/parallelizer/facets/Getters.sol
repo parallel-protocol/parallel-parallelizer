@@ -6,6 +6,7 @@ import { IGetters } from "contracts/interfaces/IGetters.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
 import { LibGetters } from "../libraries/LibGetters.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
+import { LibSurplus } from "../libraries/LibSurplus.sol";
 import { LibWhitelist } from "../libraries/LibWhitelist.sol";
 
 import "../../utils/Constants.sol";
@@ -205,5 +206,46 @@ contract Getters is IGetters {
   /// @inheritdoc IGetters
   function isConsumingScheduledOp() external view returns (bytes4) {
     return s.transmuterStorage().consumingSchedule ? this.isConsumingScheduledOp.selector : bytes4(0);
+  }
+
+  /// @inheritdoc IGetters
+  function getPayees() external view returns (address[] memory, uint256[] memory) {
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    address[] memory payees = new address[](ts.payees.length);
+    uint256[] memory shares = new uint256[](ts.payees.length);
+    for (uint256 i = 0; i < ts.payees.length; i++) {
+      payees[i] = ts.payees[i];
+      shares[i] = ts.shares[ts.payees[i]];
+    }
+    return (payees, shares);
+  }
+
+  /// @inheritdoc IGetters
+  function getTotalShares() external view returns (uint256) {
+    return s.transmuterStorage().totalShares;
+  }
+
+  /// @inheritdoc IGetters
+  function getShares(address payee) external view returns (uint256) {
+    return s.transmuterStorage().shares[payee];
+  }
+
+  /// @inheritdoc IGetters
+  function getSlippageTolerance(address collateral) external view returns (uint256) {
+    return s.transmuterStorage().slippageTolerance[collateral];
+  }
+
+  /// @inheritdoc IGetters
+  function getLastReleasedAt() external view returns (uint256) {
+    return s.transmuterStorage().lastReleasedAt;
+  }
+
+  /// @inheritdoc IGetters
+  function getCollateralSurplus(address collateral)
+    external
+    view
+    returns (uint256 collateralSurplus, uint256 stableSurplus)
+  {
+    return LibSurplus._computeCollateralSurplus(collateral);
   }
 }

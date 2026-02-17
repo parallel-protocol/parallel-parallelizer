@@ -43,11 +43,13 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
     for (uint256 i; i < listLength; ++i) {
       balances[i] = IERC20(list[i]).balanceOf(address(this));
     }
+    uint256 tokenPBalance = IERC20(address(ts.tokenP)).balanceOf(address(this));
     //solhint-disable-next-line
     (bool success, bytes memory result) = ODOS_ROUTER.call(payload);
     if (!success) _revertBytes(result);
     amountOut = abi.decode(result, (uint256));
     if (amountOut < minAmountOut) revert TooSmallAmountOut();
+    if (IERC20(address(ts.tokenP)).balanceOf(address(this)) < tokenPBalance) revert InvalidTokens();
     bool hasIncreased;
     address collateral;
     for (uint256 i; i < listLength; ++i) {
