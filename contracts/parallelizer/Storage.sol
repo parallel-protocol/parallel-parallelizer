@@ -131,6 +131,13 @@ struct ParallelizerStorage {
   mapping(address => uint256) isTrusted; // If an address is trusted to update the normalizer value
   mapping(address => uint256) isSellerTrusted; // If an address is trusted to sell accruing reward tokens or to run
     // keeper jobs on oracles
-  mapping(WhitelistType => mapping(address => uint256)) isWhitelistedForType;
+  mapping(WhitelistType => mapping(address => uint256)) isWhitelistedForType; // Whether an address is whitelisted for
+    // a specific whitelist type
+  // Used for the surplus distribution
+  mapping(address => uint256) slippageTolerance;
+  uint64 surplusBufferRatio; // Minimum collateral ratio required after surplus processing
+  uint256 lastReleasedAt;
+  uint256 totalShares; // The total shares of the totalShares for all payees
+  address[] payees; // The addresses of the payees
+  mapping(address => uint256) shares; // The shares of the totalShares for each payee
 }
-// Whether an address is whitelisted for a specific whitelist type

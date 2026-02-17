@@ -37,6 +37,7 @@ uint256 constant BASE_27 = 1e27;
 uint256 constant BASE_36 = 1e36;
 uint256 constant MAX_BURN_FEE = 999_000_000;
 uint256 constant MAX_MINT_FEE = BASE_12 - 1;
+uint256 constant MAX_PAYEES = 10;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                      REENTRANT                                                      

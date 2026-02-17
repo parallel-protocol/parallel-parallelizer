@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 error AccessManagedUnauthorized(address caller);
 error AlreadyAdded();
+error ArrayLengthMismatch();
 error CannotAddFunctionToDiamondThatAlreadyExists(bytes4 _selector);
 error CannotAddSelectorsToZeroAddress(bytes4[] _selectors);
 error CannotRemoveFunctionThatDoesNotExist(bytes4 _selector);
@@ -45,6 +46,8 @@ error TooLate();
 error TooSmallAmountOut();
 error ZeroAddress();
 error ZeroAmount();
+error ZeroSurplusAmount();
 error SwapError();
 error SlippageTooHigh();
 error InsufficientFunds();
+error Undercollateralized();

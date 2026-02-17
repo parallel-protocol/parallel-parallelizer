@@ -13,6 +13,7 @@ import { GenericHarvester } from "contracts/helpers/GenericHarvester.sol";
 import { SettersGuardian } from "contracts/parallelizer/facets/SettersGuardian.sol";
 import { SettersGovernor } from "contracts/parallelizer/facets/SettersGovernor.sol";
 import { DiamondEtherscan } from "contracts/parallelizer/facets/DiamondEtherscan.sol";
+import { Surplus } from "contracts/parallelizer/facets/Surplus.sol";
 import "contracts/utils/Constants.sol";
 import "./Helper.sol";
 
@@ -91,7 +92,7 @@ abstract contract ConfigAccessManager is Helper {
   }
 
   function getParallelizerGovernorSelectorAccess() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](11);
+    bytes4[] memory selectors = new bytes4[](16);
     selectors[0] = SettersGovernor.recoverERC20.selector;
     selectors[1] = SettersGovernor.setAccessManager.selector;
     selectors[2] = SettersGovernor.setCollateralManager.selector;
@@ -103,6 +104,11 @@ abstract contract ConfigAccessManager is Helper {
     selectors[8] = SettersGovernor.setOracle.selector;
     selectors[9] = SettersGovernor.updateOracle.selector;
     selectors[10] = SettersGovernor.setWhitelistStatus.selector;
+    selectors[11] = SettersGovernor.updatePayees.selector;
+    selectors[12] = SettersGovernor.updateSlippageTolerance.selector;
+    selectors[13] = SettersGovernor.updateSurplusBufferRatio.selector;
+    selectors[14] = Surplus.release.selector;
+    selectors[15] = Surplus.processSurplus.selector;
     return selectors;
   }
 }

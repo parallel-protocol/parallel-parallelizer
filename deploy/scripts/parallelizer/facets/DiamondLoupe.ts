@@ -11,11 +11,17 @@ export default deployScript(
 
     console.log(`Network: ${chainName} \n Deployer: ${deployer} \n Deploying facet: ${contractName}`);
 
-    const diamondLoupe = await deploy(contractName, {
-      account: deployer,
-      artifact: artifacts.DiamondLoupe,
-      args: [],
-    });
+    const diamondLoupe = await deploy(
+      contractName,
+      {
+        account: deployer,
+        artifact: artifacts.DiamondLoupe,
+        args: [],
+      },
+      {
+        skipIfAlreadyDeployed: true,
+      },
+    );
 
     console.log(`Deployed facet: ${contractName}, network: ${chainName}, address: ${diamondLoupe.address}`);
   },
