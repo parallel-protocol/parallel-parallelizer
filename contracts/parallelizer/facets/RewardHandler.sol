@@ -47,11 +47,10 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
     //solhint-disable-next-line
     (bool success, bytes memory result) = ODOS_ROUTER.call(payload);
     if (!success) _revertBytes(result);
-    amountOut = abi.decode(result, (uint256));
-    if (amountOut < minAmountOut) revert TooSmallAmountOut();
     if (IERC20(address(ts.tokenP)).balanceOf(address(this)) < tokenPBalance) revert InvalidTokens();
     bool hasIncreased;
     address collateral;
+    uint256 amountOut;
     for (uint256 i; i < listLength; ++i) {
       uint256 newBalance = IERC20(list[i]).balanceOf(address(this));
       if (newBalance < balances[i]) {
@@ -59,7 +58,9 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
       } else if (newBalance > balances[i]) {
         hasIncreased = true;
         collateral = list[i];
-        emit RewardsSoldFor(list[i], newBalance - balances[i]);
+        amountOut = newBalance - balances[i];
+        if (amountOut < minAmountOut) revert TooSmallAmountOut();
+        emit RewardsSoldFor(collateral, amountOut);
       }
     }
     if (!hasIncreased) revert InvalidSwap();

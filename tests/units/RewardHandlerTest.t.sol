@@ -63,11 +63,11 @@ contract RewardHandlerTest is Fixture {
 
   function test_RevertWhen_SellRewards_TooSmallAmountOut() public {
     bytes memory payload =
-      abi.encodeWithSelector(MockOdosRouter.swap.selector, 100, 100, address(tokenA), address(tokenB));
+      abi.encodeWithSelector(MockOdosRouter.swap.selector, 100, 100, address(tokenA), address(eurA));
     vm.startPrank(governor);
 
     deal(address(tokenA), address(parallelizer), 100);
-    deal(address(tokenB), address(odos), 100);
+    deal(address(eurA), address(odos), 100);
     parallelizer.changeAllowance(tokenA, address(odos), 100);
     vm.expectRevert(Errors.TooSmallAmountOut.selector);
     parallelizer.sellRewards(1000, payload);
