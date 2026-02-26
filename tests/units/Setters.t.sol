@@ -631,6 +631,12 @@ contract Test_Setters_ToggleTrusted is Fixture {
 }
 
 contract Test_Setters_SetWhitelistStatus is Fixture {
+  function test_RevertWhen_InvalidWhitelistStatus() public {
+    vm.expectRevert(Errors.InvalidWhitelistStatus.selector);
+    hoax(governor);
+    parallelizer.setWhitelistStatus(address(eurA), 2, "");
+  }
+
   function test_RevertWhen_NotGovernor() public {
     bytes memory emptyData;
     bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);

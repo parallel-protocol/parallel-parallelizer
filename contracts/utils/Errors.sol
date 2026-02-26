@@ -28,6 +28,7 @@ error InvalidRate();
 error InvalidSwap();
 error InvalidTokens();
 error InvalidAccessManager();
+error InvalidWhitelistStatus();
 error ManagerHasAssets();
 error NoSelectorsProvidedForFacetForCut(address _facetAddress);
 error NotAllowed();
