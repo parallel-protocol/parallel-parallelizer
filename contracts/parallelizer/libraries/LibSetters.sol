@@ -41,7 +41,7 @@ library LibSetters {
   event SurplusBufferRatioUpdated(uint64 surplusBufferRatio);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ONLY GOVERNOR ACTIONS                                              
+    ONLY GOVERNOR ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Internal version of `setAccessManager`
@@ -149,6 +149,10 @@ library LibSetters {
   function setOracle(address collateral, bytes memory oracleConfig) internal {
     Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
     if (collatInfo.decimals == 0) revert NotCollateral();
+    (,,,, bytes memory hyperparameters) =
+      abi.decode(oracleConfig, (OracleReadType, OracleReadType, bytes, bytes, bytes));
+    (uint128 userDeviation, uint128 burnRatioDeviation) = abi.decode(hyperparameters, (uint128, uint128));
+    if (userDeviation > burnRatioDeviation) revert InvalidParams();
     // Checks oracle validity
     LibOracle.readMint(oracleConfig);
     collatInfo.oracleConfig = oracleConfig;
@@ -172,7 +176,7 @@ library LibSetters {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ONLY GUARDIAN ACTIONS                                              
+    ONLY GUARDIAN ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Internal version of `togglePause`
@@ -298,10 +302,9 @@ library LibSetters {
       // the first segment [BASE_9, x_{n-1}[
       // Redemption inflexion points should be in [0,BASE_9]
       (action == ActionType.Mint && (xFee[n - 1] >= BASE_9 || xFee[0] != 0 || yFee[n - 1] > int256(BASE_12)))
-        || (
-          action == ActionType.Burn
-            && (xFee[0] != BASE_9 || yFee[n - 1] > int256(BASE_9) || (n > 1 && (yFee[0] != yFee[1])))
-        ) || (action == ActionType.Redeem && (xFee[n - 1] > BASE_9 || yFee[n - 1] < 0 || yFee[n - 1] > int256(BASE_9)))
+        || (action == ActionType.Burn
+          && (xFee[0] != BASE_9 || yFee[n - 1] > int256(BASE_9) || (n > 1 && (yFee[0] != yFee[1]))))
+        || (action == ActionType.Redeem && (xFee[n - 1] > BASE_9 || yFee[n - 1] < 0 || yFee[n - 1] > int256(BASE_9)))
     ) {
       revert InvalidParams();
     }

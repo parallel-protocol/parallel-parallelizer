@@ -1664,3 +1664,78 @@ contract Test_Setters_UpdateSlippageTolerance is Fixture {
     parallelizer.updateSlippageTolerance(address(eurA), BASE_9 / 2);
   }
 }
+
+contract Test_Setters_SetOracle is Fixture {
+  event OracleSet(address indexed collateral, bytes oracleConfig);
+
+  function _buildOracleConfig(
+    uint128 userDeviation,
+    uint128 burnRatioDeviation
+  )
+    internal
+    view
+    returns (bytes memory)
+  {
+    (OracleReadType readType, OracleReadType targetType, bytes memory data, bytes memory targetData,) =
+      parallelizer.getOracle(address(eurA));
+    return abi.encode(readType, targetType, data, targetData, abi.encode(userDeviation, burnRatioDeviation));
+  }
+
+  function test_RevertWhen_UserDeviationGreaterThanBurnRatioDeviation() public {
+    // userDeviation = 5%, burnRatioDeviation = 2% → should revert
+    bytes memory oracleConfig = _buildOracleConfig(5e16, 2e16);
+    vm.expectRevert(Errors.InvalidParams.selector);
+    hoax(governor);
+    parallelizer.setOracle(address(eurA), oracleConfig);
+  }
+
+  function test_RevertWhen_UserDeviationGreaterThanBurnRatioDeviation_EdgeCase() public {
+    // userDeviation just 1 wei above burnRatioDeviation → should revert
+    bytes memory oracleConfig = _buildOracleConfig(1e16 + 1, 1e16);
+    vm.expectRevert(Errors.InvalidParams.selector);
+    hoax(governor);
+    parallelizer.setOracle(address(eurA), oracleConfig);
+  }
+
+  function test_SetOracle_Success_EqualDeviations() public {
+    // userDeviation == burnRatioDeviation → should succeed
+    bytes memory oracleConfig = _buildOracleConfig(3e16, 3e16);
+    vm.expectEmit(address(parallelizer));
+    emit OracleSet(address(eurA), oracleConfig);
+    hoax(governor);
+    parallelizer.setOracle(address(eurA), oracleConfig);
+  }
+
+  function test_SetOracle_Success_UserDeviationLessThanBurnRatioDeviation() public {
+    // userDeviation = 2%, burnRatioDeviation = 5% → should succeed
+    bytes memory oracleConfig = _buildOracleConfig(2e16, 5e16);
+    vm.expectEmit(address(parallelizer));
+    emit OracleSet(address(eurA), oracleConfig);
+    hoax(governor);
+    parallelizer.setOracle(address(eurA), oracleConfig);
+  }
+
+  function test_SetOracle_Success_ZeroDeviations() public {
+    // Both zero → should succeed
+    bytes memory oracleConfig = _buildOracleConfig(0, 0);
+    vm.expectEmit(address(parallelizer));
+    emit OracleSet(address(eurA), oracleConfig);
+    hoax(governor);
+    parallelizer.setOracle(address(eurA), oracleConfig);
+  }
+
+  function testFuzz_RevertWhen_UserDeviationGreaterThanBurnRatioDeviation(
+    uint128 userDeviation,
+    uint128 burnRatioDeviation
+  )
+    public
+  {
+    vm.assume(userDeviation > burnRatioDeviation);
+    userDeviation = uint128(bound(userDeviation, 1, BASE_18));
+    burnRatioDeviation = uint128(bound(burnRatioDeviation, 0, userDeviation - 1));
+    bytes memory oracleConfig = _buildOracleConfig(userDeviation, burnRatioDeviation);
+    vm.expectRevert(Errors.InvalidParams.selector);
+    hoax(governor);
+    parallelizer.setOracle(address(eurA), oracleConfig);
+  }
+}
