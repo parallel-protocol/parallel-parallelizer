@@ -20,7 +20,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is an authorized fork of Angle's `RewardHandler` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/RewardHandler.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/RewardHandler.sol
 contract RewardHandler is IRewardHandler, AccessManagedModifiers {
   using SafeERC20 for IERC20;
 
