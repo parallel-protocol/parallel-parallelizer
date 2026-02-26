@@ -156,6 +156,22 @@ export default deployScript(
       }
     }
 
+    const selectorsToDelete: `0x${string}`[] = [];
+    for (const selector of oldSelectors) {
+      if (newSelectors.indexOf(selector) === -1) {
+        selectorsToDelete.push(selector);
+      }
+    }
+
+    if (selectorsToDelete.length > 0) {
+      changesDetected = true;
+      facetCuts.unshift({
+        facetAddress: "0x0000000000000000000000000000000000000000",
+        functionSelectors: selectorsToDelete,
+        action: FacetCutAction.Remove,
+      });
+    }
+
     if (!changesDetected) {
       console.log("No changes detected");
       return;
