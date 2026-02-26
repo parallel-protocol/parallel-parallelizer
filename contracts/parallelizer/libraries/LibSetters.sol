@@ -114,6 +114,9 @@ library LibSetters {
     if (increase) {
       collatInfo.normalizedStables = collatInfo.normalizedStables + uint216(normalizedAmount);
       ts.normalizedStables = ts.normalizedStables + normalizedAmount;
+      if (collatInfo.normalizedStables > collatInfo.stablecoinCap) {
+        revert AboveCap();
+      }
     } else {
       collatInfo.normalizedStables = collatInfo.normalizedStables - uint216(normalizedAmount);
       ts.normalizedStables = ts.normalizedStables - normalizedAmount;

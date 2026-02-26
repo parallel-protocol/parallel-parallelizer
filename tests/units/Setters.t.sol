@@ -526,8 +526,9 @@ contract Test_Setters_RecoverERC20 is Fixture {
     IERC20[] memory subCollaterals = new IERC20[](2);
     subCollaterals[0] = eurA;
     subCollaterals[1] = eurB;
-    ManagerStorage memory data =
-      ManagerStorage({ subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager)) });
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager))
+    });
     manager.setSubCollaterals(data.subCollaterals, data.config);
 
     hoax(governor);
@@ -945,8 +946,9 @@ contract Test_Setters_SetCollateralManager is Fixture {
     MockManager manager = new MockManager(address(eurA)); // Deploy a mock manager for eurA
     IERC20[] memory subCollaterals = new IERC20[](1);
     subCollaterals[0] = eurB;
-    ManagerStorage memory data =
-      ManagerStorage({ subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager)) });
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager))
+    });
 
     vm.expectRevert(Errors.InvalidParams.selector);
     hoax(governor);
@@ -959,16 +961,14 @@ contract Test_Setters_SetCollateralManager is Fixture {
     subCollaterals[0] = eurA;
     manager.setSubCollaterals(subCollaterals, "");
     ManagerStorage memory data = ManagerStorage({
-      subCollaterals: subCollaterals,
-      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
     });
     hoax(governor);
     parallelizer.setCollateralManager(address(eurA), true, data);
 
     MockManager newManager = new MockManager(address(eurA)); // Deploy a mock manager for eurA
     data = ManagerStorage({
-      subCollaterals: subCollaterals,
-      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
     });
 
     deal(address(eurA), address(manager), 1);
@@ -982,8 +982,7 @@ contract Test_Setters_SetCollateralManager is Fixture {
     IERC20[] memory subCollaterals = new IERC20[](1);
     subCollaterals[0] = eurA;
     ManagerStorage memory data = ManagerStorage({
-      subCollaterals: subCollaterals,
-      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
     });
 
     (bool isManaged, IERC20[] memory fetchedSubCollaterals, bytes memory config) =
@@ -1015,16 +1014,14 @@ contract Test_Setters_SetCollateralManager is Fixture {
     subCollaterals[0] = eurA;
     manager.setSubCollaterals(subCollaterals, "");
     ManagerStorage memory data = ManagerStorage({
-      subCollaterals: subCollaterals,
-      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
     });
     hoax(governor);
     parallelizer.setCollateralManager(address(eurA), true, data);
 
     MockManager newManager = new MockManager(address(eurB)); // Deploy a mock manager for eurA
     data = ManagerStorage({
-      subCollaterals: subCollaterals,
-      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
     });
     hoax(governor);
     parallelizer.setCollateralManager(address(eurA), true, data);
@@ -1047,16 +1044,14 @@ contract Test_Setters_SetCollateralManager is Fixture {
     subCollaterals[0] = eurA;
     manager.setSubCollaterals(subCollaterals, "");
     ManagerStorage memory data = ManagerStorage({
-      subCollaterals: subCollaterals,
-      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(manager)))
     });
     hoax(governor);
     parallelizer.setCollateralManager(address(eurA), true, data);
 
     MockManager newManager = new MockManager(address(eurB)); // Deploy a mock manager for eurA
     data = ManagerStorage({
-      subCollaterals: subCollaterals,
-      config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(address(newManager)))
     });
 
     // Add 1 wei to the manager to check that the function does not revert
@@ -1080,8 +1075,9 @@ contract Test_Setters_SetCollateralManager is Fixture {
     MockManager manager = new MockManager(address(eurA)); // Deploy a mock manager for eurA
     IERC20[] memory subCollaterals = new IERC20[](1);
     subCollaterals[0] = eurA;
-    ManagerStorage memory data =
-      ManagerStorage({ subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager)) });
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager))
+    });
 
     hoax(governor);
     parallelizer.setCollateralManager(address(eurA), true, data);
@@ -1254,6 +1250,17 @@ contract Test_Setters_AdjustNormalizedStablecoins is Fixture {
     assertEq(normalizer, BASE_27);
     assertEq(normalizedStables, 5 ether / 2);
   }
+
+  function test_RevertWhen_AboveCap() public {
+    hoax(guardian);
+    parallelizer.setStablecoinCap(address(eurA), 2 ether);
+
+    _mintExactOutput(alice, address(eurA), 1 ether, 1 ether);
+
+    vm.expectRevert(Errors.AboveCap.selector);
+    hoax(governor);
+    parallelizer.adjustStablecoins(address(eurA), 2 ether, true);
+  }
 }
 
 contract Test_Setters_RevokeCollateral is Fixture {
@@ -1288,8 +1295,9 @@ contract Test_Setters_RevokeCollateral is Fixture {
     IERC20[] memory subCollaterals = new IERC20[](2);
     subCollaterals[0] = eurA;
     subCollaterals[1] = eurB;
-    ManagerStorage memory data =
-      ManagerStorage({ subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager)) });
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager))
+    });
     manager.setSubCollaterals(data.subCollaterals, "");
 
     hoax(governor);
@@ -1349,8 +1357,9 @@ contract Test_Setters_RevokeCollateral is Fixture {
     IERC20[] memory subCollaterals = new IERC20[](2);
     subCollaterals[0] = eurA;
     subCollaterals[1] = eurB;
-    ManagerStorage memory data =
-      ManagerStorage({ subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager)) });
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager))
+    });
     manager.setSubCollaterals(data.subCollaterals, "");
 
     hoax(governor);
@@ -1384,8 +1393,9 @@ contract Test_Setters_RevokeCollateral is Fixture {
     IERC20[] memory subCollaterals = new IERC20[](2);
     subCollaterals[0] = eurA;
     subCollaterals[1] = eurB;
-    ManagerStorage memory data =
-      ManagerStorage({ subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager)) });
+    ManagerStorage memory data = ManagerStorage({
+      subCollaterals: subCollaterals, config: abi.encode(ManagerType.EXTERNAL, abi.encode(manager))
+    });
     manager.setSubCollaterals(data.subCollaterals, "");
 
     hoax(governor);
@@ -1668,14 +1678,7 @@ contract Test_Setters_UpdateSlippageTolerance is Fixture {
 contract Test_Setters_SetOracle is Fixture {
   event OracleSet(address indexed collateral, bytes oracleConfig);
 
-  function _buildOracleConfig(
-    uint128 userDeviation,
-    uint128 burnRatioDeviation
-  )
-    internal
-    view
-    returns (bytes memory)
-  {
+  function _buildOracleConfig(uint128 userDeviation, uint128 burnRatioDeviation) internal view returns (bytes memory) {
     (OracleReadType readType, OracleReadType targetType, bytes memory data, bytes memory targetData,) =
       parallelizer.getOracle(address(eurA));
     return abi.encode(readType, targetType, data, targetData, abi.encode(userDeviation, burnRatioDeviation));
