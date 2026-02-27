@@ -87,11 +87,11 @@ library LibSurplus {
     }
     uint256 oracleValue = LibOracle.readMint(collatInfo.oracleConfig);
     uint256 totalCollateralValue =
-      LibHelpers.convertDecimalTo(oracleValue * currentCollateralBalance, 18 + collatInfo.decimals, 18);
+      LibHelpers.convertDecimalTo(oracleValue * currentCollateralBalance, 18 + collatInfo.decimals, 18, Math.Rounding.Floor);
     uint256 stablesBacked = (uint256(collatInfo.normalizedStables) * ts.normalizer) / BASE_27;
     if (totalCollateralValue <= stablesBacked) revert ZeroSurplusAmount();
     stableSurplus = totalCollateralValue - stablesBacked;
-    collateralSurplus = LibHelpers.convertDecimalTo((stableSurplus * BASE_18) / oracleValue, 18, collatInfo.decimals);
+    collateralSurplus = LibHelpers.convertDecimalTo((stableSurplus * BASE_18) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Floor);
   }
 
   /// @notice Computes the minimum expected amount of stablecoins to receive for a given surplus.

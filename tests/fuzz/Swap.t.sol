@@ -223,10 +223,18 @@ contract SwapTest is Fixture, FunctionUtils {
       );
     }
     if (stableAmount > 0) {
-      vm.expectRevert(Errors.TooSmallAmountOut.selector);
-      parallelizer.swapExactInput(
-        amountIn, stableAmount + 1, _collaterals[fromTokenMint], address(tokenP), alice, block.timestamp * 2
-      );
+      // With Ceil rounding in quoteOut, amountIn may be rounded up enough that
+      // quoteIn(amountIn) >= stableAmount + 1, so the slippage check wouldn't trigger.
+      // Only expect TooSmallAmountOut when the reflexive quote confirms slippage.
+      uint256 reflexiveMintOut = amountIn > 0
+        ? parallelizer.quoteIn(amountIn, _collaterals[fromTokenMint], address(tokenP))
+        : 0;
+      if (reflexiveMintOut < stableAmount + 1) {
+        vm.expectRevert(Errors.TooSmallAmountOut.selector);
+        parallelizer.swapExactInput(
+          amountIn, stableAmount + 1, _collaterals[fromTokenMint], address(tokenP), alice, block.timestamp * 2
+        );
+      }
     }
     vm.stopPrank();
 

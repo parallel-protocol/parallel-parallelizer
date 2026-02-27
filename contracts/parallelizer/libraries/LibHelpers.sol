@@ -12,10 +12,24 @@ import "../Storage.sol";
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibHelpers.sol
 library LibHelpers {
   /// @notice Rebases the units of `amount` from `fromDecimals` to `toDecimals`
-  function convertDecimalTo(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
-    if (fromDecimals > toDecimals) return amount / 10 ** (fromDecimals - toDecimals);
-    else if (fromDecimals < toDecimals) return amount * 10 ** (toDecimals - fromDecimals);
-    else return amount;
+  function convertDecimalTo(
+    uint256 amount,
+    uint8 fromDecimals,
+    uint8 toDecimals,
+    Math.Rounding rounding
+  )
+    internal
+    pure
+    returns (uint256)
+  {
+    if (fromDecimals > toDecimals) {
+      uint256 divisor = 10 ** (fromDecimals - toDecimals);
+      return Math.mulDiv(amount, 1, divisor, rounding);
+    } else if (fromDecimals < toDecimals) {
+      return amount * 10 ** (toDecimals - fromDecimals);
+    } else {
+      return amount;
+    }
   }
 
   /// @notice Checks whether a `token` is in a list `tokens` and returns the index of the token in the list

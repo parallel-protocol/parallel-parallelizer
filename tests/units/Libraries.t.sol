@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import { stdError } from "@forge-std/Test.sol";
 
@@ -31,11 +32,15 @@ contract LibrariesTest is Fixture {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function test_ConvertDecimalTo() public {
-    assertEq(mockLib.convertDecimalTo(100, 18, 18), 100);
-    assertEq(mockLib.convertDecimalTo(100, 19, 18), 10);
-    assertEq(mockLib.convertDecimalTo(100, 18, 19), 1000);
-    assertEq(mockLib.convertDecimalTo(100, 18, 23), 10_000_000);
-    assertEq(mockLib.convertDecimalTo(100, 23, 18), 0);
+    assertEq(mockLib.convertDecimalTo(100, 18, 18, Math.Rounding.Floor), 100);
+    assertEq(mockLib.convertDecimalTo(100, 19, 18, Math.Rounding.Floor), 10);
+    assertEq(mockLib.convertDecimalTo(100, 18, 19, Math.Rounding.Floor), 1000);
+    assertEq(mockLib.convertDecimalTo(100, 18, 23, Math.Rounding.Floor), 10_000_000);
+    assertEq(mockLib.convertDecimalTo(100, 23, 18, Math.Rounding.Floor), 0);
+    // Ceil rounding
+    assertEq(mockLib.convertDecimalTo(100, 23, 18, Math.Rounding.Ceil), 1);
+    assertEq(mockLib.convertDecimalTo(100, 19, 18, Math.Rounding.Ceil), 10);
+    assertEq(mockLib.convertDecimalTo(101, 19, 18, Math.Rounding.Ceil), 11);
   }
 
   function test_CheckList() public {

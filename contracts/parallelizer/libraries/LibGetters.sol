@@ -80,7 +80,7 @@ library LibGetters {
         }
         uint256 oracleValue = LibOracle.readRedemption(collateral.oracleConfig);
         totalCollateralization += (oracleValue
-            * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18)) / BASE_18;
+            * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18, Math.Rounding.Floor)) / BASE_18;
       }
     }
     // The `stablecoinsIssued` value need to be rounded up because it is then used as a divizer when computing
