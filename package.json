@@ -62,7 +62,7 @@
     "viem": "^2.37.1"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.2.0",
-    "@openzeppelin/contracts-upgradeable": "^5.2.0"
+    "@openzeppelin/contracts": "5.4.0",
+    "@openzeppelin/contracts-upgradeable": "5.4.0"
   }
 }
