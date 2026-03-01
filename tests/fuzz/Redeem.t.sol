@@ -1549,8 +1549,9 @@ contract RedeemTest is Fixture, FunctionUtils {
       }
 
       (,,,, uint256 oracleValue) = parallelizer.getOracleValues(collateralList[i]);
-      totalCollateralization +=
-        (oracleValue * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18, Math.Rounding.Floor)) / BASE_18;
+      totalCollateralization += (
+        oracleValue * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18, Math.Rounding.Floor)
+      ) / BASE_18;
     }
   }
 }

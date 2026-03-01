@@ -276,7 +276,9 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   {
     uint256 oracleValue = LibOracle.readMint(collatInfo.oracleConfig);
     amountIn = _quoteFees(collatInfo, QuoteType.MintExactOutput, amountOut);
-    amountIn = LibHelpers.convertDecimalTo((amountIn * BASE_18) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Ceil);
+    amountIn = LibHelpers.convertDecimalTo(
+      (amountIn * BASE_18) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Ceil
+    );
   }
 
   /// @notice Computes the `amountIn` of stablecoins to burn to release `amountOut` of `collateral`
@@ -290,7 +292,9 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     returns (uint256 amountIn)
   {
     (uint256 ratio, uint256 oracleValue) = LibOracle.getBurnOracle(collateral, collatInfo.oracleConfig);
-    amountIn = Math.mulDiv(LibHelpers.convertDecimalTo(amountOut, collatInfo.decimals, 18, Math.Rounding.Ceil), oracleValue, ratio);
+    amountIn = Math.mulDiv(
+      LibHelpers.convertDecimalTo(amountOut, collatInfo.decimals, 18, Math.Rounding.Ceil), oracleValue, ratio
+    );
     amountIn = _quoteFees(collatInfo, QuoteType.BurnExactOutput, amountIn);
   }
 
@@ -306,7 +310,9 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   {
     (uint256 ratio, uint256 oracleValue) = LibOracle.getBurnOracle(collateral, collatInfo.oracleConfig);
     amountOut = _quoteFees(collatInfo, QuoteType.BurnExactInput, amountIn);
-    amountOut = LibHelpers.convertDecimalTo((amountOut * ratio) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Floor);
+    amountOut = LibHelpers.convertDecimalTo(
+      (amountOut * ratio) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Floor
+    );
   }
 
   /// @notice Computes the fees to apply during a mint or burn operation
