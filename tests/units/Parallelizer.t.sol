@@ -408,6 +408,57 @@ contract TestParallelizer is Fixture {
     parallelizer.release();
   }
 
+  function test_ProcessSurplus_Success_SpotBelowTargetWithinDeviation()
+    public
+    setZeroMintFeesOnAllCollaterals
+  {
+    // Mint 100 tokenP at oracle = 1.0 (default STABLE target, userDeviation=0)
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+
+    // Reconfigure eurA oracle: MAX target = 1.10, userDeviation = 5%
+    AggregatorV3Interface[] memory circuitChainlink = new AggregatorV3Interface[](1);
+    uint32[] memory stalePeriods = new uint32[](1);
+    uint8[] memory circuitChainIsMultiplied = new uint8[](1);
+    uint8[] memory chainlinkDecimals = new uint8[](1);
+    circuitChainlink[0] = AggregatorV3Interface(address(oracleA));
+    stalePeriods[0] = 1 hours;
+    circuitChainIsMultiplied[0] = 1;
+    chainlinkDecimals[0] = 8;
+    OracleQuoteType quoteType = OracleQuoteType.UNIT;
+    bytes memory readData =
+      abi.encode(circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, quoteType);
+    bytes memory targetData = abi.encode(uint256(1.10e18));
+
+    vm.startPrank(governor);
+    parallelizer.setOracle(
+      address(eurA),
+      abi.encode(
+        OracleReadType.CHAINLINK_FEEDS,
+        OracleReadType.MAX,
+        readData,
+        targetData,
+        abi.encode(uint128(5e16), uint128(5e16)) // userDeviation=5%, burnRatioDeviation=5%
+      )
+    );
+    vm.stopPrank();
+
+    // Drop spot price to 1.07 — below target (1.10) but within 5% deviation
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.07e8));
+
+    // Verify surplus exists
+    (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
+    assertGt(collateralSurplus, 0, "Surplus should exist");
+    assertGt(stableSurplus, 0, "Stable surplus should exist");
+
+    // After fix: processSurplus should succeed because _computeCollateralSurplus
+    // now uses min(readRedemption, readMint) for conservative sizing
+    _setSlippageTolerance(address(eurA), 1e8);
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+    parallelizer.processSurplus(address(eurA), 0);
+    vm.stopPrank();
+  }
+
   ///---------------------------------
   /// Helpers
   ///---------------------------------

@@ -85,13 +85,18 @@ library LibSurplus {
     } else {
       currentCollateralBalance = IERC20(collateral).balanceOf(address(this));
     }
-    uint256 oracleValue = LibOracle.readMint(collatInfo.oracleConfig);
+    uint256 redemptionValue = LibOracle.readRedemption(collatInfo.oracleConfig);
+    uint256 mintValue = LibOracle.readMint(collatInfo.oracleConfig);
+    // Use the lower oracle value to conservatively size the surplus, preventing over-extraction
+    // that would cause the post-swap CR check (which uses readRedemption) to revert
+    uint256 conservativeValue = Math.min(redemptionValue, mintValue);
     uint256 totalCollateralValue =
-      LibHelpers.convertDecimalTo(oracleValue * currentCollateralBalance, 18 + collatInfo.decimals, 18, Math.Rounding.Floor);
+      LibHelpers.convertDecimalTo(conservativeValue * currentCollateralBalance, 18 + collatInfo.decimals, 18, Math.Rounding.Floor);
     uint256 stablesBacked = (uint256(collatInfo.normalizedStables) * ts.normalizer) / BASE_27;
     if (totalCollateralValue <= stablesBacked) revert ZeroSurplusAmount();
     stableSurplus = totalCollateralValue - stablesBacked;
-    collateralSurplus = LibHelpers.convertDecimalTo((stableSurplus * BASE_18) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Floor);
+    // Use mintValue for back-conversion to collateral, matching the swap execution price
+    collateralSurplus = LibHelpers.convertDecimalTo((stableSurplus * BASE_18) / mintValue, 18, collatInfo.decimals, Math.Rounding.Floor);
   }
 
   /// @notice Computes the minimum expected amount of stablecoins to receive for a given surplus.
