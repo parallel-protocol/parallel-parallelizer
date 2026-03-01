@@ -213,6 +213,36 @@ contract TestParallelizer is Fixture {
     vm.stopPrank();
   }
 
+  function test_ProcessSurplus_Success_WithSurplusBufferRatioAbove100()
+    public
+    setZeroMintFeesOnAllCollaterals
+    mintTokenPFromAllCollaterals
+  {
+    _setSlippageTolerance(address(eurB), 1e8);
+
+    // set eurB as yield-bearing asset with target 1.08
+    _setOracleMaxTarget(address(eurB), address(oracleB), 1.08e18);
+    // eurB appreciates to 1.08 to generate surplus
+    MockChainlinkOracle(address(oracleB)).setLatestAnswer(int256(1.08e8));
+    // Appreciate eurA and eurY too so global CR is well above the buffer
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.08e8));
+    MockChainlinkOracle(address(oracleY)).setLatestAnswer(int256(1.08e8));
+
+    // Set buffer ratio to 1.01 (101%)
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(1.01e9));
+
+    (uint64 crBefore,) = parallelizer.getCollateralRatio();
+    assertTrue(crBefore > uint64(1.01e9));
+
+    parallelizer.processSurplus(address(eurB), 0);
+
+    (uint64 crAfter,) = parallelizer.getCollateralRatio();
+    assertGe(crAfter, uint64(1.01e9));
+    assertLe(crAfter, crBefore);
+    vm.stopPrank();
+  }
+
   function test_ProcessSurplus_RevertWhen_NormalizerNotBase27_OvercountsSurplus()
     public
     setZeroMintFeesOnAllCollaterals
