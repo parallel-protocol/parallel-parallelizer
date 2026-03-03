@@ -78,6 +78,7 @@ library LibSurplus {
     returns (uint256 collateralSurplus, uint256 stableSurplus)
   {
     ParallelizerStorage storage ts = s.transmuterStorage();
+    if (ts.surplusBufferRatio == 0) revert SurplusBufferRatioNotSet();
     Collateral storage collatInfo = ts.collaterals[collateral];
     uint256 currentCollateralBalance;
     if (collatInfo.isManaged > 0) {
@@ -94,10 +95,8 @@ library LibSurplus {
       conservativeValue * currentCollateralBalance, 18 + collatInfo.decimals, 18, Math.Rounding.Floor
     );
     uint256 stablesBacked = (uint256(collatInfo.normalizedStables) * ts.normalizer) / BASE_27;
-    uint64 bufferRatio = ts.surplusBufferRatio;
-    if (bufferRatio == 0) bufferRatio = uint64(BASE_9);
     // Compute the max stables that can be backed while maintaining the buffer ratio
-    uint256 maxBackable = (totalCollateralValue * BASE_9) / bufferRatio;
+    uint256 maxBackable = (totalCollateralValue * BASE_9) / ts.surplusBufferRatio;
     if (maxBackable <= stablesBacked) revert ZeroSurplusAmount();
     stableSurplus = maxBackable - stablesBacked;
     collateralSurplus =

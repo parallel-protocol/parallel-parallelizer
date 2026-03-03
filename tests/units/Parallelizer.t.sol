@@ -95,13 +95,20 @@ contract TestParallelizer is Fixture {
   /// Test ProcessSurplus
   ///---------------------------------
 
+  modifier setSurplusBufferRatio() {
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+    vm.stopPrank();
+    _;
+  }
+
   function test_ProcessSurplus_Success()
     public
     swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
     updateSlippageToleranceTo1e7
+    setSurplusBufferRatio
   {
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
     uint256 amountOut = parallelizer.quoteIn(collateralSurplus, address(eurA), address(tokenP));
 
@@ -112,16 +119,15 @@ contract TestParallelizer is Fixture {
   function test_ProcessSurplus_RevertWhen_AmountOutIsTooSmall()
     public
     swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
+    setSurplusBufferRatio
   {
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert(TooSmallAmountOut.selector);
     parallelizer.processSurplus(address(eurA), 0);
   }
 
-  function test_ProcessSurplus_RevertWhen_NoSurplus() public {
+  function test_ProcessSurplus_RevertWhen_NoSurplus() public setSurplusBufferRatio {
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert(ZeroSurplusAmount.selector);
     parallelizer.processSurplus(address(eurA), 0);
   }
@@ -132,7 +138,7 @@ contract TestParallelizer is Fixture {
     updateSlippageToleranceTo1e7
   {
     vm.startPrank(governor);
-    vm.expectRevert(InvalidParam.selector);
+    vm.expectRevert(SurplusBufferRatioNotSet.selector);
     parallelizer.processSurplus(address(eurA), 0);
   }
 
@@ -140,9 +146,9 @@ contract TestParallelizer is Fixture {
     public
     swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
     updateSlippageToleranceTo1e7
+    setSurplusBufferRatio
   {
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
 
     // Process only half the surplus
@@ -173,6 +179,7 @@ contract TestParallelizer is Fixture {
     public
     setZeroMintFeesOnAllCollaterals
     mintTokenPFromAllCollaterals
+    setSurplusBufferRatio
   {
     (uint64 crBefore,) = parallelizer.getCollateralRatio();
     assertTrue(crBefore >= BASE_9, "ProcessSurplus: Protocol should be healthy before surplus processing");
@@ -187,7 +194,6 @@ contract TestParallelizer is Fixture {
     MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.95e8));
 
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert(Undercollateralized.selector);
     parallelizer.processSurplus(address(eurB), 0);
     vm.stopPrank();
@@ -270,7 +276,11 @@ contract TestParallelizer is Fixture {
     vm.stopPrank();
   }
 
-  function test_GetCollateralSurplus_RevertWhen_NoSurplus_ZeroSurplusAmount() public setZeroMintFeesOnAllCollaterals {
+  function test_GetCollateralSurplus_RevertWhen_NoSurplus_ZeroSurplusAmount()
+    public
+    setZeroMintFeesOnAllCollaterals
+    setSurplusBufferRatio
+  {
     _mintZeroFee(address(eurA), 100 * BASE_6);
 
     // Drop oracle below 1.0 so totalCollateralValue < stablesBacked
@@ -281,7 +291,11 @@ contract TestParallelizer is Fixture {
     parallelizer.getCollateralSurplus(address(eurA));
   }
 
-  function test_GetCollateralSurplus_WorksForManagedCollateral() public setZeroMintFeesOnAllCollaterals {
+  function test_GetCollateralSurplus_WorksForManagedCollateral()
+    public
+    setZeroMintFeesOnAllCollaterals
+    setSurplusBufferRatio
+  {
     // Set up eurA as managed collateral
     MockManager manager = new MockManager(address(eurA));
     IERC20[] memory subCollaterals = new IERC20[](1);
@@ -307,7 +321,11 @@ contract TestParallelizer is Fixture {
     assertGt(stableSurplus, 0, "ProcessSurplus: managed collateral should report stable surplus");
   }
 
-  function test_ProcessSurplus_Success_ForManagedCollateral() public setZeroMintFeesOnAllCollaterals {
+  function test_ProcessSurplus_Success_ForManagedCollateral()
+    public
+    setZeroMintFeesOnAllCollaterals
+    setSurplusBufferRatio
+  {
     // Set up eurA as managed collateral
     MockManager manager = new MockManager(address(eurA));
     IERC20[] memory subCollaterals = new IERC20[](1);
@@ -331,8 +349,6 @@ contract TestParallelizer is Fixture {
     _setSlippageTolerance(address(eurA), 1e8);
 
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
-
     (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
     uint256 amountOut = parallelizer.quoteIn(collateralSurplus, address(eurA), address(tokenP));
 
@@ -441,6 +457,7 @@ contract TestParallelizer is Fixture {
   function test_ProcessSurplus_Success_SpotBelowTargetWithinDeviation()
     public
     setZeroMintFeesOnAllCollaterals
+    setSurplusBufferRatio
   {
     // Mint 100 tokenP at oracle = 1.0 (default STABLE target, userDeviation=0)
     _mintZeroFee(address(eurA), 100 * BASE_6);
@@ -457,7 +474,7 @@ contract TestParallelizer is Fixture {
     OracleQuoteType quoteType = OracleQuoteType.UNIT;
     bytes memory readData =
       abi.encode(circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, quoteType);
-    bytes memory targetData = abi.encode(uint256(1.10e18));
+    bytes memory targetData = abi.encode(uint256(1.1e18));
 
     vm.startPrank(governor);
     parallelizer.setOracle(
@@ -484,7 +501,6 @@ contract TestParallelizer is Fixture {
     // now uses min(readRedemption, readMint) for conservative sizing
     _setSlippageTolerance(address(eurA), 1e8);
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     parallelizer.processSurplus(address(eurA), 0);
     vm.stopPrank();
   }
