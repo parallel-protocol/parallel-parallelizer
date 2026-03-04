@@ -259,12 +259,13 @@ library LibSetters {
     }
 
     // Zero out stale shares for old payees
-    for (uint256 i = 0; i < ts.payees.length; ++i) {
+    uint256 i = 0;
+    for (; i < ts.payees.length; ++i) {
       ts.shares[ts.payees[i]] = 0;
     }
     delete ts.payees;
     uint256 _totalShares = 0;
-    uint256 i = 0;
+    i = 0;
     for (; i < _payees.length; ++i) {
       for (uint256 j = 0; j < i; ++j) {
         if (_payees[j] == _payees[i]) revert AlreadyAdded();

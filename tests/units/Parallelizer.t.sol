@@ -109,7 +109,7 @@ contract TestParallelizer is Fixture {
     setSurplusBufferRatio
   {
     vm.startPrank(governor);
-    (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
+    (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
     uint256 amountOut = parallelizer.quoteIn(collateralSurplus, address(eurA), address(tokenP));
 
     parallelizer.processSurplus(address(eurA), 0);

@@ -50,7 +50,6 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
     if (IERC20(address(ts.tokenP)).balanceOf(address(this)) < tokenPBalance) revert InvalidTokens();
     bool hasIncreased;
     address collateral;
-    uint256 amountOut;
     for (uint256 i; i < listLength; ++i) {
       uint256 newBalance = IERC20(list[i]).balanceOf(address(this));
       if (newBalance < balances[i]) {
