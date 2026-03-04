@@ -175,7 +175,7 @@ contract TestParallelizer is Fixture {
     _;
   }
 
-  function test_ProcessSurplus_RevertWhen_SurplusProcessingMakesProtocolUndercollateralized()
+  function test_ProcessSurplus_Success_CapsPerCollateralSurplusByGlobalSurplus()
     public
     setZeroMintFeesOnAllCollaterals
     mintTokenPFromAllCollaterals
@@ -193,10 +193,13 @@ contract TestParallelizer is Fixture {
     // eurA depegs to 0.95 to make the protocol at risk
     MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.95e8));
 
+    // Per-collateral eurB surplus = 8, but global surplus ≈ 3, so surplus is capped
     vm.startPrank(governor);
-    vm.expectRevert(Undercollateralized.selector);
     parallelizer.processSurplus(address(eurB), 0);
     vm.stopPrank();
+
+    (uint64 crAfter,) = parallelizer.getCollateralRatio();
+    assertGe(crAfter, uint64(BASE_9), "CR should remain >= surplusBufferRatio after capped surplus processing");
   }
 
   function test_ProcessSurplus_RevertWhen_CRDropsBelowSurplusBufferRatio()
@@ -214,7 +217,8 @@ contract TestParallelizer is Fixture {
     // Set a high buffer ratio (1.05) — CR after surplus will be above 1.0 but below 1.05
     vm.startPrank(governor);
     parallelizer.updateSurplusBufferRatio(uint64(1.05e9));
-    vm.expectRevert(Undercollateralized.selector);
+    // Global CR ≈ 1.027 < surplusBufferRatio (1.05), so no global surplus is extractable
+    vm.expectRevert(ZeroSurplusAmount.selector);
     parallelizer.processSurplus(address(eurB), 0);
     vm.stopPrank();
   }
@@ -282,13 +286,62 @@ contract TestParallelizer is Fixture {
     setSurplusBufferRatio
   {
     _mintZeroFee(address(eurA), 100 * BASE_6);
-
-    // Drop oracle below 1.0 so totalCollateralValue < stablesBacked
-    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.99e8));
-
-    // Should revert with ZeroSurplusAmount, not arithmetic underflow
     vm.expectRevert(ZeroSurplusAmount.selector);
     parallelizer.getCollateralSurplus(address(eurA));
+  }
+
+  function test_GetCollateralSurplus_CapsPerCollateralSurplusByGlobalSurplus() public setZeroMintFeesOnAllCollaterals {
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.6667e8));
+    _mintZeroFee(address(eurA), 150 * BASE_6);
+    _mintZeroFee(address(eurB), 100 * BASE_12);
+
+    vm.startPrank(governor);
+    // Set buffer ratio to 1.1 (110%)
+    parallelizer.updateSurplusBufferRatio(uint64(1.1e9));
+    vm.stopPrank();
+
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1e8));
+
+    // eurA: 150 value, ~100 stables; eurB: 100 value, ~100 stables
+    // global CR = 250 / 200 = 1.25 > 1.1, so global surplus is extractable
+    // Per-collateral eurA surplus = 150/1.1 - 100 = 36.36
+    // Global surplus = 200 * (1.25 - 1.1) / 1.1 = 27.27
+    // Capped surplus = min(36.36, 27.27) = 27.27
+    (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
+
+    assertApproxEqAbs(stableSurplus, 27.27e18, 0.01e18);
+    assertApproxEqAbs(collateralSurplus, 27.27e6, 0.01e6);
+  }
+
+  function test_ProcessSurplus_CapsPerCollateralSurplusByGlobalSurplus() public setZeroMintFeesOnAllCollaterals {
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.6667e8));
+    _mintZeroFee(address(eurA), 150 * BASE_6);
+    _mintZeroFee(address(eurB), 100 * BASE_12);
+
+    _setSlippageTolerance(address(eurA), 1e8);
+
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(1.1e9));
+    vm.stopPrank();
+
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1e8));
+
+    // eurA: 150 value, ~100 stables; eurB: 100 value, ~100 stables
+    // global CR = 250 / 200 = 1.25 > 1.1, so global surplus is extractable
+    // Per-collateral eurA surplus = 150/1.1 - 100 = 36.36
+    // Global surplus = 200 * (1.25 - 1.1) / 1.1 = 27.27
+    // Capped surplus = min(36.36, 27.27) = 27.27
+    (uint64 crBefore,) = parallelizer.getCollateralRatio();
+
+    vm.prank(governor);
+    (uint256 collateralSurplus, uint256 stableSurplus,) = parallelizer.processSurplus(address(eurA), 0);
+
+    assertApproxEqAbs(stableSurplus, 27.27e18, 0.01e18);
+    assertApproxEqAbs(collateralSurplus, 27.27e6, 0.01e6);
+
+    (uint64 crAfter,) = parallelizer.getCollateralRatio();
+    assertGe(crAfter, uint64(1.1e9), "CR should remain >= surplusBufferRatio after capped surplus processing");
+    assertLt(crAfter, crBefore, "CR should decrease after surplus processing");
   }
 
   function test_GetCollateralSurplus_WorksForManagedCollateral()

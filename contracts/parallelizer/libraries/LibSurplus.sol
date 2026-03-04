@@ -7,6 +7,7 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import { LibManager } from "../libraries/LibManager.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
+import { LibGetters } from "../libraries/LibGetters.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibStorage as s } from "../libraries/LibStorage.sol";
 
@@ -80,27 +81,50 @@ library LibSurplus {
     ParallelizerStorage storage ts = s.transmuterStorage();
     if (ts.surplusBufferRatio == 0) revert SurplusBufferRatioNotSet();
     Collateral storage collatInfo = ts.collaterals[collateral];
-    uint256 currentCollateralBalance;
-    if (collatInfo.isManaged > 0) {
-      (, currentCollateralBalance) = LibManager.totalAssets(collatInfo.managerData.config);
-    } else {
-      currentCollateralBalance = IERC20(collateral).balanceOf(address(this));
-    }
+    uint256 collateralBalance = _getCollateralBalance(collateral);
     uint256 redemptionValue = LibOracle.readRedemption(collatInfo.oracleConfig);
     uint256 mintValue = LibOracle.readMint(collatInfo.oracleConfig);
     // Use the lower oracle value to conservatively size the surplus, preventing over-extraction
     // that would cause the post-swap CR check (which uses readRedemption) to revert
-    uint256 conservativeValue = Math.min(redemptionValue, mintValue);
     uint256 totalCollateralValue = LibHelpers.convertDecimalTo(
-      conservativeValue * currentCollateralBalance, 18 + collatInfo.decimals, 18, Math.Rounding.Floor
+      Math.min(redemptionValue, mintValue) * collateralBalance, 18 + collatInfo.decimals, 18, Math.Rounding.Floor
     );
     uint256 stablesBacked = (uint256(collatInfo.normalizedStables) * ts.normalizer) / BASE_27;
     // Compute the max stables that can be backed while maintaining the buffer ratio
     uint256 maxBackable = (totalCollateralValue * BASE_9) / ts.surplusBufferRatio;
     if (maxBackable <= stablesBacked) revert ZeroSurplusAmount();
     stableSurplus = maxBackable - stablesBacked;
+    // Cap per-collateral surplus by global extractable surplus
+    stableSurplus = Math.min(stableSurplus, _calculateGlobalExtractableSurplus(ts.surplusBufferRatio));
+    if (stableSurplus == 0) revert ZeroSurplusAmount();
     collateralSurplus =
       LibHelpers.convertDecimalTo((stableSurplus * BASE_18) / mintValue, 18, collatInfo.decimals, Math.Rounding.Floor);
+  }
+
+  /// @notice Computes the global extractable surplus above the surplus buffer ratio.
+  /// @param surplusBufferRatio The surplus buffer ratio.
+  /// @return globalStableSurplus The maximum stables that can be minted globally while maintaining the buffer ratio.
+  function _calculateGlobalExtractableSurplus(uint64 surplusBufferRatio)
+    internal
+    view
+    returns (uint256 globalStableSurplus)
+  {
+    (uint64 collatRatio, uint256 stablecoinsIssued,,,) = LibGetters.getCollateralRatio();
+    if (collatRatio <= surplusBufferRatio) revert ZeroSurplusAmount();
+    globalStableSurplus = stablecoinsIssued * (uint256(collatRatio) - surplusBufferRatio) / surplusBufferRatio;
+  }
+
+  /// @notice Gets the balance of a collateral.
+  /// @dev If the collateral is managed, the balance is the total assets of the managed collateral.
+  /// @param collateral The collateral address to get the balance of.
+  /// @return balance The balance of the collateral.
+  function _getCollateralBalance(address collateral) internal view returns (uint256 balance) {
+    Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
+    if (collatInfo.isManaged > 0) {
+      (, balance) = LibManager.totalAssets(collatInfo.managerData.config);
+    } else {
+      balance = IERC20(collateral).balanceOf(address(this));
+    }
   }
 
   /// @notice Computes the minimum expected amount of stablecoins to receive for a given surplus.
