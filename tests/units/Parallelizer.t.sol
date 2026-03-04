@@ -344,6 +344,32 @@ contract TestParallelizer is Fixture {
     assertLt(crAfter, crBefore, "CR should decrease after surplus processing");
   }
 
+  function test_GetCollateralSurplus_RevertWhen_GlobalCRBelowSurplusBufferRatio()
+    public
+    setZeroMintFeesOnAllCollaterals
+  {
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+    _mintZeroFee(address(eurB), 100 * BASE_12);
+
+    vm.startPrank(governor);
+    // Set buffer ratio to 1.1 (110%)
+    parallelizer.updateSurplusBufferRatio(uint64(1.1e9));
+    vm.stopPrank();
+
+    // Global CR = 200/200 = 1.0 < surplusBufferRatio (1.1)
+    // eurA has per-collateral CR = 1.0, no per-collateral surplus either
+    vm.expectRevert(ZeroSurplusAmount.selector);
+    parallelizer.getCollateralSurplus(address(eurA));
+
+    // eurA appreciates to 1.15 → per-collateral CR = 1.15, surplus exists per-collateral
+    // eurB depreciates to 0.9 → global CR = (115 + 90) / 200 = 1.025 < 1.1
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.15e8));
+    MockChainlinkOracle(address(oracleB)).setLatestAnswer(int256(0.9e8));
+
+    vm.expectRevert(ZeroSurplusAmount.selector);
+    parallelizer.getCollateralSurplus(address(eurA));
+  }
+
   function test_GetCollateralSurplus_WorksForManagedCollateral()
     public
     setZeroMintFeesOnAllCollaterals
