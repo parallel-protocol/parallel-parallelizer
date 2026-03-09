@@ -18,7 +18,7 @@ import "../Storage.sol";
 /// @custom:contact security@cooperlabs.xyz
 /// @dev There may be duplicates in the info provided by the getters defined here
 /// @dev This contract is an authorized fork of Angle's `Getters` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Getters.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Getters.sol
 contract Getters is IGetters {
   /// @inheritdoc IGetters
   function isValidSelector(bytes4 selector) external view returns (bool) {

@@ -39,7 +39,6 @@ contract Surplus is AccessManagedModifiers, ISurplus {
     returns (uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount)
   {
     ParallelizerStorage storage ts = s.transmuterStorage();
-    if (ts.surplusBufferRatio == 0) revert InvalidParam();
     (collateralSurplus, stableSurplus) = LibSurplus._computeCollateralSurplus(collateral);
     if (collateralSurplus == 0) revert ZeroAmount();
     if (maxCollateralAmount > 0 && maxCollateralAmount < collateralSurplus) {

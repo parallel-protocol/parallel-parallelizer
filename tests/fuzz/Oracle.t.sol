@@ -955,7 +955,7 @@ contract OracleTest is Fixture, FunctionUtils {
     uint128[] memory burnFirewall = new uint128[](3);
     for (uint256 i; i < _collaterals.length; i++) {
       userFirewall[i] = uint128(bound(userAndBurnFirewall[i], 0, BASE_18));
-      burnFirewall[i] = uint128(bound(userAndBurnFirewall[i + 3], 0, BASE_18));
+      burnFirewall[i] = uint128(bound(userAndBurnFirewall[i + 3], userFirewall[i], BASE_18));
       userAndBurnFirewall[i] = userFirewall[i];
       userAndBurnFirewall[i + 3] = burnFirewall[i];
     }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
+error AboveCap();
 error AccessManagedUnauthorized(address caller);
 error AlreadyAdded();
 error ArrayLengthMismatch();
@@ -27,6 +28,7 @@ error InvalidRate();
 error InvalidSwap();
 error InvalidTokens();
 error InvalidAccessManager();
+error InvalidWhitelistStatus();
 error ManagerHasAssets();
 error NoSelectorsProvidedForFacetForCut(address _facetAddress);
 error NotAllowed();
@@ -38,6 +40,7 @@ error NotTrustedOrGuardian();
 error NotWhitelisted();
 error OdosSwapFailed();
 error OracleUpdateFailed();
+error SurplusBufferRatioNotSet();
 error Paused();
 error ReentrantCall();
 error RemoveFacetAddressMustBeZeroAddress(address _facetAddress);

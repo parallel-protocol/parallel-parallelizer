@@ -223,10 +223,18 @@ contract SwapTest is Fixture, FunctionUtils {
       );
     }
     if (stableAmount > 0) {
-      vm.expectRevert(Errors.TooSmallAmountOut.selector);
-      parallelizer.swapExactInput(
-        amountIn, stableAmount + 1, _collaterals[fromTokenMint], address(tokenP), alice, block.timestamp * 2
-      );
+      // With Ceil rounding in quoteOut, amountIn may be rounded up enough that
+      // quoteIn(amountIn) >= stableAmount + 1, so the slippage check wouldn't trigger.
+      // Only expect TooSmallAmountOut when the reflexive quote confirms slippage.
+      uint256 reflexiveMintOut = amountIn > 0
+        ? parallelizer.quoteIn(amountIn, _collaterals[fromTokenMint], address(tokenP))
+        : 0;
+      if (reflexiveMintOut < stableAmount + 1) {
+        vm.expectRevert(Errors.TooSmallAmountOut.selector);
+        parallelizer.swapExactInput(
+          amountIn, stableAmount + 1, _collaterals[fromTokenMint], address(tokenP), alice, block.timestamp * 2
+        );
+      }
     }
     vm.stopPrank();
 
@@ -347,7 +355,7 @@ contract SwapTest is Fixture, FunctionUtils {
     uint128[] memory burnFirewall = new uint128[](3);
     for (uint256 i; i < _collaterals.length; i++) {
       userFirewall[i] = uint128(bound(userAndBurnFirewall[i], 0, BASE_18));
-      burnFirewall[i] = uint128(bound(userAndBurnFirewall[i + 3], 0, BASE_18));
+      burnFirewall[i] = uint128(bound(userAndBurnFirewall[i + 3], userFirewall[i], BASE_18));
       userAndBurnFirewall[i] = userFirewall[i];
       userAndBurnFirewall[i + 3] = burnFirewall[i];
     }

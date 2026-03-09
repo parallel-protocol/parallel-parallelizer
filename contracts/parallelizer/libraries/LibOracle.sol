@@ -15,10 +15,10 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is an authorized fork of Angle's `LibOracle` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibOracle.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibOracle.sol
 library LibOracle {
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ACTIONS SPECIFIC ORACLES                                             
+    ACTIONS SPECIFIC ORACLES
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Reads the oracle value used during a redemption to compute collateral ratio for `oracleConfig`
@@ -89,7 +89,7 @@ library LibOracle {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    VIEW FUNCTIONS                                                  
+    VIEW FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Internal version of the `getOracle` function
@@ -202,7 +202,7 @@ library LibOracle {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    SPECIFIC HELPERS                                                 
+    SPECIFIC HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Reads a Chainlink feed using a quote amount and converts the quote amount to the out-currency

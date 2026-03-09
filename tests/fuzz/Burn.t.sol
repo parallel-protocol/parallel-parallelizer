@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "contracts/parallelizer/Storage.sol" as Storage;
 import "contracts/utils/Errors.sol" as Errors;
@@ -143,7 +144,9 @@ contract BurnTest is Fixture, FunctionUtils {
     if (mintedStables + mintedStables2 - burntStables > 0) {
       computedCollatRatio = uint64((collateralisation * BASE_9) / (mintedStables + mintedStables2 - burntStables));
       if ((collateralisation * BASE_9) / (mintedStables + mintedStables2 - burntStables) > type(uint64).max) {
-        vm.expectRevert(bytes("SafeCast: value doesn't fit in 64 bits"));
+        vm.expectRevert();
+        parallelizer.getCollateralRatio();
+        return;
       }
     }
 
@@ -1276,7 +1279,7 @@ contract BurnTest is Fixture, FunctionUtils {
     uint128[] memory burnFirewall = new uint128[](3);
     for (uint256 i; i < _collaterals.length; i++) {
       userFirewall[i] = uint128(bound(userAndBurnFirewall[i], 0, BASE_18));
-      burnFirewall[i] = uint128(bound(userAndBurnFirewall[i + 3], 0, BASE_18));
+      burnFirewall[i] = uint128(bound(userAndBurnFirewall[i + 3], userFirewall[i], BASE_18));
       userAndBurnFirewall[i] = userFirewall[i];
       userAndBurnFirewall[i + 3] = burnFirewall[i];
     }

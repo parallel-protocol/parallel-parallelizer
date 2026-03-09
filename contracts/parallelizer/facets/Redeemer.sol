@@ -25,7 +25,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is an authorized fork of Angle's `Redeemer` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Redeemer.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Redeemer.sol
 contract Redeemer is IRedeemer, AccessManagedModifiers {
   using SafeERC20 for IERC20;
   using Math for uint256;
@@ -42,7 +42,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   event NormalizerUpdated(uint256 newNormalizerValue);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    EXTERNAL ACTIONS                                                 
+    EXTERNAL ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc IRedeemer
@@ -108,7 +108,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INTERNAL HELPERS                                                 
+    INTERNAL HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Internal function of the `redeem` function in the `Redeemer` contract
@@ -223,9 +223,9 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
       // We ensure to preserve the invariant `sum(collateralNewNormalizedStables) = normalizedStables`
       uint128 newNormalizedStables;
       for (uint256 i; i < collateralListLength; ++i) {
-        uint128 newCollateralNormalizedStable = (
-          (uint256(ts.collaterals[collateralListMem[i]].normalizedStables) * newNormalizerValue) / BASE_27
-        ).toUint128();
+        uint128 newCollateralNormalizedStable = ((uint256(ts.collaterals[collateralListMem[i]].normalizedStables)
+              * newNormalizerValue) / BASE_27)
+        .toUint128();
         newNormalizedStables += newCollateralNormalizedStable;
         ts.collaterals[collateralListMem[i]].normalizedStables = uint216(newCollateralNormalizedStable);
       }

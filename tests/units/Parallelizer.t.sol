@@ -95,14 +95,21 @@ contract TestParallelizer is Fixture {
   /// Test ProcessSurplus
   ///---------------------------------
 
+  modifier setSurplusBufferRatio() {
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+    vm.stopPrank();
+    _;
+  }
+
   function test_ProcessSurplus_Success()
     public
     swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
     updateSlippageToleranceTo1e7
+    setSurplusBufferRatio
   {
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
-    (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
+    (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
     uint256 amountOut = parallelizer.quoteIn(collateralSurplus, address(eurA), address(tokenP));
 
     parallelizer.processSurplus(address(eurA), 0);
@@ -112,16 +119,15 @@ contract TestParallelizer is Fixture {
   function test_ProcessSurplus_RevertWhen_AmountOutIsTooSmall()
     public
     swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
+    setSurplusBufferRatio
   {
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert(TooSmallAmountOut.selector);
     parallelizer.processSurplus(address(eurA), 0);
   }
 
-  function test_ProcessSurplus_RevertWhen_NoSurplus() public {
+  function test_ProcessSurplus_RevertWhen_NoSurplus() public setSurplusBufferRatio {
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     vm.expectRevert(ZeroSurplusAmount.selector);
     parallelizer.processSurplus(address(eurA), 0);
   }
@@ -132,7 +138,7 @@ contract TestParallelizer is Fixture {
     updateSlippageToleranceTo1e7
   {
     vm.startPrank(governor);
-    vm.expectRevert(InvalidParam.selector);
+    vm.expectRevert(SurplusBufferRatioNotSet.selector);
     parallelizer.processSurplus(address(eurA), 0);
   }
 
@@ -140,9 +146,9 @@ contract TestParallelizer is Fixture {
     public
     swapSomeCollateralToTokenPAndUpdateOracleToMorphoOracle
     updateSlippageToleranceTo1e7
+    setSurplusBufferRatio
   {
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
     (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
 
     // Process only half the surplus
@@ -169,10 +175,11 @@ contract TestParallelizer is Fixture {
     _;
   }
 
-  function test_ProcessSurplus_RevertWhen_SurplusProcessingMakesProtocolUndercollateralized()
+  function test_ProcessSurplus_Success_CapsPerCollateralSurplusByGlobalSurplus()
     public
     setZeroMintFeesOnAllCollaterals
     mintTokenPFromAllCollaterals
+    setSurplusBufferRatio
   {
     (uint64 crBefore,) = parallelizer.getCollateralRatio();
     assertTrue(crBefore >= BASE_9, "ProcessSurplus: Protocol should be healthy before surplus processing");
@@ -186,11 +193,13 @@ contract TestParallelizer is Fixture {
     // eurA depegs to 0.95 to make the protocol at risk
     MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.95e8));
 
+    // Per-collateral eurB surplus = 8, but global surplus ≈ 3, so surplus is capped
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
-    vm.expectRevert(Undercollateralized.selector);
     parallelizer.processSurplus(address(eurB), 0);
     vm.stopPrank();
+
+    (uint64 crAfter,) = parallelizer.getCollateralRatio();
+    assertGe(crAfter, uint64(BASE_9), "CR should remain >= surplusBufferRatio after capped surplus processing");
   }
 
   function test_ProcessSurplus_RevertWhen_CRDropsBelowSurplusBufferRatio()
@@ -208,8 +217,39 @@ contract TestParallelizer is Fixture {
     // Set a high buffer ratio (1.05) — CR after surplus will be above 1.0 but below 1.05
     vm.startPrank(governor);
     parallelizer.updateSurplusBufferRatio(uint64(1.05e9));
-    vm.expectRevert(Undercollateralized.selector);
+    // Global CR ≈ 1.027 < surplusBufferRatio (1.05), so no global surplus is extractable
+    vm.expectRevert(ZeroSurplusAmount.selector);
     parallelizer.processSurplus(address(eurB), 0);
+    vm.stopPrank();
+  }
+
+  function test_ProcessSurplus_Success_WithSurplusBufferRatioAbove100()
+    public
+    setZeroMintFeesOnAllCollaterals
+    mintTokenPFromAllCollaterals
+  {
+    _setSlippageTolerance(address(eurB), 1e8);
+
+    // set eurB as yield-bearing asset with target 1.08
+    _setOracleMaxTarget(address(eurB), address(oracleB), 1.08e18);
+    // eurB appreciates to 1.08 to generate surplus
+    MockChainlinkOracle(address(oracleB)).setLatestAnswer(int256(1.08e8));
+    // Appreciate eurA and eurY too so global CR is well above the buffer
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.08e8));
+    MockChainlinkOracle(address(oracleY)).setLatestAnswer(int256(1.08e8));
+
+    // Set buffer ratio to 1.01 (101%)
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(1.01e9));
+
+    (uint64 crBefore,) = parallelizer.getCollateralRatio();
+    assertTrue(crBefore > uint64(1.01e9));
+
+    parallelizer.processSurplus(address(eurB), 0);
+
+    (uint64 crAfter,) = parallelizer.getCollateralRatio();
+    assertGe(crAfter, uint64(1.01e9));
+    assertLe(crAfter, crBefore);
     vm.stopPrank();
   }
 
@@ -240,18 +280,101 @@ contract TestParallelizer is Fixture {
     vm.stopPrank();
   }
 
-  function test_GetCollateralSurplus_RevertWhen_NoSurplus_ZeroSurplusAmount() public setZeroMintFeesOnAllCollaterals {
+  function test_GetCollateralSurplus_RevertWhen_NoSurplus_ZeroSurplusAmount()
+    public
+    setZeroMintFeesOnAllCollaterals
+    setSurplusBufferRatio
+  {
     _mintZeroFee(address(eurA), 100 * BASE_6);
-
-    // Drop oracle below 1.0 so totalCollateralValue < stablesBacked
-    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.99e8));
-
-    // Should revert with ZeroSurplusAmount, not arithmetic underflow
     vm.expectRevert(ZeroSurplusAmount.selector);
     parallelizer.getCollateralSurplus(address(eurA));
   }
 
-  function test_GetCollateralSurplus_WorksForManagedCollateral() public setZeroMintFeesOnAllCollaterals {
+  function test_GetCollateralSurplus_CapsPerCollateralSurplusByGlobalSurplus() public setZeroMintFeesOnAllCollaterals {
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.6667e8));
+    _mintZeroFee(address(eurA), 150 * BASE_6);
+    _mintZeroFee(address(eurB), 100 * BASE_12);
+
+    vm.startPrank(governor);
+    // Set buffer ratio to 1.1 (110%)
+    parallelizer.updateSurplusBufferRatio(uint64(1.1e9));
+    vm.stopPrank();
+
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1e8));
+
+    // eurA: 150 value, ~100 stables; eurB: 100 value, ~100 stables
+    // global CR = 250 / 200 = 1.25 > 1.1, so global surplus is extractable
+    // Per-collateral eurA surplus = 150/1.1 - 100 = 36.36
+    // Global surplus = 200 * (1.25 - 1.1) / 1.1 = 27.27
+    // Capped surplus = min(36.36, 27.27) = 27.27
+    (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
+
+    assertApproxEqAbs(stableSurplus, 27.27e18, 0.01e18);
+    assertApproxEqAbs(collateralSurplus, 27.27e6, 0.01e6);
+  }
+
+  function test_ProcessSurplus_CapsPerCollateralSurplusByGlobalSurplus() public setZeroMintFeesOnAllCollaterals {
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(0.6667e8));
+    _mintZeroFee(address(eurA), 150 * BASE_6);
+    _mintZeroFee(address(eurB), 100 * BASE_12);
+
+    _setSlippageTolerance(address(eurA), 1e8);
+
+    vm.startPrank(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(1.1e9));
+    vm.stopPrank();
+
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1e8));
+
+    // eurA: 150 value, ~100 stables; eurB: 100 value, ~100 stables
+    // global CR = 250 / 200 = 1.25 > 1.1, so global surplus is extractable
+    // Per-collateral eurA surplus = 150/1.1 - 100 = 36.36
+    // Global surplus = 200 * (1.25 - 1.1) / 1.1 = 27.27
+    // Capped surplus = min(36.36, 27.27) = 27.27
+    (uint64 crBefore,) = parallelizer.getCollateralRatio();
+
+    vm.prank(governor);
+    (uint256 collateralSurplus, uint256 stableSurplus,) = parallelizer.processSurplus(address(eurA), 0);
+
+    assertApproxEqAbs(stableSurplus, 27.27e18, 0.01e18);
+    assertApproxEqAbs(collateralSurplus, 27.27e6, 0.01e6);
+
+    (uint64 crAfter,) = parallelizer.getCollateralRatio();
+    assertGe(crAfter, uint64(1.1e9), "CR should remain >= surplusBufferRatio after capped surplus processing");
+    assertLt(crAfter, crBefore, "CR should decrease after surplus processing");
+  }
+
+  function test_GetCollateralSurplus_RevertWhen_GlobalCRBelowSurplusBufferRatio()
+    public
+    setZeroMintFeesOnAllCollaterals
+  {
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+    _mintZeroFee(address(eurB), 100 * BASE_12);
+
+    vm.startPrank(governor);
+    // Set buffer ratio to 1.1 (110%)
+    parallelizer.updateSurplusBufferRatio(uint64(1.1e9));
+    vm.stopPrank();
+
+    // Global CR = 200/200 = 1.0 < surplusBufferRatio (1.1)
+    // eurA has per-collateral CR = 1.0, no per-collateral surplus either
+    vm.expectRevert(ZeroSurplusAmount.selector);
+    parallelizer.getCollateralSurplus(address(eurA));
+
+    // eurA appreciates to 1.15 → per-collateral CR = 1.15, surplus exists per-collateral
+    // eurB depreciates to 0.9 → global CR = (115 + 90) / 200 = 1.025 < 1.1
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.15e8));
+    MockChainlinkOracle(address(oracleB)).setLatestAnswer(int256(0.9e8));
+
+    vm.expectRevert(ZeroSurplusAmount.selector);
+    parallelizer.getCollateralSurplus(address(eurA));
+  }
+
+  function test_GetCollateralSurplus_WorksForManagedCollateral()
+    public
+    setZeroMintFeesOnAllCollaterals
+    setSurplusBufferRatio
+  {
     // Set up eurA as managed collateral
     MockManager manager = new MockManager(address(eurA));
     IERC20[] memory subCollaterals = new IERC20[](1);
@@ -277,7 +400,11 @@ contract TestParallelizer is Fixture {
     assertGt(stableSurplus, 0, "ProcessSurplus: managed collateral should report stable surplus");
   }
 
-  function test_ProcessSurplus_Success_ForManagedCollateral() public setZeroMintFeesOnAllCollaterals {
+  function test_ProcessSurplus_Success_ForManagedCollateral()
+    public
+    setZeroMintFeesOnAllCollaterals
+    setSurplusBufferRatio
+  {
     // Set up eurA as managed collateral
     MockManager manager = new MockManager(address(eurA));
     IERC20[] memory subCollaterals = new IERC20[](1);
@@ -301,8 +428,6 @@ contract TestParallelizer is Fixture {
     _setSlippageTolerance(address(eurA), 1e8);
 
     vm.startPrank(governor);
-    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
-
     (uint256 collateralSurplus,) = parallelizer.getCollateralSurplus(address(eurA));
     uint256 amountOut = parallelizer.quoteIn(collateralSurplus, address(eurA), address(tokenP));
 
@@ -406,6 +531,57 @@ contract TestParallelizer is Fixture {
     vm.startPrank(governor);
     vm.expectRevert(ZeroAmount.selector);
     parallelizer.release();
+  }
+
+  function test_ProcessSurplus_Success_SpotBelowTargetWithinDeviation()
+    public
+    setZeroMintFeesOnAllCollaterals
+    setSurplusBufferRatio
+  {
+    // Mint 100 tokenP at oracle = 1.0 (default STABLE target, userDeviation=0)
+    _mintZeroFee(address(eurA), 100 * BASE_6);
+
+    // Reconfigure eurA oracle: MAX target = 1.10, userDeviation = 5%
+    AggregatorV3Interface[] memory circuitChainlink = new AggregatorV3Interface[](1);
+    uint32[] memory stalePeriods = new uint32[](1);
+    uint8[] memory circuitChainIsMultiplied = new uint8[](1);
+    uint8[] memory chainlinkDecimals = new uint8[](1);
+    circuitChainlink[0] = AggregatorV3Interface(address(oracleA));
+    stalePeriods[0] = 1 hours;
+    circuitChainIsMultiplied[0] = 1;
+    chainlinkDecimals[0] = 8;
+    OracleQuoteType quoteType = OracleQuoteType.UNIT;
+    bytes memory readData =
+      abi.encode(circuitChainlink, stalePeriods, circuitChainIsMultiplied, chainlinkDecimals, quoteType);
+    bytes memory targetData = abi.encode(uint256(1.1e18));
+
+    vm.startPrank(governor);
+    parallelizer.setOracle(
+      address(eurA),
+      abi.encode(
+        OracleReadType.CHAINLINK_FEEDS,
+        OracleReadType.MAX,
+        readData,
+        targetData,
+        abi.encode(uint128(5e16), uint128(5e16)) // userDeviation=5%, burnRatioDeviation=5%
+      )
+    );
+    vm.stopPrank();
+
+    // Drop spot price to 1.07 — below target (1.10) but within 5% deviation
+    MockChainlinkOracle(address(oracleA)).setLatestAnswer(int256(1.07e8));
+
+    // Verify surplus exists
+    (uint256 collateralSurplus, uint256 stableSurplus) = parallelizer.getCollateralSurplus(address(eurA));
+    assertGt(collateralSurplus, 0, "Surplus should exist");
+    assertGt(stableSurplus, 0, "Stable surplus should exist");
+
+    // After fix: processSurplus should succeed because _computeCollateralSurplus
+    // now uses min(readRedemption, readMint) for conservative sizing
+    _setSlippageTolerance(address(eurA), 1e8);
+    vm.startPrank(governor);
+    parallelizer.processSurplus(address(eurA), 0);
+    vm.stopPrank();
   }
 
   ///---------------------------------

@@ -20,7 +20,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is an authorized fork of Angle's `RewardHandler` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/RewardHandler.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/RewardHandler.sol
 contract RewardHandler is IRewardHandler, AccessManagedModifiers {
   using SafeERC20 for IERC20;
 
@@ -47,8 +47,6 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
     //solhint-disable-next-line
     (bool success, bytes memory result) = ODOS_ROUTER.call(payload);
     if (!success) _revertBytes(result);
-    amountOut = abi.decode(result, (uint256));
-    if (amountOut < minAmountOut) revert TooSmallAmountOut();
     if (IERC20(address(ts.tokenP)).balanceOf(address(this)) < tokenPBalance) revert InvalidTokens();
     bool hasIncreased;
     address collateral;
@@ -59,7 +57,9 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
       } else if (newBalance > balances[i]) {
         hasIncreased = true;
         collateral = list[i];
-        emit RewardsSoldFor(list[i], newBalance - balances[i]);
+        amountOut = newBalance - balances[i];
+        if (amountOut < minAmountOut) revert TooSmallAmountOut();
+        emit RewardsSoldFor(collateral, amountOut);
       }
     }
     if (!hasIncreased) revert InvalidSwap();

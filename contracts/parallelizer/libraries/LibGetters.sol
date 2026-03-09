@@ -17,7 +17,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is an authorized fork of Angle's `LibGetters` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibGetters.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibGetters.sol
 library LibGetters {
   using Math for uint256;
   using SafeCast for uint256;
@@ -79,8 +79,8 @@ library LibGetters {
           balances[countCollat++] = collateralBalance;
         }
         uint256 oracleValue = LibOracle.readRedemption(collateral.oracleConfig);
-        totalCollateralization +=
-          (oracleValue * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18)) / BASE_18;
+        totalCollateralization += (oracleValue
+            * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18, Math.Rounding.Floor)) / BASE_18;
       }
     }
     // The `stablecoinsIssued` value need to be rounded up because it is then used as a divizer when computing
