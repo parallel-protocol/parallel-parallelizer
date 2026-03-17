@@ -171,6 +171,8 @@ contract GenericRebalancer is BaseHarvester, IERC3156FlashBorrower, RouterSwappe
       parallelizer.swapExactInput(amountOut, minAmountOut, tokenOut, address(tokenP), address(this), block.timestamp);
     if (amount > amountStableOut) {
       budget[sender] -= amount - amountStableOut; // Will revert if not enough funds
+    } else if (amountStableOut > amount) {
+      budget[sender] += amountStableOut - amount;
     }
     return CALLBACK_SUCCESS;
   }
