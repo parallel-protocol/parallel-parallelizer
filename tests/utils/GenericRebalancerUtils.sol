@@ -108,12 +108,21 @@ abstract contract GenericRebalancerUtils is Test {
   /// @param eurA Address of eurA token
   /// @return extraData Encoded swap data
   function _createSwapData(address eurB, address eurA) internal pure returns (bytes memory extraData) {
+    return _createSwapData(eurB, eurA, 1_500_000);
+  }
+
+  /// @notice Create swap data for harvest with a configurable output amount
+  /// @param eurB Address of eurB token
+  /// @param eurA Address of eurA token
+  /// @param amountOut Amount of tokenOut the router should return
+  /// @return extraData Encoded swap data
+  function _createSwapData(address eurB, address eurA, uint256 amountOut) internal pure returns (bytes memory extraData) {
     bytes memory swapData = abi.encodeWithSelector(
       bytes4(keccak256("swap(uint256,address,uint256,address)")),
-      1_500_000, // amountIn
-      eurB, // tokenIn
-      1_500_000, // amountOut
-      eurA // tokenOut
+      1_500_000,
+      eurB,
+      amountOut,
+      eurA
     );
     extraData = abi.encode(SwapType.SWAP, swapData);
   }
