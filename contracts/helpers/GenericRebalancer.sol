@@ -159,7 +159,7 @@ contract GenericRebalancer is BaseHarvester, IERC3156FlashBorrower, RouterSwappe
     uint256 amountOut =
       parallelizer.swapExactInput(amount, 0, address(tokenP), tokenIn, address(this), block.timestamp);
 
-    // Swap to tokenIn
+    // Swap to tokenOut
     amountOut = _swapToTokenOut(typeAction, tokenIn, tokenOut, amountOut, swapType, callData);
 
     //  Ensure router consumed all tokens
