@@ -5,7 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Test } from "@forge-std/Test.sol";
 
 import { GenericRebalancer, SwapType } from "contracts/helpers/GenericRebalancer.sol";
-import { BaseHarvester } from "contracts/helpers/BaseHarvester.sol";
+import { BaseRebalancer } from "contracts/helpers/BaseRebalancer.sol";
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { MockRouterWithLeftovers } from "../mock/MockRouterWithLeftovers.sol";
@@ -61,7 +61,7 @@ abstract contract GenericRebalancerUtils is Test {
     // Setup permissions
     vm.startPrank(governor);
     bytes4[] memory selectors = new bytes4[](3);
-    selectors[0] = BaseHarvester.setYieldBearingAssetData.selector;
+    selectors[0] = BaseRebalancer.setYieldBearingAssetData.selector;
     selectors[1] = GenericRebalancer.setSwapRouter.selector;
     selectors[2] = GenericRebalancer.setTokenTransferAddress.selector;
 

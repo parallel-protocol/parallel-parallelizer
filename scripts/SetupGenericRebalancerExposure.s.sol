@@ -4,10 +4,10 @@ pragma solidity 0.8.28;
 import "./Base.s.sol";
 
 import { GenericRebalancer } from "contracts/helpers/GenericRebalancer.sol";
-import { BaseHarvester } from "contracts/helpers/BaseHarvester.sol";
+import { BaseRebalancer } from "contracts/helpers/BaseRebalancer.sol";
 
 contract SetupGenericRebalancerExposure is BaseScript {
-  BaseHarvester genericRebalancer = BaseHarvester(0x57770C1721Eb35509f38210A935c8b1911db7E0e);
+  BaseRebalancer genericRebalancer = BaseRebalancer(0x57770C1721Eb35509f38210A935c8b1911db7E0e);
 
   function run() public broadcast {
     accessManager.grantRole(Roles.GUARDIAN_ROLE, broadcaster, 0);

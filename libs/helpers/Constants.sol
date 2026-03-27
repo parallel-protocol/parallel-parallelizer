@@ -23,7 +23,7 @@ enum ContractType {
   TreasuryEURp,
   TreasuryUSDp,
   FlashLoan,
-  MultiBlockHarvester,
+  MultiBlockRebalancer,
   GenericRebalancer,
   Harvester,
   Rebalancer,
