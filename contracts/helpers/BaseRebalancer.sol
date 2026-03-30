@@ -80,6 +80,16 @@ abstract contract BaseRebalancer is IHarvester, AccessManaged {
 
   event Recovered(address token, uint256 amount, address to);
   event TrustedToggled(address trusted, bool status);
+  event TargetExposureSet(address indexed yieldBearingAsset, uint64 targetExposure);
+  event YieldBearingAssetDataSet(
+    address indexed yieldBearingAsset,
+    address asset,
+    uint64 targetExposure,
+    uint64 minExposure,
+    uint64 maxExposure,
+    uint64 overrideExposures,
+    uint96 maxSlippage
+  );
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                        CONSTRUCTOR
@@ -176,6 +186,7 @@ abstract contract BaseRebalancer is IHarvester, AccessManaged {
    */
   function setTargetExposure(address yieldBearingAsset, uint64 targetExposure) external onlyTrustedOrRestricted {
     yieldBearingData[yieldBearingAsset].targetExposure = targetExposure;
+    emit TargetExposureSet(yieldBearingAsset, targetExposure);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -260,6 +271,15 @@ abstract contract BaseRebalancer is IHarvester, AccessManaged {
       yieldBearingInfo.overrideExposures = 2;
       _updateLimitExposuresYieldAsset(asset, yieldBearingInfo);
     }
+    emit YieldBearingAssetDataSet(
+      yieldBearingAsset,
+      asset,
+      targetExposure,
+      yieldBearingInfo.minExposure,
+      yieldBearingInfo.maxExposure,
+      yieldBearingInfo.overrideExposures,
+      maxSlippage
+    );
   }
 
   function _updateLimitExposuresYieldAsset(
