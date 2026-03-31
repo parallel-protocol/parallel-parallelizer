@@ -27,7 +27,7 @@ import "../Storage.sol";
 contract Surplus is AccessManagedModifiers, ISurplus {
   using SafeERC20 for IERC20;
 
-  event SurplusProcessed(uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount);
+  event SurplusProcessed(address collateral, uint256 collateralSurplus, uint256 stableSurplus, uint256 issuedAmount);
 
   /// @inheritdoc ISurplus
   function processSurplus(
@@ -57,7 +57,7 @@ contract Surplus is AccessManagedModifiers, ISurplus {
       );
     (uint64 collatRatio,,,,) = LibGetters.getCollateralRatio();
     if (collatRatio < ts.surplusBufferRatio) revert Undercollateralized();
-    emit SurplusProcessed(collateralSurplus, stableSurplus, issuedAmount);
+    emit SurplusProcessed(collateral, collateralSurplus, stableSurplus, issuedAmount);
   }
 
   /// @inheritdoc ISurplus
