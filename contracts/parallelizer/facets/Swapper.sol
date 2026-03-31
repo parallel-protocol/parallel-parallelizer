@@ -232,6 +232,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
           revert NotWhitelisted();
         }
         uint128 changeAmount = ((amountIn * BASE_27) / ts.normalizer).toUint128();
+        if (changeAmount >= ts.normalizedStables) revert CannotBurnAllStableIssued();
         // This will underflow when the system is trying to burn more stablecoins than what has been issued
         // from this collateral
         collatInfo.normalizedStables = collatInfo.normalizedStables - uint216(changeAmount);

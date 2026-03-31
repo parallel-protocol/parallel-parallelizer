@@ -175,6 +175,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     uint256 stablecoinsIssued;
     (collatRatio, stablecoinsIssued, tokens, balances, subCollateralsTracker) = LibGetters.getCollateralRatio();
     if (amountBurnt > stablecoinsIssued) revert TooBigAmountIn();
+    if (amountBurnt == stablecoinsIssued) revert CannotBurnAllStableIssued();
     int64[] memory yRedemptionCurveMem = ts.yRedemptionCurve;
     uint64 penaltyFactor;
     // If the protocol is under-collateralized, a penalty factor is applied to the returned amount of each asset
