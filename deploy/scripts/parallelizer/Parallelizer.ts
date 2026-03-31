@@ -87,6 +87,7 @@ const getFacetsWithSelectors = async (get: <TAbi extends Abi>(name: string) => D
     "Swapper",
     "Redeemer",
     "RewardHandler",
+    "Surplus",
   ];
   const facets = [];
   for (const facet of facetsList) {
