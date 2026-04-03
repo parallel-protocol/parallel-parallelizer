@@ -170,12 +170,11 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     view
     returns (address[] memory tokens, uint256[] memory balances, uint256[] memory subCollateralsTracker)
   {
-    ParallelizerStorage storage ts = s.transmuterStorage();
     uint64 collatRatio;
     uint256 stablecoinsIssued;
     (collatRatio, stablecoinsIssued, tokens, balances, subCollateralsTracker) = LibGetters.getCollateralRatio();
-    if (amountBurnt > stablecoinsIssued) revert TooBigAmountIn();
-    if (amountBurnt == stablecoinsIssued) revert CannotBurnAllStableIssued();
+    if (amountBurnt >= stablecoinsIssued) revert CannotBurnAllStableIssued();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     int64[] memory yRedemptionCurveMem = ts.yRedemptionCurve;
     uint64 penaltyFactor;
     // If the protocol is under-collateralized, a penalty factor is applied to the returned amount of each asset
@@ -234,6 +233,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
       newNormalizerValue = BASE_27;
     }
     ts.normalizer = newNormalizerValue.toUint128();
+    if (!increase && ts.normalizedStables == 0) revert CannotBurnAllStableIssued();
     emit NormalizerUpdated(newNormalizerValue);
   }
 }

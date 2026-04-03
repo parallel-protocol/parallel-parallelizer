@@ -1309,6 +1309,26 @@ contract BurnTest is Fixture, FunctionUtils {
     vm.stopPrank();
   }
 
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          NORMALIZED STABLES GUARD
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+  function test_BurnPath_CannotDriveNormalizedStablesToZero() public {
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), alice, mintAmount);
+    vm.startPrank(alice);
+    eurA.approve(address(parallelizer), mintAmount);
+    uint256 minted =
+      parallelizer.swapExactInput(mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours);
+    vm.stopPrank();
+
+    vm.startPrank(alice);
+    vm.expectRevert(CannotBurnAllStableIssued.selector);
+    parallelizer.swapExactInput(minted, 0, address(tokenP), address(eurA), alice, block.timestamp + 1 hours);
+    vm.stopPrank();
+
+    assertGt(parallelizer.getTotalIssued(), 0, "normalizedStables must not be zero");
+  }
+
   function _getExposures(
     uint256 mintedStables,
     uint256[] memory collateralMintedStables

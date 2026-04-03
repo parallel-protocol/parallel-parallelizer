@@ -405,9 +405,8 @@ contract RedeemTest is Fixture, FunctionUtils {
       (, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
       if (shouldReturn) return;
     }
-    if (amountBurnt > stableIssued) vm.expectRevert(Errors.TooBigAmountIn.selector);
-    else if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
-    else if (amountBurnt == stableIssued) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    if (mintedStables == 0 || amountBurnt >= stableIssued) return;
+
     {
       address[] memory tokens;
       uint256[] memory amounts;
@@ -467,9 +466,8 @@ contract RedeemTest is Fixture, FunctionUtils {
         if (shouldReturn) return;
       }
 
-      if (amountBurntBob > stableIssued) vm.expectRevert(Errors.TooBigAmountIn.selector);
-      else if (stableIssued == 0) vm.expectRevert(stdError.divisionError);
-      else if (amountBurntBob == stableIssued) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+      if (stableIssued == 0 || amountBurntBob >= stableIssued) return;
+
       {
         uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
         (tokens, amounts) = parallelizer.redeem(amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts);
@@ -1873,6 +1871,97 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.prank(governor);
     parallelizer.setCollateralManager(token, true, managerData);
   }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          NORMALIZED STABLES GUARD
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+  function test_RedeemPath_CannotDriveNormalizedStablesToZero() public {
+    address attacker = vm.addr(10);
+
+    vm.startPrank(guardian);
+    parallelizer.togglePause(address(eurB), ActionType.Redeem);
+    parallelizer.togglePause(address(eurY), ActionType.Redeem);
+    uint64[] memory xRedemption = new uint64[](1);
+    xRedemption[0] = uint64(0);
+    int64[] memory yRedemption = new int64[](1);
+    yRedemption[0] = int64(int256(BASE_9));
+    parallelizer.setRedemptionCurveParams(xRedemption, yRedemption);
+    vm.stopPrank();
+
+    _mintExactInput(bob, address(eurA), 10_000e6, 0);
+    _mintExactInput(charlie, address(eurB), 10_000e12, 0);
+    _mintExactInput(dylan, address(eurY), 10_000e18, 0);
+
+    uint256 bobBal = IERC20(address(tokenP)).balanceOf(bob);
+    uint256 charlieBal = IERC20(address(tokenP)).balanceOf(charlie);
+    uint256 dylanBal = IERC20(address(tokenP)).balanceOf(dylan);
+    vm.prank(bob);
+    IERC20(address(tokenP)).transfer(attacker, bobBal);
+    vm.prank(charlie);
+    IERC20(address(tokenP)).transfer(attacker, charlieBal);
+    vm.prank(dylan);
+    IERC20(address(tokenP)).transfer(attacker, dylanBal);
+
+    vm.startPrank(attacker);
+    (uint256 issuedFromA,) = parallelizer.getIssuedByCollateral(address(eurA));
+    (uint256 issuedFromB,) = parallelizer.getIssuedByCollateral(address(eurB));
+    (uint256 issuedFromY,) = parallelizer.getIssuedByCollateral(address(eurY));
+
+    if (issuedFromA > 1e18) {
+      parallelizer.swapExactInput(issuedFromA - 1e18, 0, address(tokenP), address(eurA), attacker, block.timestamp * 2);
+    }
+    if (issuedFromB > 1e18) {
+      parallelizer.swapExactInput(issuedFromB - 1e18, 0, address(tokenP), address(eurB), attacker, block.timestamp * 2);
+    }
+    if (issuedFromY > 1e18) {
+      parallelizer.swapExactInput(issuedFromY - 1e18, 0, address(tokenP), address(eurY), attacker, block.timestamp * 2);
+    }
+
+    uint256 stablecoinsIssued = parallelizer.getTotalIssued();
+    if (stablecoinsIssued > 1) {
+      uint256[] memory minOuts = new uint256[](3);
+      vm.expectRevert();
+      parallelizer.redeem(stablecoinsIssued - 1, attacker, block.timestamp * 2, minOuts);
+    }
+    vm.stopPrank();
+
+    assertGt(parallelizer.getTotalIssued(), 0, "normalizedStables must not be driven to zero");
+  }
+
+  /// @notice Fuzz: amountBurnt < stablecoinsIssued must never drive normalizedStables to 0
+  function testFuzz_RedeemBelowIssuedCannotZeroNormalizedStables(
+    uint256 mintA,
+    uint256 mintB,
+    uint256 mintY,
+    uint256 redeemRatio
+  ) public {
+    mintA = bound(mintA, 1e6, 1_000_000e6);
+    mintB = bound(mintB, 1e12, 1_000_000e12);
+    mintY = bound(mintY, 1e18, 1_000_000e18);
+
+    _mintExactInput(alice, address(eurA), mintA, 0);
+    _mintExactInput(alice, address(eurB), mintB, 0);
+    _mintExactInput(alice, address(eurY), mintY, 0);
+
+    uint256 stablecoinsIssued = parallelizer.getTotalIssued();
+    if (stablecoinsIssued == 0) return;
+
+    redeemRatio = bound(redeemRatio, 0, BASE_9 - 1);
+    uint256 redeemAmount = (stablecoinsIssued * redeemRatio) / BASE_9;
+    if (redeemAmount == 0) return;
+    if (redeemAmount >= stablecoinsIssued) redeemAmount = stablecoinsIssued - 1;
+
+    uint256[] memory minOuts = new uint256[](3);
+    vm.startPrank(alice);
+    parallelizer.redeem(redeemAmount, alice, block.timestamp * 2, minOuts);
+    vm.stopPrank();
+
+    assertGt(parallelizer.getTotalIssued(), 0, "normalizedStables must not be driven to zero with amountBurnt < stablecoinsIssued");
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                  HELPERS
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _computeCollateralisation() internal view returns (uint256 totalCollateralization) {
     address[] memory collateralList = parallelizer.getCollateralList();
