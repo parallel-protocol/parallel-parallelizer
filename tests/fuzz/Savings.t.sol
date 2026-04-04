@@ -798,6 +798,123 @@ contract SavingsTest is Fixture, FunctionUtils {
     return (amount, shares, receiver);
   }
 
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    EIP-3009
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function test_DepositWithAuthorization() public {
+    uint256 amount = 100 * BASE_18;
+    deal(address(tokenP), alice, amount);
+
+    bytes32 domainSeparator = MockTokenPermit(address(tokenP)).DOMAIN_SEPARATOR();
+    bytes32 transferTypehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
+    bytes32 structHash = keccak256(
+      abi.encode(transferTypehash, alice, address(saving), amount, 0, block.timestamp + 1 hours, bytes32("dep1"))
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+
+    // bob relays alice's signed authorization
+    vm.prank(bob);
+    uint256 shares = saving.depositWithAuthorization(amount, alice, alice, 0, block.timestamp + 1 hours, bytes32("dep1"), v, r, s);
+
+    assertGt(shares, 0);
+    assertGt(saving.balanceOf(alice), 0);
+    assertEq(IERC20(address(tokenP)).balanceOf(alice), 0);
+  }
+
+  function test_DepositWithAuthorization_RevertWhen_Paused() public {
+    uint256 amount = 100 * BASE_18;
+    deal(address(tokenP), alice, amount);
+
+    bytes32 domainSeparator = MockTokenPermit(address(tokenP)).DOMAIN_SEPARATOR();
+    bytes32 transferTypehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
+    bytes32 structHash = keccak256(
+      abi.encode(transferTypehash, alice, address(saving), amount, 0, block.timestamp + 1 hours, bytes32("dep2"))
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+
+    vm.prank(guardian);
+    saving.togglePause();
+
+    vm.prank(bob);
+    vm.expectRevert(Errors.Paused.selector);
+    saving.depositWithAuthorization(amount, alice, alice, 0, block.timestamp + 1 hours, bytes32("dep2"), v, r, s);
+  }
+
+  function test_RedeemWithAuthorization_Savings() public {
+    // First deposit
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 redeemShares = shares / 2;
+
+    // Sign authorization on Savings shares (the savings token) for the savings contract
+    bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
+    bytes32 typehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267; // TRANSFER_WITH_AUTHORIZATION
+    bytes32 structHash = keccak256(
+      abi.encode(typehash, alice, address(saving), redeemShares, 0, block.timestamp + 1 hours, bytes32("redeem_sav1"))
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+
+    vm.prank(bob);
+    uint256 assets = saving.redeemWithAuthorization(
+      redeemShares, alice, alice, 0, block.timestamp + 1 hours, bytes32("redeem_sav1"), v, r, s
+    );
+
+    assertGt(assets, 0);
+    assertEq(saving.balanceOf(alice), shares - redeemShares);
+  }
+
+  function test_TransferWithAuthorization_Savings() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 transferAmount = shares / 2;
+
+    bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
+    bytes32 typehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267; // TRANSFER_WITH_AUTHORIZATION
+    bytes32 structHash = keccak256(
+      abi.encode(typehash, alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"))
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+
+    vm.prank(dylan);
+    saving.transferWithAuthorization(alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"), v, r, s);
+
+    assertEq(saving.balanceOf(alice), shares - transferAmount);
+    assertEq(saving.balanceOf(bob), transferAmount);
+  }
+
+  function test_ReceiveWithAuthorization_Savings() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 transferAmount = shares / 2;
+
+    bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
+    bytes32 structHash = keccak256(
+      abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("recv1"))
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+
+    // bob calls receiveWithAuthorization (to == msg.sender)
+    vm.prank(bob);
+    saving.receiveWithAuthorization(alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("recv1"), v, r, s);
+
+    assertEq(saving.balanceOf(alice), shares - transferAmount);
+    assertEq(saving.balanceOf(bob), transferAmount);
+  }
+
+  function test_CancelAuthorization_Savings() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    bytes32 nonce = bytes32("cancel1");
+
+    bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
+    bytes32 cancelTypehash = 0x158b0a9edf7a828aad02f63cd515c68ef2f50ba807396f6d12842833a1597429;
+    bytes32 structHash = keccak256(abi.encode(cancelTypehash, alice, nonce));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+
+    saving.cancelAuthorization(alice, nonce, v, r, s);
+    assertTrue(saving.authorizationState(alice, nonce));
+  }
+
   function _sweepBalances(address owner, address[] memory tokens) internal {
     vm.startPrank(owner);
     for (uint256 i; i < tokens.length; ++i) {
