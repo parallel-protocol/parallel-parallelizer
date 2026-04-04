@@ -5,6 +5,7 @@ pragma solidity 0.8.28;
 import { console } from "@forge-std/console.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 import { Constants, ContractType } from "@helpers/Constants.sol";
 
@@ -23,6 +24,7 @@ import { MockTokenPermit } from "./mock/MockTokenPermit.sol";
 import { CollateralSetup, Test } from "contracts/parallelizer/configs/Test.sol";
 import "contracts/utils/Constants.sol";
 import "contracts/utils/Errors.sol";
+import "contracts/parallelizer/Storage.sol";
 import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { Parallelizer } from "./utils/Parallelizer.sol";
 import { ConfigAccessManager } from "./utils/ConfigAccessManager.sol";
@@ -169,5 +171,43 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
     IERC20(tokenIn).approve(address(parallelizer), type(uint256).max);
     parallelizer.swapExactInput(amountIn, estimatedStable, tokenIn, address(tokenP), owner, block.timestamp * 2);
     vm.stopPrank();
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    EIP-3009 HELPERS
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  bytes32 internal constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH =
+    0xd099cc98ef71107a616c4f0f941f04c322d8e254fe26b3c6668db87aae413de8;
+
+  function _buildAuthData(
+    uint256 privateKey,
+    address token,
+    address from,
+    address to,
+    uint256 value,
+    bytes32 nonce
+  )
+    internal
+    view
+    returns (bytes memory)
+  {
+    bytes32 domainSeparator = MockTokenPermit(token).DOMAIN_SEPARATOR();
+    bytes32 structHash =
+      keccak256(abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, to, value, 0, block.timestamp + 1 hours, nonce));
+    bytes32 digest = MessageHashUtils.toTypedDataHash(domainSeparator, structHash);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+    return abi.encode(
+      AuthorizationParams({
+        from: from,
+        value: value,
+        validAfter: 0,
+        validBefore: block.timestamp + 1 hours,
+        nonce: nonce,
+        v: v,
+        r: r,
+        s: s
+      })
+    );
   }
 }
