@@ -1956,7 +1956,11 @@ contract RedeemTest is Fixture, FunctionUtils {
     parallelizer.redeem(redeemAmount, alice, block.timestamp * 2, minOuts);
     vm.stopPrank();
 
-    assertGt(parallelizer.getTotalIssued(), 0, "normalizedStables must not be driven to zero with amountBurnt < stablecoinsIssued");
+    assertGt(
+      parallelizer.getTotalIssued(),
+      0,
+      "normalizedStables must not be driven to zero with amountBurnt < stablecoinsIssued"
+    );
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
