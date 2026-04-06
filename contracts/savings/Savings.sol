@@ -237,14 +237,16 @@ contract Savings is BaseSavings, EIP3009 {
 
   /// @inheritdoc IEIP3009
   function transferWithAuthorization(
-    address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s
+    address from, address to, uint256 value, uint256 validAfter,
+    uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s
   ) external whenNotPaused {
     _transferWithAuthorization(from, to, value, validAfter, validBefore, nonce, v, r, s);
   }
 
   /// @inheritdoc IEIP3009
   function receiveWithAuthorization(
-    address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s
+    address from, address to, uint256 value, uint256 validAfter,
+    uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s
   ) external whenNotPaused {
     _receiveWithAuthorization(from, to, value, validAfter, validBefore, nonce, v, r, s);
   }

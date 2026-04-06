@@ -815,7 +815,9 @@ contract SavingsTest is Fixture, FunctionUtils {
 
     // bob relays alice's signed authorization
     vm.prank(bob);
-    uint256 shares = saving.depositWithAuthorization(amount, alice, alice, 0, block.timestamp + 1 hours, bytes32("dep1"), v, r, s);
+    uint256 shares = saving.depositWithAuthorization(
+      amount, alice, alice, 0, block.timestamp + 1 hours, bytes32("dep1"), v, r, s
+    );
 
     assertGt(shares, 0);
     assertGt(saving.balanceOf(alice), 0);
@@ -849,11 +851,16 @@ contract SavingsTest is Fixture, FunctionUtils {
 
     // Sign authorization on Savings shares (the savings token) for the savings contract
     bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
-    bytes32 typehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267; // TRANSFER_WITH_AUTHORIZATION
+    // TRANSFER_WITH_AUTHORIZATION typehash
+    bytes32 typehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
     bytes32 structHash = keccak256(
-      abi.encode(typehash, alice, address(saving), redeemShares, 0, block.timestamp + 1 hours, bytes32("redeem_sav1"))
+      abi.encode(
+        typehash, alice, address(saving), redeemShares, 0, block.timestamp + 1 hours, bytes32("redeem_sav1")
+      )
     );
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+      1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash)
+    );
 
     vm.prank(bob);
     uint256 assets = saving.redeemWithAuthorization(
@@ -870,14 +877,19 @@ contract SavingsTest is Fixture, FunctionUtils {
     uint256 transferAmount = shares / 2;
 
     bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
-    bytes32 typehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267; // TRANSFER_WITH_AUTHORIZATION
+    // TRANSFER_WITH_AUTHORIZATION typehash
+    bytes32 typehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
     bytes32 structHash = keccak256(
       abi.encode(typehash, alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"))
     );
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+      1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash)
+    );
 
     vm.prank(dylan);
-    saving.transferWithAuthorization(alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"), v, r, s);
+    saving.transferWithAuthorization(
+      alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"), v, r, s
+    );
 
     assertEq(saving.balanceOf(alice), shares - transferAmount);
     assertEq(saving.balanceOf(bob), transferAmount);
@@ -890,13 +902,20 @@ contract SavingsTest is Fixture, FunctionUtils {
 
     bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
     bytes32 structHash = keccak256(
-      abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("recv1"))
+      abi.encode(
+        RECEIVE_WITH_AUTHORIZATION_TYPEHASH, alice, bob, transferAmount,
+        0, block.timestamp + 1 hours, bytes32("recv1")
+      )
     );
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+      1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash)
+    );
 
     // bob calls receiveWithAuthorization (to == msg.sender)
     vm.prank(bob);
-    saving.receiveWithAuthorization(alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("recv1"), v, r, s);
+    saving.receiveWithAuthorization(
+      alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("recv1"), v, r, s
+    );
 
     assertEq(saving.balanceOf(alice), shares - transferAmount);
     assertEq(saving.balanceOf(bob), transferAmount);

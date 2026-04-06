@@ -15,11 +15,13 @@ import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 /// Supports both EOA (v,r,s) and smart contract wallet (EIP-1271) signatures.
 /// The EIP-712 domain separator is computed dynamically from `name()` so no initialization is required.
 abstract contract EIP3009 is ERC20Upgradeable, IEIP3009 {
-  // keccak256("TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
+  // keccak256("TransferWithAuthorization(address from,address to,
+  //   uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
   bytes32 public constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH =
     0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
 
-  // keccak256("ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
+  // keccak256("ReceiveWithAuthorization(address from,address to,
+  //   uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
   bytes32 public constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH =
     0xd099cc98ef71107a616c4f0f941f04c322d8e254fe26b3c6668db87aae413de8;
 
@@ -167,16 +169,23 @@ abstract contract EIP3009 is ERC20Upgradeable, IEIP3009 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _domainSeparator() internal view returns (bytes32) {
-    return keccak256(abi.encode(EIP712_DOMAIN_TYPEHASH, keccak256(bytes(name())), VERSION_HASH, block.chainid, address(this)));
+    return keccak256(
+      abi.encode(EIP712_DOMAIN_TYPEHASH, keccak256(bytes(name())), VERSION_HASH, block.chainid, address(this))
+    );
   }
 
-  function _requireValidSignature(address signer, bytes32 dataHash, bytes memory signature) private view {
-    if (!SignatureChecker.isValidSignatureNow(signer, MessageHashUtils.toTypedDataHash(_domainSeparator(), dataHash), signature)) {
+  function _requireValidSignature(
+    address signer, bytes32 dataHash, bytes memory signature
+  ) private view {
+    bytes32 digest = MessageHashUtils.toTypedDataHash(_domainSeparator(), dataHash);
+    if (!SignatureChecker.isValidSignatureNow(signer, digest, signature)) {
       revert InvalidSignature();
     }
   }
 
-  function _requireValidAuthorization(address authorizer, bytes32 nonce, uint256 validAfter, uint256 validBefore) private view {
+  function _requireValidAuthorization(
+    address authorizer, bytes32 nonce, uint256 validAfter, uint256 validBefore
+  ) private view {
     if (block.timestamp <= validAfter) revert AuthorizationNotYetValid();
     if (block.timestamp >= validBefore) revert AuthorizationExpired();
     _requireUnusedAuthorization(authorizer, nonce);

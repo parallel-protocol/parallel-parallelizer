@@ -316,7 +316,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
     if (params.value < amountNeeded) revert InvalidSwap();
     IEIP3009(token).receiveWithAuthorization(
-      params.from, address(this), params.value, params.validAfter, params.validBefore, params.nonce, params.v, params.r, params.s
+      params.from, address(this), params.value, params.validAfter,
+      params.validBefore, params.nonce, params.v, params.r, params.s
     );
     if (params.value > amountNeeded) {
       IERC20(token).safeTransfer(params.from, params.value - amountNeeded);
