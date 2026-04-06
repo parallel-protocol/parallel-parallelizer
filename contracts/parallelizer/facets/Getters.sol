@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-
 import { IGetters } from "contracts/interfaces/IGetters.sol";
 
 import { LibOracle } from "../libraries/LibOracle.sol";
@@ -22,8 +20,6 @@ import "../Storage.sol";
 /// @dev This contract is an authorized fork of Angle's `Getters` contract
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Getters.sol
 contract Getters is IGetters {
-  using Math for uint256;
-
   /// @inheritdoc IGetters
   function isValidSelector(bytes4 selector) external view returns (bool) {
     return s.diamondStorage().selectorInfo[selector].facetAddress != address(0);
@@ -101,15 +97,15 @@ contract Getters is IGetters {
     ParallelizerStorage storage ts = s.transmuterStorage();
     uint256 _normalizer = ts.normalizer;
     return (
-      uint256(ts.collaterals[collateral].normalizedStables).mulDiv(_normalizer, BASE_27, Math.Rounding.Floor),
-      uint256(ts.normalizedStables).mulDiv(ts.normalizer, BASE_27, Math.Rounding.Floor)
+      (uint256(ts.collaterals[collateral].normalizedStables) * _normalizer) / BASE_27,
+      (uint256(ts.normalizedStables) * _normalizer) / BASE_27
     );
   }
 
   /// @inheritdoc IGetters
   function getTotalIssued() external view returns (uint256) {
     ParallelizerStorage storage ts = s.transmuterStorage();
-    return uint256(ts.normalizedStables).mulDiv(ts.normalizer, BASE_27, Math.Rounding.Floor);
+    return (uint256(ts.normalizedStables) * uint256(ts.normalizer)) / BASE_27;
   }
 
   /// @inheritdoc IGetters

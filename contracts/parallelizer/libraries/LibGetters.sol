@@ -83,12 +83,11 @@ library LibGetters {
             * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18, Math.Rounding.Floor)) / BASE_18;
       }
     }
-    stablecoinsIssued = uint256(ts.normalizedStables).mulDiv(ts.normalizer, BASE_27, Math.Rounding.Floor);
+    // The `stablecoinsIssued` value need to be rounded up because it is then used as a divizer when computing
+    // the `collatRatio`
+    stablecoinsIssued = uint256(ts.normalizedStables).mulDiv(ts.normalizer, BASE_27, Math.Rounding.Ceil);
     if (stablecoinsIssued > 0) {
-      // Use Ceil for the divisor to get a more conservative (lower) collatRatio
-      uint256 stablecoinsIssuedCeil =
-        uint256(ts.normalizedStables).mulDiv(ts.normalizer, BASE_27, Math.Rounding.Ceil);
-      collatRatio = (totalCollateralization.mulDiv(BASE_9, stablecoinsIssuedCeil, Math.Rounding.Ceil)).toUint64();
+      collatRatio = (totalCollateralization.mulDiv(BASE_9, stablecoinsIssued, Math.Rounding.Ceil)).toUint64();
     } else {
       collatRatio = type(uint64).max;
     }
