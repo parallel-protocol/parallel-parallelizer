@@ -68,7 +68,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                 GETISSUEDBYCOLLATERAL                                              
+                                                 GETISSUEDBYCOLLATERAL
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_BurnGetIssuedByCollateral(
@@ -108,7 +108,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                  GETCOLLATERALRATIO                                                
+                                                  GETCOLLATERALRATIO
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_BurnGetCollateralRatio(
@@ -134,10 +134,11 @@ contract BurnTest is Fixture, FunctionUtils {
     for (uint256 i; i < _collaterals.length; ++i) {
       (, int256 oracleValue,,,) = MockChainlinkOracle(address(_oracles[i])).latestRoundData();
       uint8 decimals = IERC20Metadata(address(_collaterals[i])).decimals();
-      collateralisation += (
-        (IERC20(_collaterals[i]).balanceOf(address(parallelizer)) * 10 ** (18 - decimals) * uint256(oracleValue))
-          / BASE_8
-      );
+      collateralisation += ((IERC20(_collaterals[i]).balanceOf(address(parallelizer))
+            * 10
+            ** (18 - decimals)
+            * uint256(oracleValue))
+          / BASE_8);
     }
 
     uint256 computedCollatRatio = type(uint64).max;
@@ -156,7 +157,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                         BURN                                                       
+                                                         BURN
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_QuoteBurnExactInputSimple(
@@ -201,11 +202,10 @@ contract BurnTest is Fixture, FunctionUtils {
     if (burnFee >= int256((BASE_9 * 999) / 1000)) vm.expectRevert(Errors.InvalidSwap.selector);
     uint256 amountOut = parallelizer.quoteIn(burnAmount, address(tokenP), _collaterals[fromToken]);
     if (burnFee >= int256((BASE_9 * 999) / 1000)) return;
-    uint256 supposedAmountOut = (
-      _convertDecimalTo(
+    uint256 supposedAmountOut =
+      (_convertDecimalTo(
         (burnAmount * (BASE_9 - uint64(burnFee))) / BASE_9, 18, IERC20Metadata(_collaterals[fromToken]).decimals()
-      )
-    );
+      ));
 
     assertEq(supposedAmountOut, amountOut);
   }
@@ -354,7 +354,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                 PIECEWISE LINEAR FEES                                              
+                                                 PIECEWISE LINEAR FEES
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_QuoteBurnExactInputReflexivityFixPiecewiseFees(
@@ -445,8 +445,8 @@ contract BurnTest is Fixture, FunctionUtils {
             supposedAmountOut += (amountToNextBreakpoint * (BASE_9 - uint64(uint256(midFees)))) / BASE_9;
           }
           // next part is just with end fees
-          supposedAmountOut +=
-            ((copyStableAmount - amountToNextBreakpoint) * (BASE_9 - uint64(yFeeBurn[lowerIndex + 1]))) / BASE_9;
+          supposedAmountOut += ((copyStableAmount - amountToNextBreakpoint)
+              * (BASE_9 - uint64(yFeeBurn[lowerIndex + 1]))) / BASE_9;
         }
       }
     }
@@ -570,7 +570,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                       FIREWALL                                                     
+                                                       FIREWALL
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_QuoteBurnExactInput_WithFirewall_FixPiecewiseFees(
@@ -663,8 +663,8 @@ contract BurnTest is Fixture, FunctionUtils {
             supposedAmountOut += (amountToNextBreakpoint * (BASE_9 - uint64(uint256(midFees)))) / BASE_9;
           }
           // next part is just with end fees
-          supposedAmountOut +=
-            ((copyStableAmount - amountToNextBreakpoint) * (BASE_9 - uint64(yFeeBurn[lowerIndex + 1]))) / BASE_9;
+          supposedAmountOut += ((copyStableAmount - amountToNextBreakpoint)
+              * (BASE_9 - uint64(yFeeBurn[lowerIndex + 1]))) / BASE_9;
         }
       }
     }
@@ -688,7 +688,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                   INDEPENDENT PATH                                                 
+                                                   INDEPENDENT PATH
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_QuoteBurnExactInputIndependant(
@@ -794,7 +794,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                         BURN                                                       
+                                                         BURN
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_BurnExactInput(
@@ -891,8 +891,82 @@ contract BurnTest is Fixture, FunctionUtils {
     assertApproxEqAbs(newStableAmount, mintedStables - stableAmount, 1 wei);
   }
 
+  function testFuzz_Burn_RevertWhen_BurningAllStableIssued(
+    uint256[3] memory initialAmounts,
+    uint256[3] memory latestOracleValue,
+    uint256 stableAmount
+  )
+    public
+  {
+    _setMintFeesForNegativeBurnFees(0);
+    (uint256 mintedStables, uint256[] memory collateralMintedStables) =
+      _loadReserves(alice, address(0), initialAmounts, 0);
+    _setZeroBurnFees(_collaterals);
+
+    if (mintedStables == 0) return;
+
+    _updateOracles(latestOracleValue);
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(parallelizer), mintedStables);
+
+    for (uint8 i; i < _collaterals.length; i++) {
+      uint256 stableIssued = parallelizer.getTotalIssued();
+      uint256 amountOut = parallelizer.quoteIn(collateralMintedStables[i], address(tokenP), _collaterals[i]);
+      if (amountOut == 0) continue;
+      bool expectRevert = collateralMintedStables[i] >= stableIssued;
+      if (expectRevert) {
+        vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+      }
+      parallelizer.swapExactInput(
+        collateralMintedStables[i], 0, address(tokenP), _collaterals[i], alice, block.timestamp * 2
+      );
+      if (expectRevert) break;
+    }
+  }
+
+  function testFuzz_Burn_RevertWhen_BurningAllStableIssuedWithWhitelist(
+    uint256[3] memory initialAmounts,
+    uint256[3] memory latestOracleValue,
+    uint256 stableAmount
+  )
+    public
+  {
+    _setMintFeesForNegativeBurnFees(0);
+    (uint256 mintedStables, uint256[] memory collateralMintedStables) =
+      _loadReserves(alice, address(0), initialAmounts, 0);
+    _setZeroBurnFees(_collaterals);
+
+    if (mintedStables == 0) return;
+
+    // Enable whitelist on the first collateral and whitelist alice
+    bytes memory emptyData;
+    bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
+    hoax(governor);
+    parallelizer.setWhitelistStatus(_collaterals[0], 1, whitelistData);
+    hoax(guardian);
+    parallelizer.toggleWhitelist(WhitelistType.BACKED, alice);
+
+    _updateOracles(latestOracleValue);
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(parallelizer), mintedStables);
+
+    for (uint8 i; i < _collaterals.length; i++) {
+      uint256 stableIssued = parallelizer.getTotalIssued();
+      uint256 amountOut = parallelizer.quoteIn(collateralMintedStables[i], address(tokenP), _collaterals[i]);
+      if (amountOut == 0) continue;
+      bool expectRevert = collateralMintedStables[i] >= stableIssued;
+      if (expectRevert) {
+        vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+      }
+      parallelizer.swapExactInput(
+        collateralMintedStables[i], 0, address(tokenP), _collaterals[i], alice, block.timestamp * 2
+      );
+      if (expectRevert) break;
+    }
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                   BURN WITH MANAGER                                                
+                                                   BURN WITH MANAGER
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
   function testFuzz_BurnMaxAvailableManager(uint256[3] memory initialAmounts, uint256 stableAmount) public {
     // create a manager to be above the maxAvailable
@@ -937,8 +1011,64 @@ contract BurnTest is Fixture, FunctionUtils {
     vm.stopPrank();
   }
 
+  function testFuzz_Burn_RevertWhen_BurningAllStableIssuedWithManager(
+    uint256[3] memory initialAmounts,
+    uint256[3] memory latestOracleValue,
+    uint256 stableAmount
+  )
+    public
+  {
+    // create a manager for the first collateral
+    MockManager manager = new MockManager(_collaterals[0]);
+    IERC20[] memory subCollaterals = new IERC20[](1);
+    AggregatorV3Interface[] memory oracles = new AggregatorV3Interface[](1);
+    subCollaterals[0] = IERC20(_collaterals[0]);
+    uint8[] memory decimals = new uint8[](1);
+    decimals[0] = IERC20Metadata(_collaterals[0]).decimals();
+    uint32[] memory stalePeriods = new uint32[](1);
+    uint8[] memory oracleIsMultiplied = new uint8[](1);
+    uint8[] memory chainlinkDecimals = new uint8[](1);
+    oracles[0] = oracleA;
+    stalePeriods[0] = 365 days;
+    oracleIsMultiplied[0] = 1;
+    chainlinkDecimals[0] = 8;
+
+    manager.setSubCollaterals(
+      subCollaterals, abi.encode(decimals, oracles, stalePeriods, oracleIsMultiplied, chainlinkDecimals)
+    );
+    ManagerStorage memory managerData =
+      ManagerStorage(subCollaterals, abi.encode(ManagerType.EXTERNAL, abi.encode(IManager(address(manager)))));
+    vm.prank(governor);
+    parallelizer.setCollateralManager(_collaterals[0], true, managerData);
+
+    _setMintFeesForNegativeBurnFees(0);
+    (uint256 mintedStables, uint256[] memory collateralMintedStables) =
+      _loadReserves(alice, address(0), initialAmounts, 0);
+    _setZeroBurnFees(_collaterals);
+
+    if (mintedStables == 0) return;
+
+    _updateOracles(latestOracleValue);
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(parallelizer), mintedStables);
+
+    for (uint8 i; i < _collaterals.length; i++) {
+      uint256 stableIssued = parallelizer.getTotalIssued();
+      uint256 amountOut = parallelizer.quoteIn(collateralMintedStables[i], address(tokenP), _collaterals[i]);
+      if (amountOut == 0) continue;
+      bool expectRevert = collateralMintedStables[i] >= stableIssued;
+      if (expectRevert) {
+        vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+      }
+      parallelizer.swapExactInput(
+        collateralMintedStables[i], 0, address(tokenP), _collaterals[i], alice, block.timestamp * 2
+      );
+      if (expectRevert) break;
+    }
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                  BURN WITH WHITELIST                                               
+                                                  BURN WITH WHITELIST
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_RevertWhen_Whitelist(
@@ -1092,7 +1222,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                         UTILS                                                      
+                                                         UTILS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _loadReserves(
@@ -1167,6 +1297,38 @@ contract BurnTest is Fixture, FunctionUtils {
     vm.stopPrank();
   }
 
+  function _setZeroBurnFees(address[] memory collaterals) internal {
+    vm.startPrank(guardian);
+    uint64[] memory xBurnFee = new uint64[](1);
+    xBurnFee[0] = uint64(BASE_9);
+    int64[] memory yBurnFee = new int64[](1);
+    yBurnFee[0] = int64(0);
+    for (uint256 i; i < collaterals.length; i++) {
+      parallelizer.setFees(collaterals[i], xBurnFee, yBurnFee, false);
+    }
+    vm.stopPrank();
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          NORMALIZED STABLES GUARD
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+  function test_BurnPath_CannotDriveNormalizedStablesToZero() public {
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), alice, mintAmount);
+    vm.startPrank(alice);
+    eurA.approve(address(parallelizer), mintAmount);
+    uint256 minted =
+      parallelizer.swapExactInput(mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours);
+    vm.stopPrank();
+
+    vm.startPrank(alice);
+    vm.expectRevert(CannotBurnAllStableIssued.selector);
+    parallelizer.swapExactInput(minted, 0, address(tokenP), address(eurA), alice, block.timestamp + 1 hours);
+    vm.stopPrank();
+
+    assertGt(parallelizer.getTotalIssued(), 0, "normalizedStables must not be zero");
+  }
+
   function _getExposures(
     uint256 mintedStables,
     uint256[] memory collateralMintedStables
@@ -1195,9 +1357,10 @@ contract BurnTest is Fixture, FunctionUtils {
     if (exposure <= xThres[xThres.length - 1]) return (0, 0, xThres.length - 1);
     while (exposure < xThres[indexExposure]) indexExposure++;
     if (exposure > xThres[indexExposure]) indexExposure--;
-    amountToNextBreakpoint = (
-      BASE_9 * collateralMintedStables[indexCollat] - xThres[indexExposure + 1] * mintedStables
-    ) / (BASE_9 - xThres[indexExposure + 1]);
+    amountToNextBreakpoint = (BASE_9
+        * collateralMintedStables[indexCollat]
+        - xThres[indexExposure + 1]
+        * mintedStables) / (BASE_9 - xThres[indexExposure + 1]);
     // if we are on the first segment amountToPrevBreakpoint is infinite
     // so we need to set constant fees for this segment
     amountToPrevBreakpoint = indexExposure == 0
@@ -1264,10 +1427,9 @@ contract BurnTest is Fixture, FunctionUtils {
         if (
           // We are in the user deviation tolerance
           // Or we are in the burn deviation tolerance
-          (
-            BASE_8 * (BASE_18 - userFirewall) < oracleValue * BASE_18
-              && oracleValue * BASE_18 < BASE_8 * (BASE_18 + userFirewall)
-          ) || (BASE_8 * (BASE_18 - burnRatioDeviation) <= oracleValue * BASE_18 && oracleValue <= BASE_8)
+          (BASE_8 * (BASE_18 - userFirewall) < oracleValue * BASE_18
+              && oracleValue * BASE_18 < BASE_8 * (BASE_18 + userFirewall))
+            || (BASE_8 * (BASE_18 - burnRatioDeviation) <= oracleValue * BASE_18 && oracleValue <= BASE_8)
         ) oracleValue = BASE_8;
       }
     }
@@ -1286,8 +1448,12 @@ contract BurnTest is Fixture, FunctionUtils {
 
     vm.startPrank(governor);
     for (uint256 i; i < _collaterals.length; i++) {
-      (Storage.OracleReadType readType, Storage.OracleReadType targetType, bytes memory data, bytes memory targetData,)
-      = parallelizer.getOracle(address(_collaterals[i]));
+      (
+        Storage.OracleReadType readType,
+        Storage.OracleReadType targetType,
+        bytes memory data,
+        bytes memory targetData,
+      ) = parallelizer.getOracle(address(_collaterals[i]));
       parallelizer.setOracle(
         _collaterals[i],
         abi.encode(
@@ -1300,7 +1466,7 @@ contract BurnTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                        ACTIONS                                                     
+                                                        ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _burnExactInput(

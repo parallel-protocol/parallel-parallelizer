@@ -84,7 +84,7 @@ contract RedeemTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                      QUOTEREDEEM                                                   
+                                                      QUOTEREDEEM
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_QuoteRedeemAllAtPeg(uint256[3] memory initialAmounts, uint256 transferProportion) public {
@@ -102,10 +102,11 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     (address[] memory tokens, uint256[] memory amounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     vm.stopPrank();
 
-    if (mintedStables == 0) return;
+    if (mintedStables == 0 || mintedStables == amountBurnt) return;
 
     _assertSizes(tokens, amounts);
     _assertQuoteAmounts(uint64(BASE_9), mintedStables, amountBurnt, uint64(BASE_9), amounts);
@@ -136,9 +137,8 @@ contract RedeemTest is Fixture, FunctionUtils {
     // it can be impossible if one of the other oracle value is already high enough to
     // make the system over collateralised by itself or if there wasn't any minted via the last collateral
     if (mintedStables > collateralisation && collateralMintedStables[2] > 0) {
-      MockChainlinkOracle(address(_oracles[2])).setLatestAnswer(
-        int256(((mintedStables - collateralisation) * BASE_8) / collateralMintedStables[2])
-      );
+      MockChainlinkOracle(address(_oracles[2]))
+        .setLatestAnswer(int256(((mintedStables - collateralisation) * BASE_8) / collateralMintedStables[2]));
 
       // check collateral ratio first
       (uint64 collatRatio, uint256 stablecoinsIssued) = parallelizer.getCollateralRatio();
@@ -151,10 +151,11 @@ contract RedeemTest is Fixture, FunctionUtils {
       vm.startPrank(alice);
       uint256 amountBurnt = tokenP.balanceOf(alice);
       if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+      else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
       (address[] memory tokens, uint256[] memory amounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
       vm.stopPrank();
 
-      if (mintedStables == 0) return;
+      if (mintedStables == 0 || mintedStables == amountBurnt) return;
 
       _assertSizes(tokens, amounts);
       _assertQuoteAmounts(collatRatio, mintedStables, amountBurnt, uint64(BASE_9), amounts);
@@ -181,10 +182,11 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     (address[] memory tokens, uint256[] memory amounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     vm.stopPrank();
 
-    if (mintedStables == 0) return;
+    if (mintedStables == 0 || mintedStables == amountBurnt) return;
 
     _assertSizes(tokens, amounts);
     _assertQuoteAmounts(collatRatio, mintedStables, amountBurnt, uint64(BASE_9), amounts);
@@ -205,10 +207,11 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     (address[] memory tokens, uint256[] memory amounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     vm.stopPrank();
 
-    if (mintedStables == 0) return;
+    if (mintedStables == 0 || mintedStables == amountBurnt) return;
 
     _assertSizes(tokens, amounts);
     _assertQuoteAmounts(uint64(BASE_9), mintedStables, amountBurnt, uint64(yFeeRedeem[yFeeRedeem.length - 1]), amounts);
@@ -238,10 +241,11 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     (address[] memory tokens, uint256[] memory amounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     vm.stopPrank();
 
-    if (mintedStables == 0) return;
+    if (mintedStables == 0 || mintedStables == amountBurnt) return;
 
     // compute fee at current collatRatio
     _assertSizes(tokens, amounts);
@@ -252,7 +256,7 @@ contract RedeemTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                        REDEEM                                                      
+                                                        REDEEM
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_RedeemAllAtPeg(uint256[3] memory initialAmounts, uint256 transferProportion) public {
@@ -266,15 +270,17 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     // uint256[] memory forfeitTokens = new uint256[](0);
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     (address[] memory tokens, uint256[] memory amounts) =
       parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
     vm.stopPrank();
 
-    if (mintedStables == 0) return;
+    if (mintedStables == 0 || mintedStables == amountBurnt) return;
 
     assertEq(amounts, quoteAmounts);
     _assertSizes(tokens, amounts);
@@ -321,8 +327,10 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     address[] memory tokens;
     uint256[] memory amounts;
     {
@@ -332,7 +340,7 @@ contract RedeemTest is Fixture, FunctionUtils {
     }
     vm.stopPrank();
 
-    if (mintedStables == 0) return;
+    if (mintedStables == 0 || mintedStables == amountBurnt) return;
 
     // compute fee at current collatRatio
     assertEq(amounts, quoteAmounts);
@@ -375,6 +383,7 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 amountBurnt = tokenP.balanceOf(alice);
     uint256 amountBurntBob;
     uint256[] memory quoteAmounts;
+    uint256 stableIssued = mintedStables > 0 ? parallelizer.getTotalIssued() : 0;
     {
       bool shouldReturn;
       {
@@ -385,17 +394,19 @@ contract RedeemTest is Fixture, FunctionUtils {
         ) {
           vm.expectPartialRevert(SafeCast.SafeCastOverflowedUintDowncast.selector);
           shouldReturn = true;
-        } else if (amountBurnt > mintedStables) {
+        } else if (amountBurnt > stableIssued) {
           vm.expectRevert(Errors.TooBigAmountIn.selector);
         } else if (mintedStables == 0) {
           vm.expectRevert(stdError.divisionError);
+        } else if (amountBurnt == stableIssued) {
+          vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
         }
       }
       (, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
       if (shouldReturn) return;
     }
-    if (amountBurnt > mintedStables) vm.expectRevert(Errors.TooBigAmountIn.selector);
-    else if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    if (mintedStables == 0 || amountBurnt >= stableIssued) return;
+
     {
       address[] memory tokens;
       uint256[] memory amounts;
@@ -405,7 +416,7 @@ contract RedeemTest is Fixture, FunctionUtils {
       }
       vm.stopPrank();
 
-      if (mintedStables == 0 || amountBurnt > mintedStables) return;
+      if (mintedStables == 0 || amountBurnt >= stableIssued) return;
 
       // compute fee at current collatRatio
       assertEq(amounts, quoteAmounts);
@@ -421,7 +432,7 @@ contract RedeemTest is Fixture, FunctionUtils {
         assertApproxEqAbs(totalStable, mintedStables - amountBurnt, 3 wei);
       }
 
-      // Compute mintedStables while rounding up
+      // Compute mintedStables while rounding up for proportion assertions
       uint128 normalizedStables =
         uint128(uint256(vm.load(address(parallelizer), bytes32(uint256(TRANSMUTER_STORAGE_POSITION) + 1))));
       uint128 normalizer =
@@ -429,6 +440,7 @@ contract RedeemTest is Fixture, FunctionUtils {
       mintedStables = uint256(normalizedStables).mulDiv(normalizer, BASE_27, Math.Rounding.Ceil);
 
       // now do a second redeem to test with non trivial ts.normalizer and ts.normalizedStables
+      stableIssued = parallelizer.getTotalIssued();
       vm.startPrank(bob);
       redeemProportion = bound(redeemProportion, 0, BASE_9);
       amountBurntBob = (tokenP.balanceOf(bob) * redeemProportion) / BASE_9;
@@ -437,30 +449,32 @@ contract RedeemTest is Fixture, FunctionUtils {
         {
           uint256 totalCollateralization = _computeCollateralisation();
           if (
-            mintedStables > 0
-              && (totalCollateralization.mulDiv(BASE_9, mintedStables, Math.Rounding.Ceil)) > type(uint64).max
+            stableIssued > 0
+              && (totalCollateralization.mulDiv(BASE_9, stableIssued, Math.Rounding.Ceil)) > type(uint64).max
           ) {
             vm.expectPartialRevert(SafeCast.SafeCastOverflowedUintDowncast.selector);
             shouldReturn = true;
-          } else if (amountBurntBob > mintedStables) {
+          } else if (amountBurntBob > stableIssued) {
             vm.expectRevert(Errors.TooBigAmountIn.selector);
-          } else if (mintedStables == 0) {
+          } else if (stableIssued == 0) {
             vm.expectRevert(stdError.divisionError);
+          } else if (amountBurntBob == stableIssued) {
+            vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
           }
         }
         (, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurntBob);
         if (shouldReturn) return;
       }
 
-      if (amountBurntBob > mintedStables) vm.expectRevert(Errors.TooBigAmountIn.selector);
-      else if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+      if (stableIssued == 0 || amountBurntBob >= stableIssued) return;
+
       {
         uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
         (tokens, amounts) = parallelizer.redeem(amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts);
       }
       vm.stopPrank();
 
-      if (mintedStables == 0 || amountBurntBob > mintedStables) return;
+      if (stableIssued == 0 || amountBurntBob >= stableIssued) return;
 
       // compute fee at current collatRatio
       assertEq(amounts, quoteAmounts);
@@ -488,8 +502,148 @@ contract RedeemTest is Fixture, FunctionUtils {
     );
   }
 
+  function testFuzz_RevertWhen_BurningAllStableIssued(
+    uint256[3] memory initialAmounts,
+    uint256[3] memory latestOracleValue,
+    uint64[10] memory xFeeRedeemUnbounded,
+    int64[10] memory yFeeRedeemUnbounded
+  )
+    public
+  {
+    // let's first load the reserves of the protocol
+    (uint256 mintedStables, uint256[] memory collateralMintedStables) = _loadReserves(initialAmounts, 0);
+    if (mintedStables == 0) return;
+    {
+      (, bool reverted) = _updateOracles(latestOracleValue, mintedStables, collateralMintedStables);
+      if (reverted) return;
+    }
+    vm.startPrank(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.quoteRedemptionCurve(amountBurnt);
+
+    uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+  }
+
+  function testFuzz_RevertWhen_BurningAllStableIssuedWithWhitelist(
+    uint256[3] memory initialAmounts,
+    uint256[3] memory latestOracleValue,
+    uint64[10] memory xFeeRedeemUnbounded,
+    int64[10] memory yFeeRedeemUnbounded
+  )
+    public
+  {
+    (uint256 mintedStables, uint256[] memory collateralMintedStables) = _loadReserves(initialAmounts, 0);
+    if (mintedStables == 0) return;
+    {
+      (, bool reverted) = _updateOracles(latestOracleValue, mintedStables, collateralMintedStables);
+      if (reverted) return;
+    }
+
+    // Enable whitelist on the first collateral and whitelist alice
+    bytes memory emptyData;
+    bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
+    hoax(governor);
+    parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    hoax(guardian);
+    parallelizer.toggleWhitelist(WhitelistType.BACKED, alice);
+
+    vm.startPrank(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.quoteRedemptionCurve(amountBurnt);
+
+    uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+  }
+
+  function testFuzz_RedeemWithForfeit_RevertWhen_BurningAllStableIssued(
+    uint256[3] memory initialAmounts,
+    uint256[3] memory latestOracleValue,
+    bool[3] memory areForfeit,
+    uint64[10] memory xFeeRedeemUnbounded,
+    int64[10] memory yFeeRedeemUnbounded
+  )
+    public
+  {
+    (uint256 mintedStables, uint256[] memory collateralMintedStables) = _loadReserves(initialAmounts, 0);
+    if (mintedStables == 0) return;
+    {
+      (, bool reverted) = _updateOracles(latestOracleValue, mintedStables, collateralMintedStables);
+      if (reverted) return;
+    }
+
+    // Build forfeit tokens from collaterals
+    uint256 nbrForfeit;
+    for (uint256 i; i < _collaterals.length; ++i) {
+      if (areForfeit[i]) nbrForfeit++;
+    }
+    address[] memory forfeitTokens = new address[](nbrForfeit);
+    uint256 index;
+    for (uint256 i; i < _collaterals.length; ++i) {
+      if (areForfeit[i]) forfeitTokens[index++] = _collaterals[i];
+    }
+
+    vm.startPrank(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.quoteRedemptionCurve(amountBurnt);
+
+    uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+  }
+
+  function testFuzz_RedeemWithForfeit_RevertWhen_BurningAllStableIssuedWithWhitelist(
+    uint256[3] memory initialAmounts,
+    uint256[3] memory latestOracleValue,
+    bool[3] memory areForfeit,
+    uint64[10] memory xFeeRedeemUnbounded,
+    int64[10] memory yFeeRedeemUnbounded
+  )
+    public
+  {
+    (uint256 mintedStables, uint256[] memory collateralMintedStables) = _loadReserves(initialAmounts, 0);
+    if (mintedStables == 0) return;
+    {
+      (, bool reverted) = _updateOracles(latestOracleValue, mintedStables, collateralMintedStables);
+      if (reverted) return;
+    }
+
+    // Build forfeit tokens from collaterals
+    uint256 nbrForfeit;
+    for (uint256 i; i < _collaterals.length; ++i) {
+      if (areForfeit[i]) nbrForfeit++;
+    }
+    address[] memory forfeitTokens = new address[](nbrForfeit);
+    uint256 index;
+    for (uint256 i; i < _collaterals.length; ++i) {
+      if (areForfeit[i]) forfeitTokens[index++] = _collaterals[i];
+    }
+
+    // Enable whitelist on the first collateral and whitelist alice
+    bytes memory emptyData;
+    bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
+    hoax(governor);
+    parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    hoax(guardian);
+    parallelizer.toggleWhitelist(WhitelistType.BACKED, alice);
+
+    vm.startPrank(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.quoteRedemptionCurve(amountBurnt);
+
+    uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                  REDEEM WITH MANAGER                                               
+                                                  REDEEM WITH MANAGER
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_QuoteRedemptionCurveWithManagerRandomRedemptionFees(
@@ -560,6 +714,8 @@ contract RedeemTest is Fixture, FunctionUtils {
             shouldReturn = true;
           } else if (mintedStables == 0) {
             vm.expectRevert(stdError.divisionError);
+          } else if (amountBurnt == mintedStables) {
+            vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
           }
         }
         (tokens, amounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
@@ -567,7 +723,7 @@ contract RedeemTest is Fixture, FunctionUtils {
       }
       vm.stopPrank();
 
-      if (mintedStables == 0) return;
+      if (mintedStables == 0 || mintedStables == amountBurnt) return;
 
       // compute fee at current collatRatio
       _assertSizesWithManager(tokens, amounts);
@@ -632,12 +788,15 @@ contract RedeemTest is Fixture, FunctionUtils {
           shouldReturn = true;
         } else if (mintedStables == 0) {
           vm.expectRevert(stdError.divisionError);
+        } else if (amountBurnt == mintedStables) {
+          vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
         }
       }
       (, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
       if (shouldReturn) return;
     }
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+    else if (amountBurnt == mintedStables) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     {
       uint256[] memory amounts;
       address[] memory tokens;
@@ -647,7 +806,7 @@ contract RedeemTest is Fixture, FunctionUtils {
       }
       vm.stopPrank();
 
-      if (mintedStables == 0) return;
+      if (mintedStables == 0 || amountBurnt == mintedStables) return;
 
       // compute fee at current collatRatio
       assertEq(amounts, quoteAmounts);
@@ -684,6 +843,8 @@ contract RedeemTest is Fixture, FunctionUtils {
             vm.expectRevert(Errors.TooBigAmountIn.selector);
           } else if (mintedStables == 0) {
             vm.expectRevert(stdError.divisionError);
+          } else if (amountBurntBob == mintedStables) {
+            vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
           }
         }
         (, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurntBob);
@@ -691,13 +852,14 @@ contract RedeemTest is Fixture, FunctionUtils {
       }
       if (amountBurntBob > mintedStables) vm.expectRevert(Errors.TooBigAmountIn.selector);
       else if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+      else if (amountBurntBob == mintedStables) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
       {
         uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
         (tokens, amounts) = parallelizer.redeem(amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts);
       }
       vm.stopPrank();
 
-      if (mintedStables == 0 || amountBurntBob > mintedStables) return;
+      if (mintedStables == 0 || amountBurntBob >= mintedStables) return;
 
       // compute fee at current collatRatio
       assertEq(amounts, quoteAmounts);
@@ -728,8 +890,130 @@ contract RedeemTest is Fixture, FunctionUtils {
     );
   }
 
+  function testFuzz_RevertWhen_BurningAllStableIssuedWithManager(
+    uint256[3] memory initialAmounts,
+    uint256[3 * 2] memory nbrSubCollateralsAndIsManaged,
+    uint256[3 * (_MAX_SUB_COLLATERALS + 1)] memory airdropAmountsAndOracleValues,
+    uint256[3 * 2 * _MAX_SUB_COLLATERALS] memory latestSubCollatOracleValueAndDecimals,
+    uint64[10] memory xFeeRedeemUnbounded,
+    int64[10] memory yFeeRedeemUnbounded
+  )
+    public
+  {
+    for (uint256 i; i < _collaterals.length; ++i) {
+      // Randomly set subcollaterals and manager if needed
+      (IERC20[] memory subCollaterals, AggregatorV3Interface[] memory oracles) = _createManager(
+        _collaterals[i],
+        nbrSubCollateralsAndIsManaged[2 * i],
+        nbrSubCollateralsAndIsManaged[2 * i + 1],
+        i * _MAX_SUB_COLLATERALS,
+        latestSubCollatOracleValueAndDecimals
+      );
+      if (subCollaterals.length > 0) {
+        _subCollaterals[_collaterals[i]] = SubCollateralStorage(subCollaterals, oracles);
+      }
+    }
+    // let's first load the reserves of the protocol
+    uint256 mintedStables;
+    uint64 collatRatio;
+    {
+      uint256[] memory collateralMintedStables;
+      (mintedStables, collateralMintedStables) = _loadReserves(initialAmounts, 0);
+
+      // airdrop amounts in the subcollaterals
+      for (uint256 i; i < _collaterals.length; ++i) {
+        if (_subCollaterals[_collaterals[i]].subCollaterals.length > 0) {
+          _loadSubCollaterals(address(_collaterals[i]), airdropAmountsAndOracleValues, i * _MAX_SUB_COLLATERALS);
+        }
+      }
+
+      {
+        bool reverted;
+        (collatRatio, reverted) = _updateOraclesWithSubCollaterals(
+          abi.encode(mintedStables, collateralMintedStables), airdropAmountsAndOracleValues
+        );
+        if (reverted) return;
+      }
+    }
+
+    (uint64[] memory xFeeRedeem, int64[] memory yFeeRedeem) =
+      _randomRedeemptionFees(xFeeRedeemUnbounded, yFeeRedeemUnbounded);
+
+    vm.startPrank(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.quoteRedemptionCurve(amountBurnt);
+
+    uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+  }
+
+  function testFuzz_RevertWhen_BurningAllStableIssuedWithManagerAndWhitelist(
+    uint256[3] memory initialAmounts,
+    uint256[3 * 2] memory nbrSubCollateralsAndIsManaged,
+    uint256[3 * (_MAX_SUB_COLLATERALS + 1)] memory airdropAmountsAndOracleValues,
+    uint256[3 * 2 * _MAX_SUB_COLLATERALS] memory latestSubCollatOracleValueAndDecimals,
+    uint64[10] memory xFeeRedeemUnbounded,
+    int64[10] memory yFeeRedeemUnbounded
+  )
+    public
+  {
+    for (uint256 i; i < _collaterals.length; ++i) {
+      (IERC20[] memory subCollaterals, AggregatorV3Interface[] memory oracles) = _createManager(
+        _collaterals[i],
+        nbrSubCollateralsAndIsManaged[2 * i],
+        nbrSubCollateralsAndIsManaged[2 * i + 1],
+        i * _MAX_SUB_COLLATERALS,
+        latestSubCollatOracleValueAndDecimals
+      );
+      if (subCollaterals.length > 0) {
+        _subCollaterals[_collaterals[i]] = SubCollateralStorage(subCollaterals, oracles);
+      }
+    }
+    uint256 mintedStables;
+    {
+      uint256[] memory collateralMintedStables;
+      (mintedStables, collateralMintedStables) = _loadReserves(initialAmounts, 0);
+
+      for (uint256 i; i < _collaterals.length; ++i) {
+        if (_subCollaterals[_collaterals[i]].subCollaterals.length > 0) {
+          _loadSubCollaterals(address(_collaterals[i]), airdropAmountsAndOracleValues, i * _MAX_SUB_COLLATERALS);
+        }
+      }
+
+      {
+        bool reverted;
+        (, reverted) = _updateOraclesWithSubCollaterals(
+          abi.encode(mintedStables, collateralMintedStables), airdropAmountsAndOracleValues
+        );
+        if (reverted) return;
+      }
+    }
+    if (mintedStables == 0) return;
+
+    _randomRedeemptionFees(xFeeRedeemUnbounded, yFeeRedeemUnbounded);
+
+    // Enable whitelist on the first collateral and whitelist alice
+    bytes memory emptyData;
+    bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
+    hoax(governor);
+    parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    hoax(guardian);
+    parallelizer.toggleWhitelist(WhitelistType.BACKED, alice);
+
+    vm.startPrank(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.quoteRedemptionCurve(amountBurnt);
+
+    uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                  REDEEM WITH FORFEIT                                               
+                                                  REDEEM WITH FORFEIT
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function test_RevertWhen_RedeemInvalidArrayLengths(
@@ -745,6 +1029,7 @@ contract RedeemTest is Fixture, FunctionUtils {
     if (mintedStables == 0) return;
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
+    if (amountBurnt == mintedStables) return;
     {
       uint256[] memory minAmountOuts;
       {
@@ -821,6 +1106,8 @@ contract RedeemTest is Fixture, FunctionUtils {
           shouldReturn = true;
         } else if (mintedStables == 0) {
           vm.expectRevert(stdError.divisionError);
+        } else if (amountBurnt == mintedStables) {
+          vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
         }
       }
       (, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
@@ -832,13 +1119,17 @@ contract RedeemTest is Fixture, FunctionUtils {
       address[] memory forfeitTokens = _getForfeitTokens(areForfeit);
       {
         uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
-        if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+        if (mintedStables == 0) {
+          vm.expectRevert(stdError.divisionError);
+        } else if (amountBurnt == mintedStables) {
+          vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+        }
         (tokens, amounts) =
           parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
       }
       vm.stopPrank();
 
-      if (mintedStables == 0) return;
+      if (mintedStables == 0 || amountBurnt == mintedStables) return;
 
       // compute fee at current collatRatio
       assertEq(amounts, quoteAmounts);
@@ -872,6 +1163,8 @@ contract RedeemTest is Fixture, FunctionUtils {
           vm.expectRevert(Errors.TooBigAmountIn.selector);
         } else if (mintedStables == 0) {
           vm.expectRevert(stdError.divisionError);
+        } else if (amountBurntBob == mintedStables) {
+          vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
         }
         (, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurntBob);
         if (shouldReturn) return;
@@ -879,13 +1172,14 @@ contract RedeemTest is Fixture, FunctionUtils {
 
       if (amountBurntBob > mintedStables) vm.expectRevert(Errors.TooBigAmountIn.selector);
       else if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+      else if (amountBurntBob == mintedStables) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
       {
         uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
         (tokens, amounts) = parallelizer.redeem(amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts);
       }
       vm.stopPrank();
 
-      if (mintedStables == 0 || amountBurntBob > mintedStables) return;
+      if (mintedStables == 0 || amountBurntBob >= mintedStables) return;
 
       // compute fee at current collatRatio
       assertEq(amounts, quoteAmounts);
@@ -919,8 +1213,56 @@ contract RedeemTest is Fixture, FunctionUtils {
     }
   }
 
+  function testFuzz_RedeemWithForfeit_RevertWhen_BurningAllStableIssuedWithManager(
+    uint256[3] memory initialValue, // initialAmounts of size 3 / nbrSubCollaterals of size 3
+    uint256[3 * 2] memory nbrSubCollateralsAndIsManaged,
+    uint256[3 * (_MAX_SUB_COLLATERALS + 1)] memory airdropAmountsAndOracleValues,
+    uint256[3 * 2 * _MAX_SUB_COLLATERALS] memory latestSubCollatOracleValueAndDecimals,
+    bool[3 * (_MAX_SUB_COLLATERALS + 1)] memory areForfeit,
+    uint64[10] memory xFeeRedeemUnbounded, // X and Y arrays of length 10 each
+    int64[10] memory yFeeRedeemUnbounded // X and Y arrays of length 10 each
+  )
+    public
+  {
+    for (uint256 i; i < _collaterals.length; ++i) {
+      // Randomly set subcollaterals and manager if needed
+      (IERC20[] memory subCollaterals, AggregatorV3Interface[] memory oracles) = _createManager(
+        _collaterals[i],
+        nbrSubCollateralsAndIsManaged[2 * i],
+        nbrSubCollateralsAndIsManaged[2 * i + 1],
+        i * _MAX_SUB_COLLATERALS,
+        latestSubCollatOracleValueAndDecimals
+      );
+      _subCollaterals[_collaterals[i]] = SubCollateralStorage(subCollaterals, oracles);
+    }
+
+    // let's first load the reserves of the protocol
+    (uint256 mintedStables, uint256[] memory collateralMintedStables) = _loadReserves(initialValue, 0);
+    if (mintedStables == 0) return;
+    for (uint256 i; i < _collaterals.length; ++i) {
+      if (_subCollaterals[_collaterals[i]].subCollaterals.length > 0) {
+        _loadSubCollaterals(address(_collaterals[i]), airdropAmountsAndOracleValues, i * _MAX_SUB_COLLATERALS);
+      }
+    }
+    _updateOraclesWithSubCollaterals(abi.encode(mintedStables, collateralMintedStables), airdropAmountsAndOracleValues);
+    _randomRedeemptionFees(xFeeRedeemUnbounded, yFeeRedeemUnbounded);
+
+    uint256 totalCollateralization = _computeCollateralisation();
+    if ((totalCollateralization.mulDiv(BASE_9, mintedStables, Math.Rounding.Ceil)) > type(uint64).max) return;
+
+    address[] memory forfeitTokens = _getForfeitTokens(areForfeit);
+    vm.startPrank(alice);
+    uint256 amountBurnt = tokenP.balanceOf(alice);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.quoteRedemptionCurve(amountBurnt);
+
+    uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
+    vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+    parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                               REDEEM WITH WHITELISTING                                             
+                                               REDEEM WITH WHITELISTING
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function testFuzz_WithWhitelistedToken(uint256[3] memory initialAmounts, uint256 transferProportion) public {
@@ -937,7 +1279,7 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
-    if (mintedStables == 0 || amountBurnt < BASE_18) return;
+    if (mintedStables == 0 || amountBurnt < BASE_18 || amountBurnt == mintedStables) return;
     (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     // There should be a non zero amount of EURA to transfer
     if (quoteAmounts[0] == 0) return;
@@ -992,7 +1334,7 @@ contract RedeemTest is Fixture, FunctionUtils {
       parallelizer.setWhitelistStatus(address(eurB), 1, whitelistData);
     }
     uint256 amountBurnt = tokenP.balanceOf(alice);
-    if (mintedStables == 0 || amountBurnt == 0) return;
+    if (mintedStables == 0 || amountBurnt == 0 || amountBurnt == mintedStables) return;
     (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     if (quoteAmounts[0] == 0 || quoteAmounts[1] == 0) return;
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
@@ -1037,7 +1379,7 @@ contract RedeemTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                        ASSERTS                                                     
+                                                        ASSERTS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _assertSizes(address[] memory tokens, uint256[] memory amounts) internal {
@@ -1159,8 +1501,8 @@ contract RedeemTest is Fixture, FunctionUtils {
         (, int256 oracleValue,,,) = _oracles[i].latestRoundData();
         {
           uint8 decimals = IERC20Metadata(_collaterals[i]).decimals();
-          quoteStorage.amountInValueReceived +=
-            (uint256(oracleValue) * _convertDecimalTo(amounts[quoteStorage.count++], decimals, 18)) / BASE_8;
+          quoteStorage.amountInValueReceived += (uint256(oracleValue)
+              * _convertDecimalTo(amounts[quoteStorage.count++], decimals, 18)) / BASE_8;
           if (uint256(oracleValue) > quoteStorage.maxOracle) quoteStorage.maxOracle = uint256(oracleValue);
           if (amounts[i] > quoteStorage.maxValue) quoteStorage.maxValue = amounts[i] / 10 ** decimals;
           if (amounts[i] < quoteStorage.minValue || quoteStorage.minValue == 0) {
@@ -1176,10 +1518,9 @@ contract RedeemTest is Fixture, FunctionUtils {
         for (uint256 k = 1; k < _subCollaterals[_collaterals[i]].subCollaterals.length; k++) {
           (, int256 value,,,) = _subCollaterals[_collaterals[i]].oracles[k - 1].latestRoundData();
           uint8 decimals = IERC20Metadata(address(_subCollaterals[_collaterals[i]].subCollaterals[k])).decimals();
-          subCollateralValue += (
-            uint256(value)
-              * _convertDecimalTo(amounts[quoteStorage.count++], decimals, IERC20Metadata(_collaterals[i]).decimals())
-          ) / BASE_8;
+          subCollateralValue += (uint256(value)
+              * _convertDecimalTo(amounts[quoteStorage.count++], decimals, IERC20Metadata(_collaterals[i]).decimals()))
+            / BASE_8;
           if (uint256(value) > quoteStorage.maxOracle) quoteStorage.maxOracle = uint256(value);
           if (amounts[i] > quoteStorage.maxValue) quoteStorage.maxValue = amounts[i] / 10 ** decimals;
           if (amounts[i] < quoteStorage.minValue || quoteStorage.minValue == 0) {
@@ -1190,9 +1531,10 @@ contract RedeemTest is Fixture, FunctionUtils {
           }
           if (uint256(value) > BASE_18 || amounts[i] < 10 ** 4) quoteStorage.lastCheck = true;
         }
-        quoteStorage.amountInValueReceived += (
-          _convertDecimalTo(subCollateralValue, IERC20Metadata(_collaterals[i]).decimals(), 18) * uint256(oracleValue)
-        ) / BASE_8;
+        quoteStorage.amountInValueReceived += (_convertDecimalTo(
+              subCollateralValue, IERC20Metadata(_collaterals[i]).decimals(), 18
+            )
+            * uint256(oracleValue)) / BASE_8;
       }
       if (
         quoteStorage.maxValue > quoteStorage.minValue * 10 ** 14
@@ -1251,7 +1593,7 @@ contract RedeemTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                         UTILS                                                      
+                                                         UTILS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _loadReserves(
@@ -1269,8 +1611,9 @@ contract RedeemTest is Fixture, FunctionUtils {
       deal(_collaterals[i], alice, initialAmounts[i]);
       IERC20(_collaterals[i]).approve(address(parallelizer), initialAmounts[i]);
 
-      collateralMintedStables[i] =
-        parallelizer.swapExactInput(initialAmounts[i], 0, _collaterals[i], address(tokenP), alice, block.timestamp * 2);
+      collateralMintedStables[i] = parallelizer.swapExactInput(
+        initialAmounts[i], 0, _collaterals[i], address(tokenP), alice, block.timestamp * 2
+      );
       mintedStables += collateralMintedStables[i];
     }
 
@@ -1354,15 +1697,14 @@ contract RedeemTest is Fixture, FunctionUtils {
     for (uint256 i; i < airdropAmountsAndOracleValues.length / (_MAX_SUB_COLLATERALS + 1); ++i) {
       airdropAmountsAndOracleValues[3 * _MAX_SUB_COLLATERALS + i] =
         bound(airdropAmountsAndOracleValues[3 * _MAX_SUB_COLLATERALS + i], _minOracleValue, BASE_18);
-      MockChainlinkOracle(address(_oracles[i])).setLatestAnswer(
-        int256(airdropAmountsAndOracleValues[3 * _MAX_SUB_COLLATERALS + i])
-      );
+      MockChainlinkOracle(address(_oracles[i]))
+        .setLatestAnswer(int256(airdropAmountsAndOracleValues[3 * _MAX_SUB_COLLATERALS + i]));
 
       if (_subCollaterals[_collaterals[i]].subCollaterals.length <= 1) {
         (, uint256[] memory collateralMintedStables) =
           abi.decode(collateralStablesAndMintedStables, (uint256, uint256[]));
-        collateralisation +=
-          (airdropAmountsAndOracleValues[3 * _MAX_SUB_COLLATERALS + i] * collateralMintedStables[i]) / BASE_8;
+        collateralisation += (airdropAmountsAndOracleValues[3 * _MAX_SUB_COLLATERALS + i] * collateralMintedStables[i])
+          / BASE_8;
       } else {
         IERC20[] memory listSubCollaterals = _subCollaterals[_collaterals[i]].subCollaterals;
         // we don't double count the real collaterals
@@ -1371,19 +1713,16 @@ contract RedeemTest is Fixture, FunctionUtils {
         for (uint256 k = 1; k < listSubCollaterals.length; k++) {
           (, int256 oracleValue,,,) =
             MockChainlinkOracle(address(_subCollaterals[_collaterals[i]].oracles[k - 1])).latestRoundData();
-          subCollateralValue += (
-            uint256(oracleValue)
+          subCollateralValue += (uint256(oracleValue)
               * _convertDecimalTo(
                 airdropAmountsAndOracleValues[i * _MAX_SUB_COLLATERALS + k - 1],
                 IERC20Metadata(address(listSubCollaterals[k])).decimals(),
                 IERC20Metadata(address(listSubCollaterals[0])).decimals()
-              )
-          ) / BASE_8;
+              )) / BASE_8;
         }
-        collateralisation += (
-          ((BASE_18 * airdropAmountsAndOracleValues[3 * _MAX_SUB_COLLATERALS + i]) / BASE_8)
-            * _convertDecimalTo(subCollateralValue, IERC20Metadata(address(listSubCollaterals[0])).decimals(), 18)
-        ) / BASE_18;
+        collateralisation += (((BASE_18 * airdropAmountsAndOracleValues[3 * _MAX_SUB_COLLATERALS + i]) / BASE_8)
+            * _convertDecimalTo(subCollateralValue, IERC20Metadata(address(listSubCollaterals[0])).decimals(), 18))
+          / BASE_18;
       }
     }
 
@@ -1514,9 +1853,8 @@ contract RedeemTest is Fixture, FunctionUtils {
         oracles[i - 1] = AggregatorV3Interface(address(new MockChainlinkOracle()));
         subCollateralOracleValueAndDecimals[startIndex + i - 1] =
           bound(subCollateralOracleValueAndDecimals[startIndex + i - 1], _minOracleValue, BASE_18);
-        MockChainlinkOracle(address(oracles[i - 1])).setLatestAnswer(
-          int256(subCollateralOracleValueAndDecimals[startIndex + i - 1])
-        );
+        MockChainlinkOracle(address(oracles[i - 1]))
+          .setLatestAnswer(int256(subCollateralOracleValueAndDecimals[startIndex + i - 1]));
         stalePeriods[i - 1] = 365 days;
         oracleIsMultiplied[i - 1] = 1;
         chainlinkDecimals[i - 1] = 8;
@@ -1534,6 +1872,101 @@ contract RedeemTest is Fixture, FunctionUtils {
     parallelizer.setCollateralManager(token, true, managerData);
   }
 
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                          NORMALIZED STABLES GUARD
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+  function test_RedeemPath_CannotDriveNormalizedStablesToZero() public {
+    address attacker = vm.addr(10);
+
+    vm.startPrank(guardian);
+    parallelizer.togglePause(address(eurB), ActionType.Redeem);
+    parallelizer.togglePause(address(eurY), ActionType.Redeem);
+    uint64[] memory xRedemption = new uint64[](1);
+    xRedemption[0] = uint64(0);
+    int64[] memory yRedemption = new int64[](1);
+    yRedemption[0] = int64(int256(BASE_9));
+    parallelizer.setRedemptionCurveParams(xRedemption, yRedemption);
+    vm.stopPrank();
+
+    _mintExactInput(bob, address(eurA), 10_000e6, 0);
+    _mintExactInput(charlie, address(eurB), 10_000e12, 0);
+    _mintExactInput(dylan, address(eurY), 10_000e18, 0);
+
+    uint256 bobBal = IERC20(address(tokenP)).balanceOf(bob);
+    uint256 charlieBal = IERC20(address(tokenP)).balanceOf(charlie);
+    uint256 dylanBal = IERC20(address(tokenP)).balanceOf(dylan);
+    vm.prank(bob);
+    IERC20(address(tokenP)).transfer(attacker, bobBal);
+    vm.prank(charlie);
+    IERC20(address(tokenP)).transfer(attacker, charlieBal);
+    vm.prank(dylan);
+    IERC20(address(tokenP)).transfer(attacker, dylanBal);
+
+    vm.startPrank(attacker);
+    (uint256 issuedFromA,) = parallelizer.getIssuedByCollateral(address(eurA));
+    (uint256 issuedFromB,) = parallelizer.getIssuedByCollateral(address(eurB));
+    (uint256 issuedFromY,) = parallelizer.getIssuedByCollateral(address(eurY));
+
+    if (issuedFromA > 1e18) {
+      parallelizer.swapExactInput(issuedFromA - 1e18, 0, address(tokenP), address(eurA), attacker, block.timestamp * 2);
+    }
+    if (issuedFromB > 1e18) {
+      parallelizer.swapExactInput(issuedFromB - 1e18, 0, address(tokenP), address(eurB), attacker, block.timestamp * 2);
+    }
+    if (issuedFromY > 1e18) {
+      parallelizer.swapExactInput(issuedFromY - 1e18, 0, address(tokenP), address(eurY), attacker, block.timestamp * 2);
+    }
+
+    uint256 stablecoinsIssued = parallelizer.getTotalIssued();
+    if (stablecoinsIssued > 1) {
+      uint256[] memory minOuts = new uint256[](3);
+      vm.expectRevert();
+      parallelizer.redeem(stablecoinsIssued - 1, attacker, block.timestamp * 2, minOuts);
+    }
+    vm.stopPrank();
+
+    assertGt(parallelizer.getTotalIssued(), 0, "normalizedStables must not be driven to zero");
+  }
+
+  /// @notice Fuzz: amountBurnt < stablecoinsIssued must never drive normalizedStables to 0
+  function testFuzz_RedeemBelowIssuedCannotZeroNormalizedStables(
+    uint256 mintA,
+    uint256 mintB,
+    uint256 mintY,
+    uint256 redeemRatio
+  ) public {
+    mintA = bound(mintA, 1e6, 1_000_000e6);
+    mintB = bound(mintB, 1e12, 1_000_000e12);
+    mintY = bound(mintY, 1e18, 1_000_000e18);
+
+    _mintExactInput(alice, address(eurA), mintA, 0);
+    _mintExactInput(alice, address(eurB), mintB, 0);
+    _mintExactInput(alice, address(eurY), mintY, 0);
+
+    uint256 stablecoinsIssued = parallelizer.getTotalIssued();
+    if (stablecoinsIssued == 0) return;
+
+    redeemRatio = bound(redeemRatio, 0, BASE_9 - 1);
+    uint256 redeemAmount = (stablecoinsIssued * redeemRatio) / BASE_9;
+    if (redeemAmount == 0) return;
+    if (redeemAmount >= stablecoinsIssued) redeemAmount = stablecoinsIssued - 1;
+
+    uint256[] memory minOuts = new uint256[](3);
+    vm.startPrank(alice);
+    parallelizer.redeem(redeemAmount, alice, block.timestamp * 2, minOuts);
+    vm.stopPrank();
+
+    assertGt(
+      parallelizer.getTotalIssued(),
+      0,
+      "normalizedStables must not be driven to zero with amountBurnt < stablecoinsIssued"
+    );
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                  HELPERS
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
   function _computeCollateralisation() internal view returns (uint256 totalCollateralization) {
     address[] memory collateralList = parallelizer.getCollateralList();
     uint256 collateralListLength = collateralList.length;
@@ -1549,9 +1982,8 @@ contract RedeemTest is Fixture, FunctionUtils {
       }
 
       (,,,, uint256 oracleValue) = parallelizer.getOracleValues(collateralList[i]);
-      totalCollateralization += (
-        oracleValue * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18, Math.Rounding.Floor)
-      ) / BASE_18;
+      totalCollateralization += (oracleValue
+          * LibHelpers.convertDecimalTo(collateralBalance, collateral.decimals, 18, Math.Rounding.Floor)) / BASE_18;
     }
   }
 }
