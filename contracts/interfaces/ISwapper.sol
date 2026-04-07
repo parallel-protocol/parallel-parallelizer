@@ -72,6 +72,51 @@ interface ISwapper {
     external
     returns (uint256 amountIn);
 
+  /// @notice Same as `swapExactInput`, but using EIP-3009 authorization for `tokenIn`
+  /// @dev Can be used for both mint and burn operations
+  /// @param amountIn Amount of `tokenIn` to bring
+  /// @param amountOutMin Minimum amount of `tokenOut` to get
+  /// @param tokenIn Token to bring for the swap
+  /// @param tokenOut Token to get out of the swap
+  /// @param to Address to which `tokenOut` must be sent
+  /// @param deadline Timestamp before which the transaction must be executed
+  /// @param authData ABI-encoded AuthorizationParams (from, value, validAfter, validBefore, nonce, v, r, s)
+  /// @return amountOut Amount of `tokenOut` obtained through the swap
+  function swapExactInputWithAuthorization(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address tokenIn,
+    address tokenOut,
+    address to,
+    uint256 deadline,
+    bytes calldata authData
+  )
+    external
+    returns (uint256 amountOut);
+
+  /// @notice Same as `swapExactOutput`, but using EIP-3009 authorization for `tokenIn`
+  /// @dev Can be used for both mint and burn operations
+  /// @dev The authorization must be signed for `amountInMax`. The difference `amountInMax - amountIn` is refunded.
+  /// @param amountOut Amount of `tokenOut` to obtain from the swap
+  /// @param amountInMax Maximum amount of `tokenIn` to bring
+  /// @param tokenIn Token to bring for the swap
+  /// @param tokenOut Token to get out of the swap
+  /// @param to Address to which `tokenOut` must be sent
+  /// @param deadline Timestamp before which the transaction must be executed
+  /// @param authData ABI-encoded AuthorizationParams (from, value, validAfter, validBefore, nonce, v, r, s)
+  /// @return amountIn Amount of `tokenIn` used to perform the swap
+  function swapExactOutputWithAuthorization(
+    uint256 amountOut,
+    uint256 amountInMax,
+    address tokenIn,
+    address tokenOut,
+    address to,
+    uint256 deadline,
+    bytes calldata authData
+  )
+    external
+    returns (uint256 amountIn);
+
   /// @notice Simulates what a call to `swapExactInput` with `amountIn` of `tokenIn` for `tokenOut` would give.
   /// If called right before and at the same block, the `amountOut` outputted by this function is exactly the
   /// amount that will be obtained with `swapExactInput`

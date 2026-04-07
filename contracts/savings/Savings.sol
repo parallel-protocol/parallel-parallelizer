@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
+import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
+
 import "./BaseSavings.sol";
+import "./EIP3009.sol";
 
 /// @title Savings
 /// @author Cooper Labs
@@ -9,12 +12,12 @@ import "./BaseSavings.sol";
 /// @notice In this implementation, assets in the contract increase in value following a `rate` chosen by governance
 /// @dev This contract is an authorized fork of Angle's Savings contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/savings/Savings.sol
-contract Savings is BaseSavings {
+contract Savings is BaseSavings, EIP3009 {
   using SafeERC20 for IERC20Metadata;
   using Math for uint256;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    PARAMETERS / REFERENCES                                             
+    PARAMETERS / REFERENCES
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Inflation rate (per second) in BASE_27
@@ -37,7 +40,7 @@ contract Savings is BaseSavings {
   uint256[48] private __gap;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    EVENTS                                                      
+    EVENTS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   event Accrued(uint256 interest);
@@ -47,7 +50,7 @@ contract Savings is BaseSavings {
   event RateUpdated(uint256 newRate);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INITIALIZATION                                                  
+    INITIALIZATION
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Initializes the contract
@@ -77,7 +80,7 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    MODIFIERS                                                    
+    MODIFIERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Checks whether the whole contract is paused or not
@@ -95,7 +98,7 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CONTRACT LOGIC                                                  
+    CONTRACT LOGIC
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Accrues interest to this contract by minting tokenPs
@@ -125,7 +128,7 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ERC4626 VIEW FUNCTIONS                                              
+    ERC4626 VIEW FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
@@ -134,7 +137,7 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ERC4626 INTERACTION FUNCTIONS                                          
+    ERC4626 INTERACTION FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
@@ -184,7 +187,76 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INTERNAL HELPERS                                                 
+    EIP-3009
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function depositWithAuthorization(
+    uint256 assets,
+    address receiver,
+    address owner,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  )
+    external
+    whenNotPaused
+    returns (uint256 shares)
+  {
+    uint256 newTotalAssets = _accrue();
+    shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Floor);
+    IEIP3009(asset()).transferWithAuthorization(owner, address(this), assets, validAfter, validBefore, nonce, v, r, s);
+    _mint(receiver, shares);
+    emit Deposit(owner, receiver, assets, shares);
+  }
+
+  function redeemWithAuthorization(
+    uint256 shares,
+    address receiver,
+    address owner,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  )
+    external
+    whenNotPaused
+    returns (uint256 assets)
+  {
+    uint256 newTotalAssets = _accrue();
+    assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Floor);
+    _transferWithAuthorization(owner, address(this), shares, validAfter, validBefore, nonce, v, r, s);
+    _burn(address(this), shares);
+    SafeERC20.safeTransfer(IERC20Metadata(asset()), receiver, assets);
+    emit Withdraw(msg.sender, receiver, owner, assets, shares);
+  }
+
+  /// @inheritdoc IEIP3009
+  function transferWithAuthorization(
+    address from, address to, uint256 value, uint256 validAfter,
+    uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s
+  ) external whenNotPaused {
+    _transferWithAuthorization(from, to, value, validAfter, validBefore, nonce, v, r, s);
+  }
+
+  /// @inheritdoc IEIP3009
+  function receiveWithAuthorization(
+    address from, address to, uint256 value, uint256 validAfter,
+    uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s
+  ) external whenNotPaused {
+    _receiveWithAuthorization(from, to, value, validAfter, validBefore, nonce, v, r, s);
+  }
+
+  function cancelAuthorization(address authorizer, bytes32 nonce, uint8 v, bytes32 r, bytes32 s) external {
+    _cancelAuthorization(authorizer, nonce, v, r, s);
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    INTERNAL HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
@@ -229,10 +301,14 @@ contract Savings is BaseSavings {
       : shares.mulDiv(newTotalAssets, supply, rounding);
   }
 
+  function decimals() public view override(ERC4626Upgradeable, ERC20Upgradeable) returns (uint8) {
+    return super.decimals();
+  }
+
   function _setNameAndSymbol(string memory newName, string memory newSymbol) internal virtual { }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    HELPERS                                                     
+    HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Provides an estimated Annual Percentage Rate for base depositors on this contract
@@ -247,7 +323,7 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    GOVERNANCE                                                    
+    GOVERNANCE
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Pauses the contract

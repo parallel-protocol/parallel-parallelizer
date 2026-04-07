@@ -11,6 +11,7 @@ import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { ISwapper } from "contracts/interfaces/ISwapper.sol";
 import { IPermit2, PermitTransferFrom } from "contracts/interfaces/external/permit2/IPermit2.sol";
 import { SignatureTransferDetails, TokenPermissions } from "contracts/interfaces/external/permit2/IPermit2.sol";
+import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
@@ -89,7 +90,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     amountOut =
       mint ? _quoteMintExactInput(collatInfo, amountIn) : _quoteBurnExactInput(tokenOut, collatInfo, amountIn);
     if (amountOut < amountOutMin) revert TooSmallAmountOut();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "");
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", "");
   }
 
   /// @inheritdoc ISwapper
@@ -108,7 +109,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     amountOut = _quoteMintExactInput(collatInfo, amountIn);
     if (amountOut < amountOutMin) revert TooSmallAmountOut();
     permitData = _buildPermitTransferPayload(amountIn, amountIn, tokenIn, deadline, permitData, collatInfo);
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, true, collatInfo, permitData);
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, true, collatInfo, permitData, "");
   }
 
   /// @inheritdoc ISwapper
@@ -130,7 +131,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     amountIn =
       mint ? _quoteMintExactOutput(collatInfo, amountOut) : _quoteBurnExactOutput(tokenOut, collatInfo, amountOut);
     if (amountIn > amountInMax) revert TooBigAmountIn();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "");
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", "");
   }
 
   /// @inheritdoc ISwapper
@@ -149,7 +150,49 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     amountIn = _quoteMintExactOutput(collatInfo, amountOut);
     if (amountIn > amountInMax) revert TooBigAmountIn();
     permitData = _buildPermitTransferPayload(amountIn, amountInMax, tokenIn, deadline, permitData, collatInfo);
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, true, collatInfo, permitData);
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, true, collatInfo, permitData, "");
+  }
+
+  /// @inheritdoc ISwapper
+  function swapExactInputWithAuthorization(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address tokenIn,
+    address tokenOut,
+    address to,
+    uint256 deadline,
+    bytes memory authData
+  )
+    external
+    returns (uint256 amountOut)
+  {
+    _validateAuthorizationValue(authData, amountIn);
+    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
+    amountOut =
+      mint ? _quoteMintExactInput(collatInfo, amountIn) : _quoteBurnExactInput(tokenOut, collatInfo, amountIn);
+    if (amountOut < amountOutMin) revert TooSmallAmountOut();
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", authData);
+  }
+
+  /// @inheritdoc ISwapper
+  function swapExactOutputWithAuthorization(
+    uint256 amountOut,
+    uint256 amountInMax,
+    address tokenIn,
+    address tokenOut,
+    address to,
+    uint256 deadline,
+    bytes memory authData
+  )
+    external
+    returns (uint256 amountIn)
+  {
+    _validateAuthorizationValue(authData, amountInMax);
+    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
+    amountIn =
+      mint ? _quoteMintExactOutput(collatInfo, amountOut) : _quoteBurnExactOutput(tokenOut, collatInfo, amountOut);
+    if (amountIn > amountInMax) revert TooBigAmountIn();
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", authData);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -200,7 +243,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     address to,
     bool mint,
     Collateral storage collatInfo,
-    bytes memory permitData
+    bytes memory permitData,
+    bytes memory authData
   )
     internal
     nonReentrant
@@ -216,6 +260,11 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         ts.normalizedStables = ts.normalizedStables + changeAmount;
         if (permitData.length > 0) {
           PERMIT_2.functionCall(permitData);
+        } else if (authData.length > 0) {
+          _executeAuthorization(tokenIn, amountIn, authData);
+          if (collatInfo.isManaged > 0) {
+            IERC20(tokenIn).safeTransfer(LibManager.transferRecipient(collatInfo.managerData.config), amountIn);
+          }
         } else if (collatInfo.isManaged > 0) {
           IERC20(tokenIn)
             .safeTransferFrom(msg.sender, LibManager.transferRecipient(collatInfo.managerData.config), amountIn);
@@ -237,7 +286,12 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         // from this collateral
         collatInfo.normalizedStables = collatInfo.normalizedStables - uint216(changeAmount);
         ts.normalizedStables = ts.normalizedStables - changeAmount;
-        ITokenP(tokenIn).burnSelf(amountIn, msg.sender);
+        if (authData.length > 0) {
+          _executeAuthorization(tokenIn, amountIn, authData);
+          ITokenP(tokenIn).burnSelf(amountIn, address(this));
+        } else {
+          ITokenP(tokenIn).burnSelf(amountIn, msg.sender);
+        }
         if (collatInfo.isManaged > 0) {
           LibManager.release(tokenOut, to, amountOut, collatInfo.managerData.config);
         } else {
@@ -245,6 +299,28 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         }
       }
       emit Swap(tokenIn, tokenOut, amountIn, amountOut, msg.sender, to);
+    }
+  }
+
+  /// @notice Validates that the authorization value matches the expected swap amount
+  function _validateAuthorizationValue(bytes memory authData, uint256 expectedValue) internal pure {
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value != expectedValue) revert InvalidSwap();
+  }
+
+  /// @notice Executes an EIP-3009 receiveWithAuthorization to address(this) and refunds excess if any
+  /// @param token The token to receive via authorization
+  /// @param amountNeeded The actual amount needed for the swap
+  /// @param authData ABI-encoded AuthorizationParams
+  function _executeAuthorization(address token, uint256 amountNeeded, bytes memory authData) internal {
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value < amountNeeded) revert InvalidSwap();
+    IEIP3009(token).receiveWithAuthorization(
+      params.from, address(this), params.value, params.validAfter,
+      params.validBefore, params.nonce, params.v, params.r, params.s
+    );
+    if (params.value > amountNeeded) {
+      IERC20(token).safeTransfer(params.from, params.value - amountNeeded);
     }
   }
 

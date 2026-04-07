@@ -8,6 +8,7 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { IRedeemer } from "contracts/interfaces/IRedeemer.sol";
+import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
 import { LibDiamond } from "../libraries/LibDiamond.sol";
@@ -69,7 +70,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, receiver, deadline, minAmountOuts, new address[](0));
+    return _redeem(amount, msg.sender, receiver, deadline, minAmountOuts, new address[](0));
   }
 
   /// @inheritdoc IRedeemer
@@ -85,7 +86,27 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens);
+    return _redeem(amount, msg.sender, receiver, deadline, minAmountOuts, forfeitTokens);
+  }
+
+  /// @inheritdoc IRedeemer
+  function redeemWithAuthorization(
+    uint256 amount,
+    address receiver,
+    uint256 deadline,
+    uint256[] memory minAmountOuts,
+    bytes memory authData
+  )
+    external
+    returns (address[] memory tokens, uint256[] memory amounts)
+  {
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    IEIP3009(address(ts.tokenP)).receiveWithAuthorization(
+      params.from, address(this), params.value, params.validAfter,
+      params.validBefore, params.nonce, params.v, params.r, params.s
+    );
+    return _redeem(amount, address(this), receiver, deadline, minAmountOuts, new address[](0));
   }
 
   /// @inheritdoc IRedeemer
@@ -114,6 +135,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   /// @notice Internal function of the `redeem` function in the `Redeemer` contract
   function _redeem(
     uint256 amount,
+    address from,
     address to,
     uint256 deadline,
     uint256[] memory minAmountOuts,
@@ -128,37 +150,33 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     if (ts.isRedemptionLive == 0) revert Paused();
     if (block.timestamp > deadline) revert TooLate();
 
-    uint256[] memory subCollateralsTracker;
-    (tokens, amounts, subCollateralsTracker) = _quoteRedemptionCurve(amount);
-    // Check that the provided slippage tokens length is identical to the redeem one
-    uint256 amountsLength = amounts.length;
-    // If a collateral is added and another one is removed after a redeem transaction is sent, the tokens
-    // corresponding to the `minAmountOuts` given may not correspond to the actual collateral `tokens` of
-    // the protocol
-    if (amountsLength != minAmountOuts.length) revert InvalidLengths();
-    // Updating the normalizer enables to simultaneously and proportionally reduce the amount
-    // of stablecoins issued from each collateral without having to loop through each of them
-    _updateNormalizer(amount, false);
+    {
+      uint256[] memory subCollateralsTracker;
+      (tokens, amounts, subCollateralsTracker) = _quoteRedemptionCurve(amount);
+      uint256 amountsLength = amounts.length;
+      if (amountsLength != minAmountOuts.length) revert InvalidLengths();
+      _updateNormalizer(amount, false);
 
-    ITokenP(ts.tokenP).burnSelf(amount, msg.sender);
+      ITokenP(ts.tokenP).burnSelf(amount, from);
 
-    address[] memory collateralListMem = ts.collateralList;
-    uint256 indexCollateral;
-    for (uint256 i; i < amountsLength; ++i) {
-      if (amounts[i] < minAmountOuts[i]) revert TooSmallAmountOut();
-      // If a token is in the `forfeitTokens` list, then it is not sent as part of the redemption process
-      if (amounts[i] > 0 && LibHelpers.checkList(tokens[i], forfeitTokens) < 0) {
-        Collateral storage collatInfo = ts.collaterals[collateralListMem[indexCollateral]];
-        if (collatInfo.onlyWhitelisted > 0 && !LibWhitelist.checkWhitelist(collatInfo.whitelistData, to)) {
-          revert NotWhitelisted();
+      address[] memory collateralListMem = ts.collateralList;
+      uint256 indexCollateral;
+      for (uint256 i; i < amountsLength; ++i) {
+        if (amounts[i] < minAmountOuts[i]) revert TooSmallAmountOut();
+        // If a token is in the `forfeitTokens` list, then it is not sent as part of the redemption process
+        if (amounts[i] > 0 && LibHelpers.checkList(tokens[i], forfeitTokens) < 0) {
+          Collateral storage collatInfo = ts.collaterals[collateralListMem[indexCollateral]];
+          if (collatInfo.onlyWhitelisted > 0 && !LibWhitelist.checkWhitelist(collatInfo.whitelistData, to)) {
+            revert NotWhitelisted();
+          }
+          if (collatInfo.isManaged > 0) {
+            LibManager.release(tokens[i], to, amounts[i], collatInfo.managerData.config);
+          } else {
+            IERC20(tokens[i]).safeTransfer(to, amounts[i]);
+          }
         }
-        if (collatInfo.isManaged > 0) {
-          LibManager.release(tokens[i], to, amounts[i], collatInfo.managerData.config);
-        } else {
-          IERC20(tokens[i]).safeTransfer(to, amounts[i]);
-        }
+        if (subCollateralsTracker[indexCollateral] - 1 <= i) ++indexCollateral;
       }
-      if (subCollateralsTracker[indexCollateral] - 1 <= i) ++indexCollateral;
     }
     emit Redeemed(amount, tokens, amounts, forfeitTokens, msg.sender, to);
   }

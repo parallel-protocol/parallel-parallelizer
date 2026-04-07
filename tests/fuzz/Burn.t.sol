@@ -1509,4 +1509,97 @@ contract BurnTest is Fixture, FunctionUtils {
     vm.stopPrank();
     return true;
   }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    EIP-3009 SWAP WITH AUTHORIZATION
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function test_SwapExactInputWithAuthorization_Mint() public {
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), alice, mintAmount);
+
+    bytes memory authData =
+      _buildAuthData(1, address(eurA), alice, address(parallelizer), mintAmount, bytes32("mint1"));
+
+    // bob relays alice's signed authorization
+    vm.prank(bob);
+    uint256 amountOut = parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData
+    );
+
+    assertGt(amountOut, 0);
+    assertGt(tokenP.balanceOf(alice), 0);
+    assertEq(IERC20(address(eurA)).balanceOf(alice), 0);
+  }
+
+  function test_SwapExactOutputWithAuthorization_Mint() public {
+    uint256 maxIn = 200 * BASE_6;
+    deal(address(eurA), alice, maxIn);
+
+    bytes memory authData =
+      _buildAuthData(1, address(eurA), alice, address(parallelizer), maxIn, bytes32("mint2"));
+
+    vm.prank(bob);
+    uint256 amountIn = parallelizer.swapExactOutputWithAuthorization(
+      50 * BASE_18, maxIn, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData
+    );
+
+    assertLe(amountIn, maxIn);
+    assertGt(tokenP.balanceOf(alice), 0);
+    assertEq(IERC20(address(eurA)).balanceOf(alice), maxIn - amountIn);
+  }
+
+  function test_SwapExactInputWithAuthorization_Burn() public {
+    _mintExactInput(alice, address(eurA), 100 * BASE_6, 0);
+    uint256 tokenPBal = tokenP.balanceOf(alice);
+    uint256 burnAmount = tokenPBal / 2;
+
+    bytes memory authData =
+      _buildAuthData(1, address(tokenP), alice, address(parallelizer), burnAmount, bytes32("burn1"));
+
+    vm.prank(bob);
+    uint256 amountOut = parallelizer.swapExactInputWithAuthorization(
+      burnAmount, 0, address(tokenP), address(eurA), alice, block.timestamp + 1 hours, authData
+    );
+
+    assertGt(amountOut, 0);
+    assertEq(tokenP.balanceOf(alice), tokenPBal - burnAmount);
+  }
+
+  function test_RevertWhen_AuthorizationValueMismatch() public {
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), alice, mintAmount);
+
+    bytes memory authData =
+      _buildAuthData(1, address(eurA), alice, address(parallelizer), mintAmount / 2, bytes32("bad1"));
+
+    vm.prank(bob);
+    vm.expectRevert(InvalidSwap.selector);
+    parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData
+    );
+  }
+
+  function test_RevertWhen_AuthorizationReusedNonce() public {
+    uint256 mintAmount = 50 * BASE_6;
+    deal(address(eurA), alice, mintAmount * 2);
+    bytes32 nonce = bytes32("reuse1");
+
+    bytes memory authData1 =
+      _buildAuthData(1, address(eurA), alice, address(parallelizer), mintAmount, nonce);
+
+    vm.prank(bob);
+    parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData1
+    );
+
+    bytes memory authData2 =
+      _buildAuthData(1, address(eurA), alice, address(parallelizer), mintAmount, nonce);
+
+    vm.prank(bob);
+    vm.expectRevert();
+    parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData2
+    );
+  }
 }
