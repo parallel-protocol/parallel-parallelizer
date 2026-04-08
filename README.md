@@ -107,7 +107,7 @@ Some changed has been made to the original Angle's Transmuter:
 | sUSDp (Savings)        | [0xe8a3DA6f5ed1cf04c58ac7f6A7383641e877517b](https:///sonicscan.org/address/0xe8a3DA6f5ed1cf04c58ac7f6A7383641e877517b) |
 | GenericRebalancer USDp | [0x120805265fA944834DC6e930De2995768806a9d2](https:///sonicscan.org/address/0x120805265fA944834DC6e930De2995768806a9d2) |
 
-#### HyperEVM
+### HyperEVM
 
 | Contract               | Explore                                                                                                                     |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -123,7 +123,7 @@ Some changed has been made to the original Angle's Transmuter:
 | sUSDp (Savings)        | [0x9B3a8f7CEC208e247d97dEE13313690977e24459](https:///www.hyperscan.com/address/0x9B3a8f7CEC208e247d97dEE13313690977e24459) |
 | GenericRebalancer USDp | [0x57770C1721Eb35509f38210A935c8b1911db7E0e](https:///www.hyperscan.com/address/0x57770C1721Eb35509f38210A935c8b1911db7E0e) |
 
-#### Avalanche
+### Avalanche
 
 | Contract               | Explore                                                                                                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
