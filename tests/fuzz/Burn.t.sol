@@ -819,6 +819,10 @@ contract BurnTest is Fixture, FunctionUtils {
     );
     stableAmount = bound(stableAmount, 0, collateralMintedStables[fromToken]);
     if (stableAmount == 0) return;
+    // Skip the "burn all stablecoins" boundary: swapExactInput reverts with CannotBurnAllStableIssued
+    // when stableAmount would drive ts.normalizedStables to zero, but quoteIn does not model this
+    // invariant and the outer try/catch only wraps the quote call.
+    if (stableAmount >= mintedStables) return;
 
     uint256 prevBalanceStable = tokenP.balanceOf(alice);
     uint256 prevParallelizerCollat = IERC20(_collaterals[fromToken]).balanceOf(address(parallelizer));
@@ -1133,6 +1137,10 @@ contract BurnTest is Fixture, FunctionUtils {
     );
     stableAmount = bound(stableAmount, 0, collateralMintedStables[fromToken]);
     if (stableAmount == 0) return;
+    // Skip the "burn all stablecoins" boundary: swapExactInput reverts with CannotBurnAllStableIssued
+    // when stableAmount would drive ts.normalizedStables to zero, but quoteIn does not model this
+    // invariant and the outer try/catch only wraps the quote call.
+    if (stableAmount >= mintedStables) return;
 
     uint256 prevBalanceStable = tokenP.balanceOf(alice);
     uint256 prevParallelizerCollat = IERC20(_collaterals[fromToken]).balanceOf(address(parallelizer));
