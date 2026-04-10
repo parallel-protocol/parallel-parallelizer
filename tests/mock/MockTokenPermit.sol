@@ -145,12 +145,40 @@ contract MockTokenPermit is ERC20Permit {
   )
     external
   {
+    _receiveWithAuthorization(from, to, value, validAfter, validBefore, nonce, abi.encodePacked(r, s, v));
+  }
+
+  function receiveWithAuthorization(
+    address from,
+    address to,
+    uint256 value,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    bytes calldata signature
+  )
+    external
+  {
+    _receiveWithAuthorization(from, to, value, validAfter, validBefore, nonce, signature);
+  }
+
+  function _receiveWithAuthorization(
+    address from,
+    address to,
+    uint256 value,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    bytes memory signature
+  )
+    internal
+  {
     require(to == msg.sender, "caller must be the payee");
     _requireValidAuthorization(from, nonce, validAfter, validBefore);
     _requireValidSignature(
       from,
       keccak256(abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce)),
-      abi.encodePacked(r, s, v)
+      signature
     );
     _authorizationStates[from][nonce] = true;
     emit AuthorizationUsed(from, nonce);

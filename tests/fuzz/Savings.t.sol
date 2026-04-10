@@ -5,6 +5,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC20Errors } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IAccessManaged } from "contracts/utils/AccessManagedUpgradeable.sol";
+import { EIP3009 } from "contracts/savings/EIP3009.sol";
 
 import { UD60x18, ud, pow, powu, unwrap } from "@prb/math/UD60x18.sol";
 
@@ -798,6 +799,84 @@ contract SavingsTest is Fixture, FunctionUtils {
     return (amount, shares, receiver);
   }
 
+  /// @notice Builds the two signatures required by `Savings.depositWithAuthorization`:
+  /// - the outer Savings-domain signature binding `receiver`, and
+  /// - the inner underlying-token EIP-3009 `ReceiveWithAuthorization`.
+  function _signDepositAuth(
+    uint256 privateKey,
+    address owner,
+    address receiver,
+    uint256 assets,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce
+  )
+    internal
+    view
+    returns (bytes memory savingsSig, bytes memory tokenSig)
+  {
+    // Outer: Savings-domain DepositWithAuthorization (binds `vault` and `receiver`)
+    bytes32 savingsDigest = MessageHashUtils.toTypedDataHash(
+      saving.DOMAIN_SEPARATOR(),
+      keccak256(
+        abi.encode(
+          saving.DEPOSIT_WITH_AUTHORIZATION_TYPEHASH(),
+          address(saving),
+          owner,
+          receiver,
+          assets,
+          validAfter,
+          validBefore,
+          nonce
+        )
+      )
+    );
+    (uint8 sV, bytes32 sR, bytes32 sS) = vm.sign(privateKey, savingsDigest);
+    savingsSig = abi.encodePacked(sR, sS, sV);
+
+    // Inner: underlying-token EIP-3009 ReceiveWithAuthorization
+    bytes32 tokenDigest = MessageHashUtils.toTypedDataHash(
+      MockTokenPermit(address(tokenP)).DOMAIN_SEPARATOR(),
+      keccak256(
+        abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, owner, address(saving), assets, validAfter, validBefore, nonce)
+      )
+    );
+    (uint8 tV, bytes32 tR, bytes32 tS) = vm.sign(privateKey, tokenDigest);
+    tokenSig = abi.encodePacked(tR, tS, tV);
+  }
+
+  /// @notice Signs a `Savings.redeemWithAuthorization` intent against the Savings EIP-712 domain.
+  function _signRedeemAuth(
+    uint256 privateKey,
+    address owner,
+    address receiver,
+    uint256 shares,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce
+  )
+    internal
+    view
+    returns (uint8 v, bytes32 r, bytes32 s)
+  {
+    bytes32 digest = MessageHashUtils.toTypedDataHash(
+      saving.DOMAIN_SEPARATOR(),
+      keccak256(
+        abi.encode(
+          saving.REDEEM_WITH_AUTHORIZATION_TYPEHASH(),
+          address(saving),
+          owner,
+          receiver,
+          shares,
+          validAfter,
+          validBefore,
+          nonce
+        )
+      )
+    );
+    (v, r, s) = vm.sign(privateKey, digest);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     EIP-3009
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -806,18 +885,14 @@ contract SavingsTest is Fixture, FunctionUtils {
     uint256 amount = 100 * BASE_18;
     deal(address(tokenP), alice, amount);
 
-    bytes32 domainSeparator = MockTokenPermit(address(tokenP)).DOMAIN_SEPARATOR();
-    bytes32 transferTypehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
-    bytes32 structHash = keccak256(
-      abi.encode(transferTypehash, alice, address(saving), amount, 0, block.timestamp + 1 hours, bytes32("dep1"))
-    );
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+    bytes32 nonce = bytes32("dep1");
+    uint256 deadline = block.timestamp + 1 hours;
+    (bytes memory savingsSig, bytes memory tokenSig) = _signDepositAuth(1, alice, alice, amount, 0, deadline, nonce);
 
     // bob relays alice's signed authorization
     vm.prank(bob);
-    uint256 shares = saving.depositWithAuthorization(
-      amount, alice, alice, 0, block.timestamp + 1 hours, bytes32("dep1"), v, r, s
-    );
+    uint256 shares =
+      saving.depositWithAuthorization(amount, alice, alice, 0, deadline, nonce, savingsSig, tokenSig);
 
     assertGt(shares, 0);
     assertGt(saving.balanceOf(alice), 0);
@@ -828,19 +903,34 @@ contract SavingsTest is Fixture, FunctionUtils {
     uint256 amount = 100 * BASE_18;
     deal(address(tokenP), alice, amount);
 
-    bytes32 domainSeparator = MockTokenPermit(address(tokenP)).DOMAIN_SEPARATOR();
-    bytes32 transferTypehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
-    bytes32 structHash = keccak256(
-      abi.encode(transferTypehash, alice, address(saving), amount, 0, block.timestamp + 1 hours, bytes32("dep2"))
-    );
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+    bytes32 nonce = bytes32("dep2");
+    uint256 deadline = block.timestamp + 1 hours;
+    (bytes memory savingsSig, bytes memory tokenSig) = _signDepositAuth(1, alice, alice, amount, 0, deadline, nonce);
 
     vm.prank(guardian);
     saving.togglePause();
 
     vm.prank(bob);
     vm.expectRevert(Errors.Paused.selector);
-    saving.depositWithAuthorization(amount, alice, alice, 0, block.timestamp + 1 hours, bytes32("dep2"), v, r, s);
+    saving.depositWithAuthorization(amount, alice, alice, 0, deadline, nonce, savingsSig, tokenSig);
+  }
+
+  /// @notice Alice signs a deposit to herself. A relayer tries to front-run by swapping `receiver`
+  /// to an attacker-controlled address. The outer Savings signature binds `receiver`, so the
+  /// signature recovery yields a different address and the call reverts.
+  function test_DepositWithAuthorization_RevertWhen_ReceiverFrontRun() public {
+    uint256 amount = 100 * BASE_18;
+    deal(address(tokenP), alice, amount);
+
+    bytes32 nonce = bytes32("dep_frontrun");
+    uint256 deadline = block.timestamp + 1 hours;
+    // Alice signs with receiver = alice
+    (bytes memory savingsSig, bytes memory tokenSig) = _signDepositAuth(1, alice, alice, amount, 0, deadline, nonce);
+
+    // Relayer submits with receiver = bob
+    vm.prank(bob);
+    vm.expectRevert(EIP3009.InvalidSignature.selector);
+    saving.depositWithAuthorization(amount, bob, alice, 0, deadline, nonce, savingsSig, tokenSig);
   }
 
   function test_RedeemWithAuthorization_Savings() public {
@@ -849,26 +939,33 @@ contract SavingsTest is Fixture, FunctionUtils {
     uint256 shares = saving.balanceOf(alice);
     uint256 redeemShares = shares / 2;
 
-    // Sign authorization on Savings shares (the savings token) for the savings contract
-    bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
-    // TRANSFER_WITH_AUTHORIZATION typehash
-    bytes32 typehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
-    bytes32 structHash = keccak256(
-      abi.encode(
-        typehash, alice, address(saving), redeemShares, 0, block.timestamp + 1 hours, bytes32("redeem_sav1")
-      )
-    );
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-      1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash)
-    );
+    bytes32 nonce = bytes32("redeem_sav1");
+    uint256 deadline = block.timestamp + 1 hours;
+    (uint8 v, bytes32 r, bytes32 s) = _signRedeemAuth(1, alice, alice, redeemShares, 0, deadline, nonce);
 
     vm.prank(bob);
-    uint256 assets = saving.redeemWithAuthorization(
-      redeemShares, alice, alice, 0, block.timestamp + 1 hours, bytes32("redeem_sav1"), v, r, s
-    );
+    uint256 assets = saving.redeemWithAuthorization(redeemShares, alice, alice, 0, deadline, nonce, v, r, s);
 
     assertGt(assets, 0);
     assertEq(saving.balanceOf(alice), shares - redeemShares);
+  }
+
+  /// @notice Alice signs a redeem to herself. A relayer tries to front-run by swapping `receiver`
+  /// to bob. The signature binds `receiver`, so the outer call reverts.
+  function test_RedeemWithAuthorization_Savings_RevertWhen_ReceiverFrontRun() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 redeemShares = shares / 2;
+
+    bytes32 nonce = bytes32("redeem_frontrun");
+    uint256 deadline = block.timestamp + 1 hours;
+    // Alice signs with receiver = alice
+    (uint8 v, bytes32 r, bytes32 s) = _signRedeemAuth(1, alice, alice, redeemShares, 0, deadline, nonce);
+
+    // Relayer submits with receiver = bob
+    vm.prank(bob);
+    vm.expectRevert(EIP3009.InvalidSignature.selector);
+    saving.redeemWithAuthorization(redeemShares, bob, alice, 0, deadline, nonce, v, r, s);
   }
 
   function test_TransferWithAuthorization_Savings() public {
@@ -877,10 +974,8 @@ contract SavingsTest is Fixture, FunctionUtils {
     uint256 transferAmount = shares / 2;
 
     bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
-    // TRANSFER_WITH_AUTHORIZATION typehash
-    bytes32 typehash = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
     bytes32 structHash = keccak256(
-      abi.encode(typehash, alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"))
+      abi.encode(TRANSFER_WITH_AUTHORIZATION_TYPEHASH, alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"))
     );
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(
       1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash)

@@ -180,6 +180,9 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
   bytes32 internal constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH =
     0xd099cc98ef71107a616c4f0f941f04c322d8e254fe26b3c6668db87aae413de8;
 
+  bytes32 internal constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH =
+    0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267;
+
   function _buildAuthData(
     uint256 privateKey,
     address token,

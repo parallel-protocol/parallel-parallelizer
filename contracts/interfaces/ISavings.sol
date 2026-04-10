@@ -7,6 +7,11 @@ import { IEIP3009 } from "./external/IEIP3009.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 interface ISavings is IEIP3009 {
+  /// @notice Deposit the underlying asset on behalf of `owner` and mint shares to `receiver`.
+  /// @param savingsSignature Signature over `DEPOSIT_WITH_AUTHORIZATION_TYPEHASH` against the
+  /// Savings contract's EIP-712 domain, binding `receiver` to prevent relayer front-running.
+  /// @param tokenSignature Standard EIP-3009 `ReceiveWithAuthorization` signature against the
+  /// underlying asset's EIP-712 domain, authorizing the transfer of `assets` into this contract.
   function depositWithAuthorization(
     uint256 assets,
     address receiver,
@@ -14,13 +19,15 @@ interface ISavings is IEIP3009 {
     uint256 validAfter,
     uint256 validBefore,
     bytes32 nonce,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
+    bytes calldata savingsSignature,
+    bytes calldata tokenSignature
   )
     external
     returns (uint256 shares);
 
+  /// @notice Burn `shares` from `owner` and send the underlying asset to `receiver`.
+  /// @dev Signature is over `REDEEM_WITH_AUTHORIZATION_TYPEHASH` against the Savings contract's
+  /// EIP-712 domain and binds `receiver` to prevent relayer front-running.
   function redeemWithAuthorization(
     uint256 shares,
     address receiver,
@@ -31,6 +38,19 @@ interface ISavings is IEIP3009 {
     uint8 v,
     bytes32 r,
     bytes32 s
+  )
+    external
+    returns (uint256 assets);
+
+  /// @notice EIP-1271 compatible variant of `redeemWithAuthorization`.
+  function redeemWithAuthorization(
+    uint256 shares,
+    address receiver,
+    address owner,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    bytes calldata signature
   )
     external
     returns (uint256 assets);
