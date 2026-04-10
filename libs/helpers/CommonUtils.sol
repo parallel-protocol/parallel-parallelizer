@@ -6,7 +6,6 @@ import { Test } from "@forge-std/Test.sol";
 import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import { JsonReader } from "./JsonReader.sol";
-import { strings } from "@stringutils/strings.sol";
 import { ContractType, Constants } from "@helpers/Constants.sol";
 
 /// @title CommonUtils
@@ -14,7 +13,6 @@ import { ContractType, Constants } from "@helpers/Constants.sol";
 /// @dev This contract is an authorized fork of Angle's `CommonUtils` contract
 /// https://github.com/AngleProtocol/utils/blob/main/src/CommonUtils.sol
 contract CommonUtils is CommonBase, JsonReader {
-  using strings for *;
 
   bytes32 private constant EUR_HASH = keccak256(abi.encodePacked("EUR"));
   bytes32 private constant USD_HASH = keccak256(abi.encodePacked("USD"));
@@ -252,47 +250,27 @@ contract CommonUtils is CommonBase, JsonReader {
     return _generateSelectors(_facetName, 3);
   }
 
+  /// @dev Pulls a facet's function selectors via `forge inspect <name> methodIdentifiers --json`,
+  /// which returns a stable JSON object keyed by function signature. Computing the selector from
+  /// `keccak256(signature)` avoids any dependency on the `forge inspect` table format that has
+  /// changed across versions and was the root cause of intermittent CI failures in the diamond
+  /// loupe tests. The command is wrapped in `sh -c` so we can redirect stderr — Foundry prints a
+  /// `Warning: Found unknown 'interfaces' config` line in some environments which would otherwise
+  /// pollute stdout and break JSON parsing.
   function _generateSelectors(string memory _facetName, uint256 retries) internal returns (bytes4[] memory selectors) {
-    //get string of contract methods
-    string[] memory cmd = new string[](4);
-    cmd[0] = "forge";
-    cmd[1] = "inspect";
-    cmd[2] = _facetName;
-    cmd[3] = "methods";
+    string[] memory cmd = new string[](3);
+    cmd[0] = "sh";
+    cmd[1] = "-c";
+    cmd[2] = string.concat("forge inspect ", _facetName, " methodIdentifiers --json 2>/dev/null");
     bytes memory res = vm.ffi(cmd);
-    string memory st = string(res);
-    // if empty, try again
-    if (bytes(st).length == 0) {
-      if (retries != 0) {
-        return _generateSelectors(_facetName, retries - 1);
-      }
+    if (res.length == 0 || res[0] != bytes1("{")) {
+      if (retries != 0) return _generateSelectors(_facetName, retries - 1);
+      return new bytes4[](0);
     }
-    // convert to slice
-    strings.slice memory s = st.toSlice();
-
-    // define delimiters
-    strings.slice memory rowDelim = "\n".toSlice();
-    // strings.slice memory partDelim = "|".toSlice();
-    strings.slice memory spaceDelim = " ".toSlice();
-
-    // remove first line
-    s.split(rowDelim);
-
-    // determine number of methods
-    uint256 count = s.count(rowDelim);
-    count = count > 2 ? (count - 1) / 2 : count;
-    selectors = new bytes4[](count);
-    // remove column headers and separator lines
-    s.split(rowDelim);
-    s.split(rowDelim);
-
-    for (uint256 i = 0; i < selectors.length; ++i) {
-      strings.slice memory currentLine = s.split(rowDelim);
-      // isolate method by removing space around it
-      currentLine.split(spaceDelim);
-      selectors[i] = bytes4(currentLine.split(spaceDelim).keccak());
-      s.split(rowDelim);
+    string[] memory signatures = vm.parseJsonKeys(string(res), "$");
+    selectors = new bytes4[](signatures.length);
+    for (uint256 i = 0; i < signatures.length; ++i) {
+      selectors[i] = bytes4(keccak256(bytes(signatures[i])));
     }
-    return selectors;
   }
 }
