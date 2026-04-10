@@ -15,15 +15,18 @@ pragma solidity 0.8.28;
 /// `userSalt`.
 library LibAuthorization {
   bytes32 internal constant SWAP_EXACT_INPUT_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "SwapExactInputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountIn,uint256 amountOutMin,address to,uint256 deadline,bytes32 userSalt)"
+    "SwapExactInputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountIn,"
+    "uint256 amountOutMin,address to,uint256 deadline,bytes32 userSalt)"
   );
 
   bytes32 internal constant SWAP_EXACT_OUTPUT_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "SwapExactOutputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountOut,uint256 amountInMax,address to,uint256 deadline,bytes32 userSalt)"
+    "SwapExactOutputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountOut,"
+    "uint256 amountInMax,address to,uint256 deadline,bytes32 userSalt)"
   );
 
   bytes32 internal constant REDEEM_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,bytes32 minAmountOutsHash,bytes32 userSalt)"
+    "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,"
+    "bytes32 minAmountOutsHash,bytes32 userSalt)"
   );
 
   function computeSwapExactInputNonce(

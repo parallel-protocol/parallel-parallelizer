@@ -219,15 +219,18 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   bytes32 internal constant PARALLELIZER_SWAP_EXACT_INPUT_TYPEHASH = keccak256(
-    "SwapExactInputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountIn,uint256 amountOutMin,address to,uint256 deadline,bytes32 userSalt)"
+    "SwapExactInputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountIn,"
+    "uint256 amountOutMin,address to,uint256 deadline,bytes32 userSalt)"
   );
 
   bytes32 internal constant PARALLELIZER_SWAP_EXACT_OUTPUT_TYPEHASH = keccak256(
-    "SwapExactOutputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountOut,uint256 amountInMax,address to,uint256 deadline,bytes32 userSalt)"
+    "SwapExactOutputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountOut,"
+    "uint256 amountInMax,address to,uint256 deadline,bytes32 userSalt)"
   );
 
   bytes32 internal constant PARALLELIZER_REDEEM_TYPEHASH = keccak256(
-    "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,bytes32 minAmountOutsHash,bytes32 userSalt)"
+    "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,"
+    "bytes32 minAmountOutsHash,bytes32 userSalt)"
   );
 
   function _buildSwapExactInputAuth(
@@ -335,8 +338,11 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
     returns (bytes memory)
   {
     uint256 validBefore = block.timestamp + 1 hours;
-    bytes32 structHash =
-      keccak256(abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, address(parallelizer), value, 0, validBefore, signedNonce));
+    bytes32 structHash = keccak256(
+      abi.encode(
+        RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, address(parallelizer), value, 0, validBefore, signedNonce
+      )
+    );
     bytes32 digest = MessageHashUtils.toTypedDataHash(MockTokenPermit(token).DOMAIN_SEPARATOR(), structHash);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
     return abi.encode(

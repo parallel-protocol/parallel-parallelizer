@@ -13,11 +13,13 @@ import { EIP3009 } from "./EIP3009.sol";
 /// included so wallets displaying the typed data surface the target contract explicitly.
 abstract contract SavingsEIP3009 is EIP3009 {
   bytes32 public constant DEPOSIT_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "DepositWithAuthorization(address vault,address owner,address receiver,uint256 assets,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    "DepositWithAuthorization(address vault,address owner,address receiver,uint256 assets,"
+    "uint256 validAfter,uint256 validBefore,bytes32 nonce)"
   );
 
   bytes32 public constant REDEEM_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "RedeemWithAuthorization(address vault,address owner,address receiver,uint256 shares,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    "RedeemWithAuthorization(address vault,address owner,address receiver,uint256 shares,"
+    "uint256 validAfter,uint256 validBefore,bytes32 nonce)"
   );
 
   error InvalidVault();

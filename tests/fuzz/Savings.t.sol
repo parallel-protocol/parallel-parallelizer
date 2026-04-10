@@ -1003,7 +1003,15 @@ contract SavingsTest is Fixture, FunctionUtils {
 
     bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
     bytes32 structHash = keccak256(
-      abi.encode(TRANSFER_WITH_AUTHORIZATION_TYPEHASH, alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"))
+      abi.encode(
+        TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+        alice,
+        bob,
+        transferAmount,
+        0,
+        block.timestamp + 1 hours,
+        bytes32("xfer1")
+      )
     );
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(
       1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash)
