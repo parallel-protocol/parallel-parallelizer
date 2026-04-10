@@ -799,9 +799,8 @@ contract SavingsTest is Fixture, FunctionUtils {
     return (amount, shares, receiver);
   }
 
-  /// @notice Builds the two signatures required by `Savings.depositWithAuthorization`:
-  /// - the outer Savings-domain signature binding `receiver`, and
-  /// - the inner underlying-token EIP-3009 `ReceiveWithAuthorization`.
+  /// @notice Signs both the outer Savings-domain intent and the inner underlying-token EIP-3009
+  /// authorization required by `Savings.depositWithAuthorization`.
   function _signDepositAuth(
     uint256 privateKey,
     address owner,
@@ -815,8 +814,25 @@ contract SavingsTest is Fixture, FunctionUtils {
     view
     returns (bytes memory savingsSig, bytes memory tokenSig)
   {
-    // Outer: Savings-domain DepositWithAuthorization (binds `vault` and `receiver`)
-    bytes32 savingsDigest = MessageHashUtils.toTypedDataHash(
+    savingsSig = _signSavingsDepositAuth(privateKey, owner, receiver, assets, validAfter, validBefore, nonce);
+    tokenSig = _signTokenReceiveAuth(privateKey, owner, assets, validAfter, validBefore, nonce);
+  }
+
+  /// @dev Split to keep each frame under the stack-too-deep threshold without via-ir.
+  function _signSavingsDepositAuth(
+    uint256 privateKey,
+    address owner,
+    address receiver,
+    uint256 assets,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce
+  )
+    private
+    view
+    returns (bytes memory sig)
+  {
+    bytes32 digest = MessageHashUtils.toTypedDataHash(
       saving.DOMAIN_SEPARATOR(),
       keccak256(
         abi.encode(
@@ -831,18 +847,30 @@ contract SavingsTest is Fixture, FunctionUtils {
         )
       )
     );
-    (uint8 sV, bytes32 sR, bytes32 sS) = vm.sign(privateKey, savingsDigest);
-    savingsSig = abi.encodePacked(sR, sS, sV);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+    sig = abi.encodePacked(r, s, v);
+  }
 
-    // Inner: underlying-token EIP-3009 ReceiveWithAuthorization
-    bytes32 tokenDigest = MessageHashUtils.toTypedDataHash(
+  function _signTokenReceiveAuth(
+    uint256 privateKey,
+    address owner,
+    uint256 assets,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce
+  )
+    private
+    view
+    returns (bytes memory sig)
+  {
+    bytes32 digest = MessageHashUtils.toTypedDataHash(
       MockTokenPermit(address(tokenP)).DOMAIN_SEPARATOR(),
       keccak256(
         abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, owner, address(saving), assets, validAfter, validBefore, nonce)
       )
     );
-    (uint8 tV, bytes32 tR, bytes32 tS) = vm.sign(privateKey, tokenDigest);
-    tokenSig = abi.encodePacked(tR, tS, tV);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+    sig = abi.encodePacked(r, s, v);
   }
 
   /// @notice Signs a `Savings.redeemWithAuthorization` intent against the Savings EIP-712 domain.

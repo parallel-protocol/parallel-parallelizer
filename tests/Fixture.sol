@@ -213,4 +213,143 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
       })
     );
   }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    PARALLELIZER AUTHORIZATION HELPERS — derived-nonce scheme, mirrors `LibAuthorization`
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  bytes32 internal constant PARALLELIZER_SWAP_EXACT_INPUT_TYPEHASH = keccak256(
+    "SwapExactInputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountIn,uint256 amountOutMin,address to,uint256 deadline,bytes32 userSalt)"
+  );
+
+  bytes32 internal constant PARALLELIZER_SWAP_EXACT_OUTPUT_TYPEHASH = keccak256(
+    "SwapExactOutputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountOut,uint256 amountInMax,address to,uint256 deadline,bytes32 userSalt)"
+  );
+
+  bytes32 internal constant PARALLELIZER_REDEEM_TYPEHASH = keccak256(
+    "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,bytes32 minAmountOutsHash,bytes32 userSalt)"
+  );
+
+  function _buildSwapExactInputAuth(
+    uint256 privateKey,
+    address tokenIn,
+    address tokenOut,
+    address from,
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address to,
+    uint256 deadline,
+    bytes32 userSalt
+  )
+    internal
+    view
+    returns (bytes memory)
+  {
+    bytes32 derivedNonce = keccak256(
+      abi.encode(
+        PARALLELIZER_SWAP_EXACT_INPUT_TYPEHASH,
+        from,
+        tokenIn,
+        tokenOut,
+        amountIn,
+        amountOutMin,
+        to,
+        deadline,
+        userSalt
+      )
+    );
+    return _signAndPackAuth(privateKey, tokenIn, from, amountIn, derivedNonce, userSalt);
+  }
+
+  function _buildSwapExactOutputAuth(
+    uint256 privateKey,
+    address tokenIn,
+    address tokenOut,
+    address from,
+    uint256 amountOut,
+    uint256 amountInMax,
+    address to,
+    uint256 deadline,
+    bytes32 userSalt
+  )
+    internal
+    view
+    returns (bytes memory)
+  {
+    bytes32 derivedNonce = keccak256(
+      abi.encode(
+        PARALLELIZER_SWAP_EXACT_OUTPUT_TYPEHASH,
+        from,
+        tokenIn,
+        tokenOut,
+        amountOut,
+        amountInMax,
+        to,
+        deadline,
+        userSalt
+      )
+    );
+    return _signAndPackAuth(privateKey, tokenIn, from, amountInMax, derivedNonce, userSalt);
+  }
+
+  function _buildRedeemAuth(
+    uint256 privateKey,
+    address from,
+    uint256 amount,
+    address receiver,
+    uint256 deadline,
+    uint256[] memory minAmountOuts,
+    bytes32 userSalt
+  )
+    internal
+    view
+    returns (bytes memory)
+  {
+    bytes32 derivedNonce = keccak256(
+      abi.encode(
+        PARALLELIZER_REDEEM_TYPEHASH,
+        from,
+        amount,
+        receiver,
+        deadline,
+        keccak256(abi.encodePacked(minAmountOuts)),
+        userSalt
+      )
+    );
+    return _signAndPackAuth(privateKey, address(tokenP), from, amount, derivedNonce, userSalt);
+  }
+
+  /// @dev Signs an EIP-3009 `ReceiveWithAuthorization` with `nonce = signedNonce` and packs an
+  /// `AuthorizationParams` whose on-the-wire `nonce` field carries `userSalt`, matching what the
+  /// Parallelizer facets expect.
+  function _signAndPackAuth(
+    uint256 privateKey,
+    address token,
+    address from,
+    uint256 value,
+    bytes32 signedNonce,
+    bytes32 userSalt
+  )
+    private
+    view
+    returns (bytes memory)
+  {
+    uint256 validBefore = block.timestamp + 1 hours;
+    bytes32 structHash =
+      keccak256(abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, address(parallelizer), value, 0, validBefore, signedNonce));
+    bytes32 digest = MessageHashUtils.toTypedDataHash(MockTokenPermit(token).DOMAIN_SEPARATOR(), structHash);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+    return abi.encode(
+      AuthorizationParams({
+        from: from,
+        value: value,
+        validAfter: 0,
+        validBefore: validBefore,
+        nonce: userSalt,
+        v: v,
+        r: r,
+        s: s
+      })
+    );
+  }
 }

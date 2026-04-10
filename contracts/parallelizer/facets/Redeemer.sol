@@ -11,6 +11,7 @@ import { IRedeemer } from "contracts/interfaces/IRedeemer.sol";
 import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
+import { LibAuthorization } from "../libraries/LibAuthorization.sol";
 import { LibDiamond } from "../libraries/LibDiamond.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibGetters } from "../libraries/LibGetters.sol";
@@ -102,9 +103,19 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   {
     ParallelizerStorage storage ts = s.transmuterStorage();
     AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value != amount) revert InvalidSwap();
+    bytes32 derivedNonce =
+      LibAuthorization.computeRedeemNonce(params.from, amount, receiver, deadline, minAmountOuts, params.nonce);
     IEIP3009(address(ts.tokenP)).receiveWithAuthorization(
-      params.from, address(this), params.value, params.validAfter,
-      params.validBefore, params.nonce, params.v, params.r, params.s
+      params.from,
+      address(this),
+      params.value,
+      params.validAfter,
+      params.validBefore,
+      derivedNonce,
+      params.v,
+      params.r,
+      params.s
     );
     return _redeem(amount, address(this), receiver, deadline, minAmountOuts, new address[](0));
   }

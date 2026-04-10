@@ -72,16 +72,12 @@ interface ISwapper {
     external
     returns (uint256 amountIn);
 
-  /// @notice Same as `swapExactInput`, but using EIP-3009 authorization for `tokenIn`
-  /// @dev Can be used for both mint and burn operations
-  /// @param amountIn Amount of `tokenIn` to bring
-  /// @param amountOutMin Minimum amount of `tokenOut` to get
-  /// @param tokenIn Token to bring for the swap
-  /// @param tokenOut Token to get out of the swap
-  /// @param to Address to which `tokenOut` must be sent
-  /// @param deadline Timestamp before which the transaction must be executed
-  /// @param authData ABI-encoded AuthorizationParams (from, value, validAfter, validBefore, nonce, v, r, s)
-  /// @return amountOut Amount of `tokenOut` obtained through the swap
+  /// @notice Same as `swapExactInput`, but using a single EIP-3009 authorization for `tokenIn`.
+  /// @dev The signed EIP-3009 nonce MUST equal `LibAuthorization.computeSwapExactInputNonce(...)`,
+  /// which binds the full swap intent. `authData.nonce` carries the caller-chosen `userSalt`; the
+  /// facet recomputes the derived nonce from the call arguments before forwarding it to the
+  /// token, so any tampering with `to`/slippage/deadline invalidates the signature.
+  /// @param authData ABI-encoded `AuthorizationParams` with `nonce = userSalt`
   function swapExactInputWithAuthorization(
     uint256 amountIn,
     uint256 amountOutMin,
@@ -94,17 +90,11 @@ interface ISwapper {
     external
     returns (uint256 amountOut);
 
-  /// @notice Same as `swapExactOutput`, but using EIP-3009 authorization for `tokenIn`
-  /// @dev Can be used for both mint and burn operations
-  /// @dev The authorization must be signed for `amountInMax`. The difference `amountInMax - amountIn` is refunded.
-  /// @param amountOut Amount of `tokenOut` to obtain from the swap
-  /// @param amountInMax Maximum amount of `tokenIn` to bring
-  /// @param tokenIn Token to bring for the swap
-  /// @param tokenOut Token to get out of the swap
-  /// @param to Address to which `tokenOut` must be sent
-  /// @param deadline Timestamp before which the transaction must be executed
-  /// @param authData ABI-encoded AuthorizationParams (from, value, validAfter, validBefore, nonce, v, r, s)
-  /// @return amountIn Amount of `tokenIn` used to perform the swap
+  /// @notice Same as `swapExactOutput`, but using a single EIP-3009 authorization for `tokenIn`.
+  /// @dev The authorization must be signed for `amountInMax`; the excess is refunded to the
+  /// authorizer. Derived-nonce scheme as in `swapExactInputWithAuthorization`, using
+  /// `LibAuthorization.computeSwapExactOutputNonce(...)`.
+  /// @param authData ABI-encoded `AuthorizationParams` with `nonce = userSalt`
   function swapExactOutputWithAuthorization(
     uint256 amountOut,
     uint256 amountInMax,

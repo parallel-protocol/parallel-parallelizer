@@ -14,6 +14,7 @@ import { SignatureTransferDetails, TokenPermissions } from "contracts/interfaces
 import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
+import { LibAuthorization } from "../libraries/LibAuthorization.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibManager } from "../libraries/LibManager.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
@@ -166,12 +167,16 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     external
     returns (uint256 amountOut)
   {
-    _validateAuthorizationValue(authData, amountIn);
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value != amountIn) revert InvalidSwap();
+    params.nonce = LibAuthorization.computeSwapExactInputNonce(
+      params.from, tokenIn, tokenOut, amountIn, amountOutMin, to, deadline, params.nonce
+    );
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
     amountOut =
       mint ? _quoteMintExactInput(collatInfo, amountIn) : _quoteBurnExactInput(tokenOut, collatInfo, amountIn);
     if (amountOut < amountOutMin) revert TooSmallAmountOut();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", authData);
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", abi.encode(params));
   }
 
   /// @inheritdoc ISwapper
@@ -187,12 +192,16 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     external
     returns (uint256 amountIn)
   {
-    _validateAuthorizationValue(authData, amountInMax);
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value != amountInMax) revert InvalidSwap();
+    params.nonce = LibAuthorization.computeSwapExactOutputNonce(
+      params.from, tokenIn, tokenOut, amountOut, amountInMax, to, deadline, params.nonce
+    );
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
     amountIn =
       mint ? _quoteMintExactOutput(collatInfo, amountOut) : _quoteBurnExactOutput(tokenOut, collatInfo, amountOut);
     if (amountIn > amountInMax) revert TooBigAmountIn();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", authData);
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", abi.encode(params));
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -300,12 +309,6 @@ contract Swapper is ISwapper, AccessManagedModifiers {
       }
       emit Swap(tokenIn, tokenOut, amountIn, amountOut, msg.sender, to);
     }
-  }
-
-  /// @notice Validates that the authorization value matches the expected swap amount
-  function _validateAuthorizationValue(bytes memory authData, uint256 expectedValue) internal pure {
-    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
-    if (params.value != expectedValue) revert InvalidSwap();
   }
 
   /// @notice Executes an EIP-3009 receiveWithAuthorization to address(this) and refunds excess if any

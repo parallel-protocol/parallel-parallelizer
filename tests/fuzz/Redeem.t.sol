@@ -384,11 +384,8 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 amountBurntBob;
     uint256[] memory quoteAmounts;
     uint256 stableIssued = mintedStables > 0 ? parallelizer.getTotalIssued() : 0;
-    // Wrap the quote in a try/catch: the redeem path can revert for several reasons
-    // (SafeCast overflow on collateral ratio, CannotBurnAllStableIssued boundary, or
-    // an arithmetic overflow deep inside the balances loop for extreme fuzz inputs).
-    // We don't assert which revert happened — dedicated tests cover the specific paths —
-    // we just skip the run when the quote doesn't succeed.
+    // The quote can revert for several reasons (SafeCast overflow, CannotBurnAllStableIssued,
+    // arithmetic overflow on extreme inputs). Dedicated tests cover each; here we just skip.
     try parallelizer.quoteRedemptionCurve(amountBurnt) returns (address[] memory, uint256[] memory a) {
       quoteAmounts = a;
     } catch {
@@ -433,7 +430,6 @@ contract RedeemTest is Fixture, FunctionUtils {
       vm.startPrank(bob);
       redeemProportion = bound(redeemProportion, 0, BASE_9);
       amountBurntBob = (tokenP.balanceOf(bob) * redeemProportion) / BASE_9;
-      // Same try/catch rationale as the first quote call above.
       try parallelizer.quoteRedemptionCurve(amountBurntBob) returns (address[] memory, uint256[] memory a) {
         quoteAmounts = a;
       } catch {
@@ -676,7 +672,6 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256[] memory amounts;
     {
       address[] memory tokens;
-      // Wrap the quote in a try/catch: see rationale in testFuzz_MultiRedemptionCurveRandomRedemptionFees.
       try parallelizer.quoteRedemptionCurve(amountBurnt) returns (address[] memory t, uint256[] memory a) {
         tokens = t;
         amounts = a;
@@ -739,7 +734,6 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 amountBurnt = tokenP.balanceOf(alice);
     uint256 amountBurntBob;
     uint256[] memory quoteAmounts;
-    // Wrap the quote in a try/catch: see rationale in testFuzz_MultiRedemptionCurveRandomRedemptionFees.
     try parallelizer.quoteRedemptionCurve(amountBurnt) returns (address[] memory, uint256[] memory a) {
       quoteAmounts = a;
     } catch {
@@ -778,7 +772,6 @@ contract RedeemTest is Fixture, FunctionUtils {
       vm.startPrank(bob);
       transferRedeemProportion[1] = bound(transferRedeemProportion[1], 0, BASE_9);
       amountBurntBob = (tokenP.balanceOf(bob) * transferRedeemProportion[1]) / BASE_9;
-      // Same try/catch rationale as the first quote call above.
       try parallelizer.quoteRedemptionCurve(amountBurntBob) returns (address[] memory, uint256[] memory a) {
         quoteAmounts = a;
       } catch {
@@ -1026,13 +1019,10 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 amountBurnt = tokenP.balanceOf(alice);
     uint256 amountBurntBob;
     uint256[] memory quoteAmounts;
-    {
-      // Wrap the quote in a try/catch: see rationale in testFuzz_MultiRedemptionCurveRandomRedemptionFees.
-      try parallelizer.quoteRedemptionCurve(amountBurnt) returns (address[] memory, uint256[] memory a) {
-        quoteAmounts = a;
-      } catch {
-        return;
-      }
+    try parallelizer.quoteRedemptionCurve(amountBurnt) returns (address[] memory, uint256[] memory a) {
+      quoteAmounts = a;
+    } catch {
+      return;
     }
     if (mintedStables == 0 || amountBurnt >= mintedStables) return;
     {
@@ -1067,7 +1057,6 @@ contract RedeemTest is Fixture, FunctionUtils {
       vm.startPrank(bob);
       transferRedeemProportion[1] = bound(transferRedeemProportion[1], 0, BASE_9);
       amountBurntBob = (tokenP.balanceOf(bob) * transferRedeemProportion[1]) / BASE_9;
-      // Same try/catch rationale as the first quote call above.
       try parallelizer.quoteRedemptionCurve(amountBurntBob) returns (address[] memory, uint256[] memory a) {
         quoteAmounts = a;
       } catch {
@@ -1909,21 +1898,48 @@ contract RedeemTest is Fixture, FunctionUtils {
     parallelizer.setRedemptionCurveParams(xRedemption, yRedemption);
     vm.stopPrank();
 
+    uint256 deadline = block.timestamp + 1 hours;
+    uint256[] memory minOuts = new uint256[](3);
     bytes memory authData =
-      _buildAuthData(1, address(tokenP), alice, address(parallelizer), redeemAmount, bytes32("redeem1"));
+      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, bytes32("redeem1"));
 
     // bob relays alice's signed authorization
     vm.prank(bob);
-    uint256[] memory minOuts = new uint256[](3);
-    (address[] memory tokens, uint256[] memory amounts) = parallelizer.redeemWithAuthorization(
-      redeemAmount, alice, block.timestamp + 1 hours, minOuts, authData
-    );
+    (address[] memory tokens, uint256[] memory amounts) =
+      parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, authData);
 
     assertEq(tokens.length, 3);
     for (uint256 i; i < amounts.length; i++) {
       assertGt(amounts[i], 0);
     }
     assertEq(tokenP.balanceOf(alice), tokenPBal - redeemAmount);
+  }
+
+  /// @notice Regression: an authorization signed for `receiver = alice` cannot be replayed with
+  /// `receiver = bob`.
+  function test_RedeemWithAuthorization_FrontrunRejected() public {
+    _mintExactInput(alice, address(eurA), 100 * BASE_6, 0);
+    _mintExactInput(alice, address(eurB), 100 * 1e12, 0);
+    _mintExactInput(alice, address(eurY), 100 * BASE_18, 0);
+
+    uint256 redeemAmount = tokenP.balanceOf(alice) / 4;
+
+    vm.startPrank(guardian);
+    uint64[] memory xR = new uint64[](1);
+    xR[0] = uint64(0);
+    int64[] memory yR = new int64[](1);
+    yR[0] = int64(int256(BASE_9));
+    parallelizer.setRedemptionCurveParams(xR, yR);
+    vm.stopPrank();
+
+    uint256 deadline = block.timestamp + 1 hours;
+    uint256[] memory minOuts = new uint256[](3);
+    bytes memory aliceAuth =
+      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, bytes32("redeem_frontrun"));
+
+    vm.prank(bob);
+    vm.expectRevert(bytes("invalid signature"));
+    parallelizer.redeemWithAuthorization(redeemAmount, bob, deadline, minOuts, aliceAuth);
   }
 
   function test_RedeemWithAuthorization_RevertWhen_ValueMismatch() public {
@@ -1938,13 +1954,14 @@ contract RedeemTest is Fixture, FunctionUtils {
     parallelizer.setRedemptionCurveParams(xR, yR);
     vm.stopPrank();
 
+    uint256 deadline = block.timestamp + 1 hours;
+    uint256[] memory minOuts = new uint256[](3);
     bytes memory authData =
-      _buildAuthData(1, address(tokenP), alice, address(parallelizer), redeemAmount / 2, bytes32("bad_redeem"));
+      _buildRedeemAuth(1, alice, redeemAmount / 2, alice, deadline, minOuts, bytes32("bad_redeem"));
 
     vm.prank(bob);
-    uint256[] memory minOuts = new uint256[](3);
     vm.expectRevert();
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, block.timestamp + 1 hours, minOuts, authData);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, authData);
   }
 
   function test_RedeemWithAuthorization_RevertWhen_ReusedNonce() public {
@@ -1953,7 +1970,7 @@ contract RedeemTest is Fixture, FunctionUtils {
     _mintExactInput(alice, address(eurY), 100 * BASE_18, 0);
 
     uint256 redeemAmount = tokenP.balanceOf(alice) / 8;
-    bytes32 nonce = bytes32("reuse_redeem");
+    bytes32 userSalt = bytes32("reuse_redeem");
 
     vm.startPrank(guardian);
     uint64[] memory xR = new uint64[](1);
@@ -1963,18 +1980,17 @@ contract RedeemTest is Fixture, FunctionUtils {
     parallelizer.setRedemptionCurveParams(xR, yR);
     vm.stopPrank();
 
-    bytes memory authData1 =
-      _buildAuthData(1, address(tokenP), alice, address(parallelizer), redeemAmount, nonce);
+    uint256 deadline = block.timestamp + 1 hours;
+    uint256[] memory minOuts = new uint256[](3);
+    bytes memory authData1 = _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, userSalt);
 
     vm.prank(bob);
-    uint256[] memory minOuts = new uint256[](3);
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, block.timestamp + 1 hours, minOuts, authData1);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, authData1);
 
-    bytes memory authData2 =
-      _buildAuthData(1, address(tokenP), alice, address(parallelizer), redeemAmount, nonce);
+    bytes memory authData2 = _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, userSalt);
 
     vm.prank(bob);
     vm.expectRevert();
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, block.timestamp + 1 hours, minOuts, authData2);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, authData2);
   }
 }

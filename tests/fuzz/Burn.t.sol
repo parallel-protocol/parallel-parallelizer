@@ -819,9 +819,8 @@ contract BurnTest is Fixture, FunctionUtils {
     );
     stableAmount = bound(stableAmount, 0, collateralMintedStables[fromToken]);
     if (stableAmount == 0) return;
-    // Skip the "burn all stablecoins" boundary: swapExactInput reverts with CannotBurnAllStableIssued
-    // when stableAmount would drive ts.normalizedStables to zero, but quoteIn does not model this
-    // invariant and the outer try/catch only wraps the quote call.
+    // `quoteIn` does not model the CannotBurnAllStableIssued guard; skip the boundary case so the
+    // follow-on swapExactInput (which is not wrapped by the try/catch below) stays successful.
     if (stableAmount >= mintedStables) return;
 
     uint256 prevBalanceStable = tokenP.balanceOf(alice);
@@ -1137,9 +1136,7 @@ contract BurnTest is Fixture, FunctionUtils {
     );
     stableAmount = bound(stableAmount, 0, collateralMintedStables[fromToken]);
     if (stableAmount == 0) return;
-    // Skip the "burn all stablecoins" boundary: swapExactInput reverts with CannotBurnAllStableIssued
-    // when stableAmount would drive ts.normalizedStables to zero, but quoteIn does not model this
-    // invariant and the outer try/catch only wraps the quote call.
+    // See rationale in testFuzz_BurnExactInput.
     if (stableAmount >= mintedStables) return;
 
     uint256 prevBalanceStable = tokenP.balanceOf(alice);
@@ -1526,13 +1523,15 @@ contract BurnTest is Fixture, FunctionUtils {
     uint256 mintAmount = 100 * BASE_6;
     deal(address(eurA), alice, mintAmount);
 
-    bytes memory authData =
-      _buildAuthData(1, address(eurA), alice, address(parallelizer), mintAmount, bytes32("mint1"));
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, bytes32("mint1")
+    );
 
     // bob relays alice's signed authorization
     vm.prank(bob);
     uint256 amountOut = parallelizer.swapExactInputWithAuthorization(
-      mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData
+      mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData
     );
 
     assertGt(amountOut, 0);
@@ -1540,16 +1539,35 @@ contract BurnTest is Fixture, FunctionUtils {
     assertEq(IERC20(address(eurA)).balanceOf(alice), 0);
   }
 
+  /// @notice Regression: an authorization signed for `to = alice` cannot be replayed with `to = bob`.
+  function test_SwapExactInputWithAuthorization_FrontrunRejected() public {
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), alice, mintAmount);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory aliceAuth = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, bytes32("frontrun1")
+    );
+
+    vm.prank(bob);
+    vm.expectRevert(bytes("invalid signature"));
+    parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), bob, deadline, aliceAuth
+    );
+  }
+
   function test_SwapExactOutputWithAuthorization_Mint() public {
     uint256 maxIn = 200 * BASE_6;
     deal(address(eurA), alice, maxIn);
 
-    bytes memory authData =
-      _buildAuthData(1, address(eurA), alice, address(parallelizer), maxIn, bytes32("mint2"));
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactOutputAuth(
+      1, address(eurA), address(tokenP), alice, 50 * BASE_18, maxIn, alice, deadline, bytes32("mint2")
+    );
 
     vm.prank(bob);
     uint256 amountIn = parallelizer.swapExactOutputWithAuthorization(
-      50 * BASE_18, maxIn, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData
+      50 * BASE_18, maxIn, address(eurA), address(tokenP), alice, deadline, authData
     );
 
     assertLe(amountIn, maxIn);
@@ -1562,12 +1580,14 @@ contract BurnTest is Fixture, FunctionUtils {
     uint256 tokenPBal = tokenP.balanceOf(alice);
     uint256 burnAmount = tokenPBal / 2;
 
-    bytes memory authData =
-      _buildAuthData(1, address(tokenP), alice, address(parallelizer), burnAmount, bytes32("burn1"));
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(tokenP), address(eurA), alice, burnAmount, 0, alice, deadline, bytes32("burn1")
+    );
 
     vm.prank(bob);
     uint256 amountOut = parallelizer.swapExactInputWithAuthorization(
-      burnAmount, 0, address(tokenP), address(eurA), alice, block.timestamp + 1 hours, authData
+      burnAmount, 0, address(tokenP), address(eurA), alice, deadline, authData
     );
 
     assertGt(amountOut, 0);
@@ -1578,36 +1598,41 @@ contract BurnTest is Fixture, FunctionUtils {
     uint256 mintAmount = 100 * BASE_6;
     deal(address(eurA), alice, mintAmount);
 
-    bytes memory authData =
-      _buildAuthData(1, address(eurA), alice, address(parallelizer), mintAmount / 2, bytes32("bad1"));
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, mintAmount / 2, 0, alice, deadline, bytes32("bad1")
+    );
 
     vm.prank(bob);
     vm.expectRevert(InvalidSwap.selector);
     parallelizer.swapExactInputWithAuthorization(
-      mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData
+      mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData
     );
   }
 
   function test_RevertWhen_AuthorizationReusedNonce() public {
     uint256 mintAmount = 50 * BASE_6;
     deal(address(eurA), alice, mintAmount * 2);
-    bytes32 nonce = bytes32("reuse1");
+    bytes32 userSalt = bytes32("reuse1");
+    uint256 deadline = block.timestamp + 1 hours;
 
-    bytes memory authData1 =
-      _buildAuthData(1, address(eurA), alice, address(parallelizer), mintAmount, nonce);
+    bytes memory authData1 = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt
+    );
 
     vm.prank(bob);
     parallelizer.swapExactInputWithAuthorization(
-      mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData1
+      mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData1
     );
 
-    bytes memory authData2 =
-      _buildAuthData(1, address(eurA), alice, address(parallelizer), mintAmount, nonce);
+    bytes memory authData2 = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt
+    );
 
     vm.prank(bob);
     vm.expectRevert();
     parallelizer.swapExactInputWithAuthorization(
-      mintAmount, 0, address(eurA), address(tokenP), alice, block.timestamp + 1 hours, authData2
+      mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData2
     );
   }
 }

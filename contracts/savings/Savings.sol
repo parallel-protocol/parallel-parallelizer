@@ -192,16 +192,12 @@ contract Savings is BaseSavings, SavingsEIP3009 {
 
   /// @notice Deposits the underlying asset on behalf of `owner` using a signed authorization,
   /// and mints shares to `receiver`.
-  /// @dev Two signatures are required to make this flow front-run resistant:
-  ///   - `savingsSignature` is signed over `DEPOSIT_WITH_AUTHORIZATION_TYPEHASH` against this
-  ///     contract's EIP-712 domain. It binds `receiver` so a relayer cannot redirect the
-  ///     minted shares to an attacker-controlled address.
-  ///   - `tokenSignature` is a standard EIP-3009 `ReceiveWithAuthorization` signed against the
-  ///     underlying asset's EIP-712 domain. It authorizes pulling `assets` from `owner` into
-  ///     this contract.
-  /// Both signatures share the same `nonce`, `validAfter`, and `validBefore` for caller
-  /// convenience. Each token tracks its own nonce state, so reusing the same `nonce` value
-  /// across the two signatures does not introduce any collision.
+  /// @dev Two signatures:
+  ///   - `savingsSignature` binds `receiver` via `DEPOSIT_WITH_AUTHORIZATION_TYPEHASH` on this
+  ///     contract's EIP-712 domain (front-run protection on the shares recipient).
+  ///   - `tokenSignature` is a standard EIP-3009 `ReceiveWithAuthorization` on the underlying
+  ///     asset that pulls `assets` from `owner` into this contract.
+  /// Both may share the same `nonce`/validity window — they're tracked on different contracts.
   function depositWithAuthorization(
     uint256 assets,
     address receiver,
