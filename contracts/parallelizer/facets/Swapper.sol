@@ -172,12 +172,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     params.nonce = LibAuthorization.computeSwapExactInputNonce(
       params.from, tokenIn, tokenOut, amountIn, amountOutMin, to, deadline, params.nonce
     );
-    bytes memory derivedAuthData = abi.encode(params);
     if (amountIn == 0) {
-      // Bailsec Issue_08: a zero-amount signed payload would otherwise leave the nonce live and
-      // replayable. params.value is constrained to amountIn (== 0) so receiveWithAuthorization
-      // is a no-op transfer that just burns the nonce.
-      _executeAuthorization(tokenIn, 0, derivedAuthData);
+      _executeAuthorization(tokenIn, 0, abi.encode(params));
       return 0;
     }
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
@@ -185,7 +181,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
       mint ? _quoteMintExactInput(collatInfo, amountIn) : _quoteBurnExactInput(tokenOut, collatInfo, amountIn);
     if (amountOut < amountOutMin) revert TooSmallAmountOut();
     if (amountOut == 0) revert ZeroAmount();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", derivedAuthData);
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", abi.encode(params));
   }
 
   /// @inheritdoc ISwapper
@@ -206,12 +202,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     params.nonce = LibAuthorization.computeSwapExactOutputNonce(
       params.from, tokenIn, tokenOut, amountOut, amountInMax, to, deadline, params.nonce
     );
-    bytes memory derivedAuthData = abi.encode(params);
     if (amountOut == 0) {
-      // Bailsec Issue_08: consume the nonce so the signed zero-output payload cannot be replayed.
-      // _executeAuthorization pulls params.value (= amountInMax) and refunds it atomically with
-      // amountNeeded = 0, so no value moves but the nonce is burned.
-      _executeAuthorization(tokenIn, 0, derivedAuthData);
+      _executeAuthorization(tokenIn, 0, abi.encode(params));
       return 0;
     }
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
@@ -219,7 +211,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
       mint ? _quoteMintExactOutput(collatInfo, amountOut) : _quoteBurnExactOutput(tokenOut, collatInfo, amountOut);
     if (amountIn > amountInMax) revert TooBigAmountIn();
     if (amountIn == 0) revert ZeroAmount();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", derivedAuthData);
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", abi.encode(params));
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -278,7 +270,6 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   {
     if (amountIn > 0 && amountOut > 0) {
       ParallelizerStorage storage ts = s.transmuterStorage();
-      address from = msg.sender;
       if (mint) {
         uint128 changeAmount = (amountOut.mulDiv(BASE_27, ts.normalizer, Math.Rounding.Ceil)).toUint128();
         // The amount of stablecoins issued from a collateral are not stored as absolute variables, but
@@ -289,7 +280,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         if (permitData.length > 0) {
           PERMIT_2.functionCall(permitData);
         } else if (authData.length > 0) {
-          from = _executeAuthorization(tokenIn, amountIn, authData);
+          _executeAuthorization(tokenIn, amountIn, authData);
           if (collatInfo.isManaged > 0) {
             IERC20(tokenIn).safeTransfer(LibManager.transferRecipient(collatInfo.managerData.config), amountIn);
           }
@@ -315,7 +306,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         collatInfo.normalizedStables = collatInfo.normalizedStables - uint216(changeAmount);
         ts.normalizedStables = ts.normalizedStables - changeAmount;
         if (authData.length > 0) {
-          from = _executeAuthorization(tokenIn, amountIn, authData);
+          _executeAuthorization(tokenIn, amountIn, authData);
           ITokenP(tokenIn).burnSelf(amountIn, address(this));
         } else {
           ITokenP(tokenIn).burnSelf(amountIn, msg.sender);
@@ -326,7 +317,16 @@ contract Swapper is ISwapper, AccessManagedModifiers {
           IERC20(tokenOut).safeTransfer(to, amountOut);
         }
       }
-      emit Swap(tokenIn, tokenOut, amountIn, amountOut, from, to);
+      // `from` decoded inline so `_swap` does not need to keep it on the stack across the
+      // mint/burn branch (compiles without via-IR).
+      emit Swap(
+        tokenIn,
+        tokenOut,
+        amountIn,
+        amountOut,
+        authData.length > 0 ? abi.decode(authData, (AuthorizationParams)).from : msg.sender,
+        to
+      );
     }
   }
 
@@ -334,15 +334,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   /// @param token The token to receive via authorization
   /// @param amountNeeded The actual amount needed for the swap
   /// @param authData ABI-encoded AuthorizationParams
-  /// @return from The authorizer address (`params.from`), to attribute the swap event to
-  function _executeAuthorization(
-    address token,
-    uint256 amountNeeded,
-    bytes memory authData
-  )
-    internal
-    returns (address from)
-  {
+  function _executeAuthorization(address token, uint256 amountNeeded, bytes memory authData) internal {
     AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
     if (params.value < amountNeeded) revert InvalidSwap();
     uint256 balanceBefore = IERC20(token).balanceOf(address(this));
@@ -361,7 +353,6 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     if (params.value > amountNeeded) {
       IERC20(token).safeTransfer(params.from, params.value - amountNeeded);
     }
-    return params.from;
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

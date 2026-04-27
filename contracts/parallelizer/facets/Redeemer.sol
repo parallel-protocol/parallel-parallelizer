@@ -128,6 +128,19 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     INTERNAL HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
+  /// @notice Working set passed by reference between `_redeem` and its loop helper, so the call
+  /// site stays under the EVM stack-depth limit when compiling without via-IR.
+  struct RedemptionExecution {
+    uint256 amount;
+    address from;
+    address to;
+    address[] tokens;
+    uint256[] amounts;
+    uint256[] subCollateralsTracker;
+    uint256[] minAmountOuts;
+    address[] forfeitTokens;
+  }
+
   /// @notice Internal function of the `redeem` function in the `Redeemer` contract
   function _redeem(
     uint256 amount,
@@ -141,46 +154,81 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     nonReentrant
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    ParallelizerStorage storage ts = s.transmuterStorage();
-
-    if (ts.isRedemptionLive == 0) revert Paused();
+    if (s.transmuterStorage().isRedemptionLive == 0) revert Paused();
     if (block.timestamp > deadline) revert TooLate();
 
-    address from = msg.sender;
-    {
-      uint256[] memory subCollateralsTracker;
-      (tokens, amounts, subCollateralsTracker) = _quoteRedemptionCurve(amount);
-      uint256 amountsLength = amounts.length;
-      if (amountsLength != minAmountOuts.length) revert InvalidLengths();
-      _updateNormalizer(amount, false);
+    RedemptionExecution memory redemption;
+    redemption.amount = amount;
+    redemption.to = to;
+    redemption.minAmountOuts = minAmountOuts;
+    redemption.forfeitTokens = forfeitTokens;
 
-      if (authData.length > 0) {
-        from = _executeAuthorization(amount, to, deadline, minAmountOuts, forfeitTokens, authData);
-        ITokenP(ts.tokenP).burnSelf(amount, address(this));
-      } else {
-        ITokenP(ts.tokenP).burnSelf(amount, msg.sender);
-      }
+    (redemption.tokens, redemption.amounts, redemption.subCollateralsTracker) = _quoteRedemptionCurve(amount);
+    if (redemption.amounts.length != minAmountOuts.length) revert InvalidLengths();
+    _updateNormalizer(amount, false);
 
-      address[] memory collateralListMem = ts.collateralList;
-      uint256 indexCollateral;
-      for (uint256 i; i < amountsLength; ++i) {
-        if (amounts[i] < minAmountOuts[i]) revert TooSmallAmountOut();
-        // If a token is in the `forfeitTokens` list, then it is not sent as part of the redemption process
-        if (amounts[i] > 0 && LibHelpers.checkList(tokens[i], forfeitTokens) < 0) {
-          Collateral storage collatInfo = ts.collaterals[collateralListMem[indexCollateral]];
-          if (collatInfo.onlyWhitelisted > 0 && !LibWhitelist.checkWhitelist(collatInfo.whitelistData, to)) {
-            revert NotWhitelisted();
-          }
-          if (collatInfo.isManaged > 0) {
-            LibManager.release(tokens[i], to, amounts[i], collatInfo.managerData.config);
-          } else {
-            IERC20(tokens[i]).safeTransfer(to, amounts[i]);
-          }
+    redemption.from = _consumeAuthAndBurn(amount, to, deadline, minAmountOuts, forfeitTokens, authData);
+
+    _distributeRedemption(redemption);
+    emit Redeemed(
+      redemption.amount,
+      redemption.tokens,
+      redemption.amounts,
+      redemption.forfeitTokens,
+      redemption.from,
+      redemption.to
+    );
+    return (redemption.tokens, redemption.amounts);
+  }
+
+  /// @notice Releases each non-forfeited collateral output to `redemption.to`. Extracted from `_redeem`
+  /// so the parent function stays within the EVM stack-depth limit.
+  function _distributeRedemption(RedemptionExecution memory redemption) internal {
+    ParallelizerStorage storage ts = s.transmuterStorage();
+    address[] memory collateralListMem = ts.collateralList;
+    uint256 indexCollateral;
+    uint256 amountsLength = redemption.amounts.length;
+    for (uint256 i; i < amountsLength; ++i) {
+      if (redemption.amounts[i] < redemption.minAmountOuts[i]) revert TooSmallAmountOut();
+      // If a token is in the `forfeitTokens` list, then it is not sent as part of the redemption process
+      if (redemption.amounts[i] > 0 && LibHelpers.checkList(redemption.tokens[i], redemption.forfeitTokens) < 0) {
+        Collateral storage collatInfo = ts.collaterals[collateralListMem[indexCollateral]];
+        if (collatInfo.onlyWhitelisted > 0 && !LibWhitelist.checkWhitelist(collatInfo.whitelistData, redemption.to)) {
+          revert NotWhitelisted();
         }
-        if (subCollateralsTracker[indexCollateral] - 1 <= i) ++indexCollateral;
+        if (collatInfo.isManaged > 0) {
+          LibManager.release(
+            redemption.tokens[i], redemption.to, redemption.amounts[i], collatInfo.managerData.config
+          );
+        } else {
+          IERC20(redemption.tokens[i]).safeTransfer(redemption.to, redemption.amounts[i]);
+        }
       }
+      if (redemption.subCollateralsTracker[indexCollateral] - 1 <= i) ++indexCollateral;
     }
-    emit Redeemed(amount, tokens, amounts, forfeitTokens, from, to);
+  }
+
+  /// @notice Pulls the redeem amount from the signer (auth flow) or burns directly from
+  /// `msg.sender`, and returns the address to attribute the `Redeemed` event to.
+  function _consumeAuthAndBurn(
+    uint256 amount,
+    address to,
+    uint256 deadline,
+    uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
+    bytes memory authData
+  )
+    internal
+    returns (address from)
+  {
+    ITokenP tokenP = s.transmuterStorage().tokenP;
+    if (authData.length > 0) {
+      from = _executeAuthorization(amount, to, deadline, minAmountOuts, forfeitTokens, authData);
+      tokenP.burnSelf(amount, address(this));
+    } else {
+      from = msg.sender;
+      tokenP.burnSelf(amount, msg.sender);
+    }
   }
 
   /// @notice Pulls the redeem amount from the signer via EIP-3009 `receiveWithAuthorization`,
