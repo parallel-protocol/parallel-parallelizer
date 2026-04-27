@@ -13,6 +13,13 @@ import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 /// @notice Abstract implementation of EIP-3009: Transfer With Authorization
 /// @dev Supports both EOA (v,r,s) and smart contract wallet (EIP-1271) signatures.
 /// The EIP-712 domain separator is computed dynamically from `name()` so no initialization is required.
+/// SECURITY: `transferWithAuthorization` has no `msg.sender` restriction and is therefore
+/// vulnerable to nonce-burn frontrunning - any observer of the mempool can submit a valid
+/// signature ahead of the intended caller, consuming the nonce. Integrations that bind the
+/// transfer to follow-on logic (swap, deposit, redeem, etc.) MUST use `receiveWithAuthorization`
+/// instead, which enforces `msg.sender == to` and atomically pairs the pull with downstream
+/// execution. `transferWithAuthorization` is intended only for direct payouts to a passive
+/// recipient.
 abstract contract EIP3009 is ERC20Upgradeable, IEIP3009 {
   // keccak256("TransferWithAuthorization(address from,address to,
   //   uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
