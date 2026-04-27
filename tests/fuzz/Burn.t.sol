@@ -1616,23 +1616,116 @@ contract BurnTest is Fixture, FunctionUtils {
     bytes32 userSalt = bytes32("reuse1");
     uint256 deadline = block.timestamp + 1 hours;
 
-    bytes memory authData1 = _buildSwapExactInputAuth(
-      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt
-    );
+    bytes memory authData1 =
+      _buildSwapExactInputAuth(1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt);
 
     vm.prank(bob);
     parallelizer.swapExactInputWithAuthorization(
       mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData1
     );
 
-    bytes memory authData2 = _buildSwapExactInputAuth(
-      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt
-    );
+    bytes memory authData2 =
+      _buildSwapExactInputAuth(1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt);
 
     vm.prank(bob);
     vm.expectRevert();
     parallelizer.swapExactInputWithAuthorization(
       mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData2
+    );
+  }
+
+  function testFuzz_RevertWhen_AuthorizationDoesNotTransferTokens_ExactInput(
+    uint256 mintAmount,
+    bytes32 userSalt
+  )
+    public
+  {
+    mintAmount = bound(mintAmount, BASE_6, 10_000 * BASE_6);
+    deal(address(eurA), alice, mintAmount);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt
+    );
+
+    vm.mockCall(
+      address(eurA),
+      abi.encodeWithSelector(
+        bytes4(
+          keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
+        )
+      ),
+      ""
+    );
+
+    vm.prank(bob);
+    vm.expectRevert(AuthorizationTransferMismatch.selector);
+    parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData
+    );
+  }
+
+  function testFuzz_RevertWhen_AuthorizationDoesNotTransferTokens_ExactOutput(
+    uint256 amountOut,
+    bytes32 userSalt
+  )
+    public
+  {
+    amountOut = bound(amountOut, BASE_18, 1000 * BASE_18);
+    uint256 maxIn = (amountOut / 1e12) * 4;
+    deal(address(eurA), alice, maxIn);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactOutputAuth(
+      1, address(eurA), address(tokenP), alice, amountOut, maxIn, alice, deadline, userSalt
+    );
+
+    vm.mockCall(
+      address(eurA),
+      abi.encodeWithSelector(
+        bytes4(
+          keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
+        )
+      ),
+      ""
+    );
+
+    vm.prank(bob);
+    vm.expectRevert(AuthorizationTransferMismatch.selector);
+    parallelizer.swapExactOutputWithAuthorization(
+      amountOut, maxIn, address(eurA), address(tokenP), alice, deadline, authData
+    );
+  }
+
+  function testFuzz_RevertWhen_AuthorizationDoesNotTransferTokens_BurnTokenP(
+    uint256 burnAmount,
+    bytes32 userSalt
+  )
+    public
+  {
+    _mintExactInput(alice, address(eurA), 10_000 * BASE_6, 0);
+    uint256 tokenPBal = tokenP.balanceOf(alice);
+    burnAmount = bound(burnAmount, BASE_18, tokenPBal / 2);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(tokenP), address(eurA), alice, burnAmount, 0, alice, deadline, userSalt
+    );
+
+    vm.mockCall(
+      address(tokenP),
+      abi.encodeWithSelector(
+        bytes4(
+          keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
+        )
+      ),
+      ""
+    );
+
+    vm.prank(bob);
+    vm.expectRevert(AuthorizationTransferMismatch.selector);
+    parallelizer.swapExactInputWithAuthorization(
+      burnAmount, 0, address(tokenP), address(eurA), alice, deadline, authData
     );
   }
 }

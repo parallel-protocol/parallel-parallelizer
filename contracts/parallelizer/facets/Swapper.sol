@@ -318,10 +318,21 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   function _executeAuthorization(address token, uint256 amountNeeded, bytes memory authData) internal {
     AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
     if (params.value < amountNeeded) revert InvalidSwap();
-    IEIP3009(token).receiveWithAuthorization(
-      params.from, address(this), params.value, params.validAfter,
-      params.validBefore, params.nonce, params.v, params.r, params.s
-    );
+    uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+    IEIP3009(token)
+      .receiveWithAuthorization(
+        params.from,
+        address(this),
+        params.value,
+        params.validAfter,
+        params.validBefore,
+        params.nonce,
+        params.v,
+        params.r,
+        params.s
+      );
+    uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+    if (balanceAfter != balanceBefore + params.value) revert AuthorizationTransferMismatch();
     if (params.value > amountNeeded) {
       IERC20(token).safeTransfer(params.from, params.value - amountNeeded);
     }

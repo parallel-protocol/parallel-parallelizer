@@ -5,6 +5,7 @@ error AboveCap();
 error AccessManagedUnauthorized(address caller);
 error AlreadyAdded();
 error ArrayLengthMismatch();
+error AuthorizationTransferMismatch();
 error CannotAddFunctionToDiamondThatAlreadyExists(bytes4 _selector);
 error CannotAddSelectorsToZeroAddress(bytes4[] _selectors);
 error CannotRemoveFunctionThatDoesNotExist(bytes4 _selector);
