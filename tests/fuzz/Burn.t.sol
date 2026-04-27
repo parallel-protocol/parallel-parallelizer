@@ -9,7 +9,9 @@ import "contracts/parallelizer/Storage.sol" as Storage;
 import "contracts/utils/Errors.sol" as Errors;
 
 import { ManagerStorage, ManagerType, WhitelistType } from "contracts/parallelizer/Storage.sol";
+import { LibAuthorization } from "contracts/parallelizer/libraries/LibAuthorization.sol";
 import { MockManager } from "../mock/MockManager.sol";
+import { Mock1271Signer } from "../mock/Mock1271Signer.sol";
 import "../Fixture.sol";
 import "../utils/FunctionUtils.sol";
 
@@ -1634,6 +1636,58 @@ contract BurnTest is Fixture, FunctionUtils {
     );
   }
 
+  function test_SwapExactInputWithAuthorization_EIP1271_NonStandardSignatureLength() public {
+    Mock1271Signer signer = new Mock1271Signer();
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), address(signer), mintAmount);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes32 userSalt = bytes32("eip1271");
+    bytes32 derivedNonce = LibAuthorization.computeSwapExactInputNonce(
+      address(signer), address(eurA), address(tokenP), mintAmount, 0, address(signer), deadline, userSalt
+    );
+
+    bytes32 structHash = keccak256(
+      abi.encode(
+        RECEIVE_WITH_AUTHORIZATION_TYPEHASH,
+        address(signer),
+        address(parallelizer),
+        mintAmount,
+        uint256(0),
+        deadline,
+        derivedNonce
+      )
+    );
+    bytes32 typedDataHash =
+      MessageHashUtils.toTypedDataHash(MockTokenPermit(address(eurA)).DOMAIN_SEPARATOR(), structHash);
+
+    bytes memory signature = new bytes(130);
+    for (uint256 i; i < 130; ++i) {
+      signature[i] = bytes1(uint8(i + 1));
+    }
+    signer.setAuthorized(typedDataHash, signature);
+
+    bytes memory authData = abi.encode(
+      AuthorizationParams({
+        from: address(signer),
+        value: mintAmount,
+        validAfter: 0,
+        validBefore: deadline,
+        nonce: userSalt,
+        signature: signature
+      })
+    );
+
+    vm.prank(bob);
+    uint256 amountOut = parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), address(signer), deadline, authData
+    );
+
+    assertGt(amountOut, 0);
+    assertEq(tokenP.balanceOf(address(signer)), amountOut);
+    assertEq(IERC20(address(eurA)).balanceOf(address(signer)), 0);
+  }
+
   function testFuzz_RevertWhen_AuthorizationDoesNotTransferTokens_ExactInput(
     uint256 mintAmount,
     bytes32 userSalt
@@ -1644,16 +1698,13 @@ contract BurnTest is Fixture, FunctionUtils {
     deal(address(eurA), alice, mintAmount);
 
     uint256 deadline = block.timestamp + 1 hours;
-    bytes memory authData = _buildSwapExactInputAuth(
-      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt
-    );
+    bytes memory authData =
+      _buildSwapExactInputAuth(1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt);
 
     vm.mockCall(
       address(eurA),
       abi.encodeWithSelector(
-        bytes4(
-          keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
-        )
+        bytes4(keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,bytes)"))
       ),
       ""
     );
@@ -1683,9 +1734,7 @@ contract BurnTest is Fixture, FunctionUtils {
     vm.mockCall(
       address(eurA),
       abi.encodeWithSelector(
-        bytes4(
-          keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
-        )
+        bytes4(keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,bytes)"))
       ),
       ""
     );
@@ -1708,16 +1757,13 @@ contract BurnTest is Fixture, FunctionUtils {
     burnAmount = bound(burnAmount, BASE_18, tokenPBal / 2);
 
     uint256 deadline = block.timestamp + 1 hours;
-    bytes memory authData = _buildSwapExactInputAuth(
-      1, address(tokenP), address(eurA), alice, burnAmount, 0, alice, deadline, userSalt
-    );
+    bytes memory authData =
+      _buildSwapExactInputAuth(1, address(tokenP), address(eurA), alice, burnAmount, 0, alice, deadline, userSalt);
 
     vm.mockCall(
       address(tokenP),
       abi.encodeWithSelector(
-        bytes4(
-          keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)")
-        )
+        bytes4(keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,bytes)"))
       ),
       ""
     );

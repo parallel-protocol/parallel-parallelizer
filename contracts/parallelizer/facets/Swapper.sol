@@ -327,9 +327,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         params.validAfter,
         params.validBefore,
         params.nonce,
-        params.v,
-        params.r,
-        params.s
+        params.signature
       );
     uint256 balanceAfter = IERC20(token).balanceOf(address(this));
     if (balanceAfter != balanceBefore + params.value) revert AuthorizationTransferMismatch();

@@ -207,9 +207,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
         validAfter: 0,
         validBefore: block.timestamp + 1 hours,
         nonce: nonce,
-        v: v,
-        r: r,
-        s: s
+        signature: abi.encodePacked(r, s, v)
       })
     );
   }
@@ -352,9 +350,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
         validAfter: 0,
         validBefore: validBefore,
         nonce: userSalt,
-        v: v,
-        r: r,
-        s: s
+        signature: abi.encodePacked(r, s, v)
       })
     );
   }

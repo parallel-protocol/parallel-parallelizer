@@ -113,9 +113,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
       params.validAfter,
       params.validBefore,
       derivedNonce,
-      params.v,
-      params.r,
-      params.s
+      params.signature
     );
     return _redeem(amount, address(this), receiver, deadline, minAmountOuts, new address[](0));
   }
