@@ -228,7 +228,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
 
   bytes32 internal constant PARALLELIZER_REDEEM_TYPEHASH = keccak256(
     "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,"
-    "bytes32 minAmountOutsHash,bytes32 userSalt)"
+    "bytes32 minAmountOutsHash,bytes32 forfeitTokensHash,bytes32 userSalt)"
   );
 
   function _buildSwapExactInputAuth(
@@ -300,6 +300,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
     address receiver,
     uint256 deadline,
     uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
     bytes32 userSalt
   )
     internal
@@ -314,6 +315,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
         receiver,
         deadline,
         keccak256(abi.encodePacked(minAmountOuts)),
+        keccak256(abi.encodePacked(forfeitTokens)),
         userSalt
       )
     );

@@ -96,12 +96,13 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     address receiver,
     uint256 deadline,
     uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
     bytes memory authData
   )
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, receiver, deadline, minAmountOuts, new address[](0), authData);
+    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens, authData);
   }
 
   /// @inheritdoc IRedeemer
@@ -154,7 +155,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
       _updateNormalizer(amount, false);
 
       if (authData.length > 0) {
-        from = _executeAuthorization(amount, to, deadline, minAmountOuts, authData);
+        from = _executeAuthorization(amount, to, deadline, minAmountOuts, forfeitTokens, authData);
         ITokenP(ts.tokenP).burnSelf(amount, address(this));
       } else {
         ITokenP(ts.tokenP).burnSelf(amount, msg.sender);
@@ -190,6 +191,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     address receiver,
     uint256 deadline,
     uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
     bytes memory authData
   )
     internal
@@ -197,8 +199,9 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   {
     AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
     if (params.value != amount) revert InvalidSwap();
-    bytes32 derivedNonce =
-      LibAuthorization.computeRedeemNonce(params.from, amount, receiver, deadline, minAmountOuts, params.nonce);
+    bytes32 derivedNonce = LibAuthorization.computeRedeemNonce(
+      params.from, amount, receiver, deadline, minAmountOuts, forfeitTokens, params.nonce
+    );
     IEIP3009(address(s.transmuterStorage().tokenP)).receiveWithAuthorization(
       params.from,
       address(this),

@@ -26,7 +26,7 @@ library LibAuthorization {
 
   bytes32 internal constant REDEEM_WITH_AUTHORIZATION_TYPEHASH = keccak256(
     "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,"
-    "bytes32 minAmountOutsHash,bytes32 userSalt)"
+    "bytes32 minAmountOutsHash,bytes32 forfeitTokensHash,bytes32 userSalt)"
   );
 
   function computeSwapExactInputNonce(
@@ -93,6 +93,7 @@ library LibAuthorization {
     address receiver,
     uint256 deadline,
     uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
     bytes32 userSalt
   )
     internal
@@ -107,6 +108,7 @@ library LibAuthorization {
         receiver,
         deadline,
         keccak256(abi.encodePacked(minAmountOuts)),
+        keccak256(abi.encodePacked(forfeitTokens)),
         userSalt
       )
     );
