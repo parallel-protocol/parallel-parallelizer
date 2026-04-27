@@ -28,8 +28,8 @@ abstract contract EIP3009 is ERC20Upgradeable, IEIP3009 {
   bytes32 public constant CANCEL_AUTHORIZATION_TYPEHASH =
     0x158b0a9edf7a828aad02f63cd515c68ef2f50ba807396f6d12842833a1597429;
 
-  bytes32 private constant EIP712_DOMAIN_TYPEHASH =
-    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+  // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
+  bytes32 private constant EIP712_DOMAIN_TYPEHASH = 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
 
   bytes32 private constant VERSION_HASH = keccak256(bytes("1"));
 

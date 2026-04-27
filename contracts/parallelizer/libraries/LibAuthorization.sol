@@ -14,20 +14,20 @@ pragma solidity 0.8.28;
 /// protection is provided by the token's own `authorizationStates` mapping; retries use a fresh
 /// `userSalt`.
 library LibAuthorization {
-  bytes32 internal constant SWAP_EXACT_INPUT_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "SwapExactInputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountIn,"
-    "uint256 amountOutMin,address to,uint256 deadline,bytes32 userSalt)"
-  );
+  // keccak256("SwapExactInputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountIn,uint256
+  // amountOutMin,address to,uint256 deadline,bytes32 userSalt)")
+  bytes32 internal constant SWAP_EXACT_INPUT_WITH_AUTHORIZATION_TYPEHASH =
+    0x9be969f74c66b263054aa69cfac8412777a0dc17ab007f81682c6b156ba06d79;
 
-  bytes32 internal constant SWAP_EXACT_OUTPUT_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "SwapExactOutputWithAuthorization(address from,address tokenIn,address tokenOut,uint256 amountOut,"
-    "uint256 amountInMax,address to,uint256 deadline,bytes32 userSalt)"
-  );
+  // keccak256("SwapExactOutputWithAuthorization(address from,address tokenIn,address tokenOut,uint256
+  // amountOut,uint256 amountInMax,address to,uint256 deadline,bytes32 userSalt)")
+  bytes32 internal constant SWAP_EXACT_OUTPUT_WITH_AUTHORIZATION_TYPEHASH =
+    0x41378613b6b468c26472b6d9a40faaeaf3c63b23ae57d1d7e3a7c3d2c356b1ed;
 
-  bytes32 internal constant REDEEM_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,"
-    "bytes32 minAmountOutsHash,bytes32 forfeitTokensHash,bytes32 userSalt)"
-  );
+  // keccak256("RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,bytes32
+  // minAmountOutsHash,bytes32 forfeitTokensHash,bytes32 userSalt)")
+  bytes32 internal constant REDEEM_WITH_AUTHORIZATION_TYPEHASH =
+    0xcff34e096e1842f6f6ae4c0d0c6eefd4855c8bdc5bc64155d7c14b2dbeee661a;
 
   function computeSwapExactInputNonce(
     address from,

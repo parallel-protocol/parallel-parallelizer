@@ -12,15 +12,15 @@ import { EIP3009 } from "./EIP3009.sol";
 /// @dev The `vault` field is redundant with the domain separator's `verifyingContract` but is
 /// included so wallets displaying the typed data surface the target contract explicitly.
 abstract contract SavingsEIP3009 is EIP3009 {
-  bytes32 public constant DEPOSIT_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "DepositWithAuthorization(address vault,address owner,address receiver,uint256 assets,"
-    "uint256 validAfter,uint256 validBefore,bytes32 nonce)"
-  );
+  // keccak256("DepositWithAuthorization(address vault,address owner,address receiver,uint256 assets,
+  // uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+  bytes32 public constant DEPOSIT_WITH_AUTHORIZATION_TYPEHASH =
+    0xffb59c7c3deee71aac2e122b6d8ff99f01f9c53f52e9eae5c4cbfb938f36505e;
 
-  bytes32 public constant REDEEM_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-    "RedeemWithAuthorization(address vault,address owner,address receiver,uint256 shares,"
-    "uint256 validAfter,uint256 validBefore,bytes32 nonce)"
-  );
+  // keccak256("RedeemWithAuthorization(address vault,address owner,address receiver,uint256 shares,uint256
+  // validAfter,uint256 validBefore,bytes32 nonce)"
+  bytes32 public constant REDEEM_WITH_AUTHORIZATION_TYPEHASH =
+    0x1491cef7ab4c7966b1389a54442e087b9510d2cd2b09fcc1b3d203fba075a530;
 
   error InvalidVault();
 
@@ -44,9 +44,7 @@ abstract contract SavingsEIP3009 is EIP3009 {
     _requireValidSignature(
       owner,
       keccak256(
-        abi.encode(
-          DEPOSIT_WITH_AUTHORIZATION_TYPEHASH, vault, owner, receiver, assets, validAfter, validBefore, nonce
-        )
+        abi.encode(DEPOSIT_WITH_AUTHORIZATION_TYPEHASH, vault, owner, receiver, assets, validAfter, validBefore, nonce)
       ),
       signature
     );
@@ -71,9 +69,7 @@ abstract contract SavingsEIP3009 is EIP3009 {
     _requireValidSignature(
       owner,
       keccak256(
-        abi.encode(
-          REDEEM_WITH_AUTHORIZATION_TYPEHASH, vault, owner, receiver, shares, validAfter, validBefore, nonce
-        )
+        abi.encode(REDEEM_WITH_AUTHORIZATION_TYPEHASH, vault, owner, receiver, shares, validAfter, validBefore, nonce)
       ),
       signature
     );
