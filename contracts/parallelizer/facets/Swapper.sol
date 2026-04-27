@@ -260,6 +260,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   {
     if (amountIn > 0 && amountOut > 0) {
       ParallelizerStorage storage ts = s.transmuterStorage();
+      address from = msg.sender;
       if (mint) {
         uint128 changeAmount = (amountOut.mulDiv(BASE_27, ts.normalizer, Math.Rounding.Ceil)).toUint128();
         // The amount of stablecoins issued from a collateral are not stored as absolute variables, but
@@ -270,7 +271,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         if (permitData.length > 0) {
           PERMIT_2.functionCall(permitData);
         } else if (authData.length > 0) {
-          _executeAuthorization(tokenIn, amountIn, authData);
+          from = _executeAuthorization(tokenIn, amountIn, authData);
           if (collatInfo.isManaged > 0) {
             IERC20(tokenIn).safeTransfer(LibManager.transferRecipient(collatInfo.managerData.config), amountIn);
           }
@@ -296,7 +297,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         collatInfo.normalizedStables = collatInfo.normalizedStables - uint216(changeAmount);
         ts.normalizedStables = ts.normalizedStables - changeAmount;
         if (authData.length > 0) {
-          _executeAuthorization(tokenIn, amountIn, authData);
+          from = _executeAuthorization(tokenIn, amountIn, authData);
           ITokenP(tokenIn).burnSelf(amountIn, address(this));
         } else {
           ITokenP(tokenIn).burnSelf(amountIn, msg.sender);
@@ -307,7 +308,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
           IERC20(tokenOut).safeTransfer(to, amountOut);
         }
       }
-      emit Swap(tokenIn, tokenOut, amountIn, amountOut, msg.sender, to);
+      emit Swap(tokenIn, tokenOut, amountIn, amountOut, from, to);
     }
   }
 
@@ -315,7 +316,15 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   /// @param token The token to receive via authorization
   /// @param amountNeeded The actual amount needed for the swap
   /// @param authData ABI-encoded AuthorizationParams
-  function _executeAuthorization(address token, uint256 amountNeeded, bytes memory authData) internal {
+  /// @return from The authorizer address (`params.from`), to attribute the swap event to
+  function _executeAuthorization(
+    address token,
+    uint256 amountNeeded,
+    bytes memory authData
+  )
+    internal
+    returns (address from)
+  {
     AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
     if (params.value < amountNeeded) revert InvalidSwap();
     uint256 balanceBefore = IERC20(token).balanceOf(address(this));
@@ -334,6 +343,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     if (params.value > amountNeeded) {
       IERC20(token).safeTransfer(params.from, params.value - amountNeeded);
     }
+    return params.from;
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1993,4 +1993,40 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.expectRevert();
     parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, authData2);
   }
+
+  event Redeemed(
+    uint256 amount,
+    address[] tokens,
+    uint256[] amounts,
+    address[] forfeitTokens,
+    address indexed from,
+    address indexed to
+  );
+
+  function test_RedeemWithAuthorization_EmitsAuthorizerNotRelayer() public {
+    _mintExactInput(alice, address(eurA), 100 * BASE_6, 0);
+    _mintExactInput(alice, address(eurB), 100 * 1e12, 0);
+    _mintExactInput(alice, address(eurY), 100 * BASE_18, 0);
+
+    uint256 redeemAmount = tokenP.balanceOf(alice) / 4;
+
+    vm.startPrank(guardian);
+    uint64[] memory xR = new uint64[](1);
+    xR[0] = uint64(0);
+    int64[] memory yR = new int64[](1);
+    yR[0] = int64(int256(BASE_9));
+    parallelizer.setRedemptionCurveParams(xR, yR);
+    vm.stopPrank();
+
+    uint256 deadline = block.timestamp + 1 hours;
+    uint256[] memory minOuts = new uint256[](3);
+    bytes memory authData =
+      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, bytes32("event_attr_redeem"));
+
+    vm.expectEmit(true, true, false, false, address(parallelizer));
+    emit Redeemed(0, new address[](0), new uint256[](0), new address[](0), alice, alice);
+
+    vm.prank(bob);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, authData);
+  }
 }

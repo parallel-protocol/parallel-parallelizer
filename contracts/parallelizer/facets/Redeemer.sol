@@ -71,7 +71,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, msg.sender, receiver, deadline, minAmountOuts, new address[](0));
+    return _redeem(amount, receiver, deadline, minAmountOuts, new address[](0), "");
   }
 
   /// @inheritdoc IRedeemer
@@ -87,7 +87,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, msg.sender, receiver, deadline, minAmountOuts, forfeitTokens);
+    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens, "");
   }
 
   /// @inheritdoc IRedeemer
@@ -101,21 +101,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    ParallelizerStorage storage ts = s.transmuterStorage();
-    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
-    if (params.value != amount) revert InvalidSwap();
-    bytes32 derivedNonce =
-      LibAuthorization.computeRedeemNonce(params.from, amount, receiver, deadline, minAmountOuts, params.nonce);
-    IEIP3009(address(ts.tokenP)).receiveWithAuthorization(
-      params.from,
-      address(this),
-      params.value,
-      params.validAfter,
-      params.validBefore,
-      derivedNonce,
-      params.signature
-    );
-    return _redeem(amount, address(this), receiver, deadline, minAmountOuts, new address[](0));
+    return _redeem(amount, receiver, deadline, minAmountOuts, new address[](0), authData);
   }
 
   /// @inheritdoc IRedeemer
@@ -144,11 +130,11 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   /// @notice Internal function of the `redeem` function in the `Redeemer` contract
   function _redeem(
     uint256 amount,
-    address from,
     address to,
     uint256 deadline,
     uint256[] memory minAmountOuts,
-    address[] memory forfeitTokens
+    address[] memory forfeitTokens,
+    bytes memory authData
   )
     internal
     nonReentrant
@@ -159,6 +145,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     if (ts.isRedemptionLive == 0) revert Paused();
     if (block.timestamp > deadline) revert TooLate();
 
+    address from = msg.sender;
     {
       uint256[] memory subCollateralsTracker;
       (tokens, amounts, subCollateralsTracker) = _quoteRedemptionCurve(amount);
@@ -166,7 +153,12 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
       if (amountsLength != minAmountOuts.length) revert InvalidLengths();
       _updateNormalizer(amount, false);
 
-      ITokenP(ts.tokenP).burnSelf(amount, from);
+      if (authData.length > 0) {
+        from = _executeAuthorization(amount, to, deadline, minAmountOuts, authData);
+        ITokenP(ts.tokenP).burnSelf(amount, address(this));
+      } else {
+        ITokenP(ts.tokenP).burnSelf(amount, msg.sender);
+      }
 
       address[] memory collateralListMem = ts.collateralList;
       uint256 indexCollateral;
@@ -187,7 +179,36 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
         if (subCollateralsTracker[indexCollateral] - 1 <= i) ++indexCollateral;
       }
     }
-    emit Redeemed(amount, tokens, amounts, forfeitTokens, msg.sender, to);
+    emit Redeemed(amount, tokens, amounts, forfeitTokens, from, to);
+  }
+
+  /// @notice Pulls the redeem amount from the signer via EIP-3009 `receiveWithAuthorization`,
+  /// using a derived nonce that binds the full redemption intent.
+  /// @return from The authorizer address (`params.from`), to attribute the redeem event to
+  function _executeAuthorization(
+    uint256 amount,
+    address receiver,
+    uint256 deadline,
+    uint256[] memory minAmountOuts,
+    bytes memory authData
+  )
+    internal
+    returns (address from)
+  {
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value != amount) revert InvalidSwap();
+    bytes32 derivedNonce =
+      LibAuthorization.computeRedeemNonce(params.from, amount, receiver, deadline, minAmountOuts, params.nonce);
+    IEIP3009(address(s.transmuterStorage().tokenP)).receiveWithAuthorization(
+      params.from,
+      address(this),
+      params.value,
+      params.validAfter,
+      params.validBefore,
+      derivedNonce,
+      params.signature
+    );
+    return params.from;
   }
 
   /// @dev This function reverts if `stablecoinsIssued==0`, which is expected behavior as there is nothing to redeem

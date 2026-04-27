@@ -18,6 +18,15 @@ import "../utils/FunctionUtils.sol";
 contract BurnTest is Fixture, FunctionUtils {
   using SafeERC20 for IERC20;
 
+  event Swap(
+    address indexed tokenIn,
+    address indexed tokenOut,
+    uint256 amountIn,
+    uint256 amountOut,
+    address indexed from,
+    address to
+  );
+
   uint256 internal _maxAmountWithoutDecimals = 10 ** 15;
   // making this value smaller worsen rounding and make test harder to pass.
   // Trade off between bullet proof against all oracles and all interactions
@@ -1633,6 +1642,25 @@ contract BurnTest is Fixture, FunctionUtils {
     vm.expectRevert();
     parallelizer.swapExactInputWithAuthorization(
       mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData2
+    );
+  }
+
+  function test_SwapExactInputWithAuthorization_EmitsAuthorizerNotRelayer() public {
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), alice, mintAmount);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, bytes32("event_attr")
+    );
+
+    uint256 expectedAmountOut = parallelizer.quoteIn(mintAmount, address(eurA), address(tokenP));
+    vm.expectEmit(address(parallelizer));
+    emit Swap(address(eurA), address(tokenP), mintAmount, expectedAmountOut, alice, alice);
+
+    vm.prank(bob);
+    parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData
     );
   }
 
