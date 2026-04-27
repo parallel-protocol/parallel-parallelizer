@@ -1645,6 +1645,55 @@ contract BurnTest is Fixture, FunctionUtils {
     );
   }
 
+  /// @notice Bailsec Issue_08: a zero-amount signed payload must consume the nonce so it cannot be
+  /// replayed, even though no swap happens.
+  function test_SwapExactInputWithAuthorization_ZeroAmountConsumesNonce() public {
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes32 userSalt = bytes32("zeroIn");
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, 0, 0, alice, deadline, userSalt
+    );
+
+    vm.prank(bob);
+    uint256 amountOut = parallelizer.swapExactInputWithAuthorization(
+      0, 0, address(eurA), address(tokenP), alice, deadline, authData
+    );
+    assertEq(amountOut, 0);
+
+    // Replaying the same signature must now revert because the nonce is consumed.
+    bytes memory replayAuthData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, 0, 0, alice, deadline, userSalt
+    );
+    vm.prank(bob);
+    vm.expectRevert(bytes("authorization is used"));
+    parallelizer.swapExactInputWithAuthorization(
+      0, 0, address(eurA), address(tokenP), alice, deadline, replayAuthData
+    );
+  }
+
+  function test_SwapExactOutputWithAuthorization_ZeroAmountConsumesNonce() public {
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes32 userSalt = bytes32("zeroOut");
+    bytes memory authData = _buildSwapExactOutputAuth(
+      1, address(eurA), address(tokenP), alice, 0, 0, alice, deadline, userSalt
+    );
+
+    vm.prank(bob);
+    uint256 amountIn = parallelizer.swapExactOutputWithAuthorization(
+      0, 0, address(eurA), address(tokenP), alice, deadline, authData
+    );
+    assertEq(amountIn, 0);
+
+    bytes memory replayAuthData = _buildSwapExactOutputAuth(
+      1, address(eurA), address(tokenP), alice, 0, 0, alice, deadline, userSalt
+    );
+    vm.prank(bob);
+    vm.expectRevert(bytes("authorization is used"));
+    parallelizer.swapExactOutputWithAuthorization(
+      0, 0, address(eurA), address(tokenP), alice, deadline, replayAuthData
+    );
+  }
+
   function test_SwapExactInputWithAuthorization_EmitsAuthorizerNotRelayer() public {
     uint256 mintAmount = 100 * BASE_6;
     deal(address(eurA), alice, mintAmount);

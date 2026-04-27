@@ -172,11 +172,20 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     params.nonce = LibAuthorization.computeSwapExactInputNonce(
       params.from, tokenIn, tokenOut, amountIn, amountOutMin, to, deadline, params.nonce
     );
+    bytes memory derivedAuthData = abi.encode(params);
+    if (amountIn == 0) {
+      // Bailsec Issue_08: a zero-amount signed payload would otherwise leave the nonce live and
+      // replayable. params.value is constrained to amountIn (== 0) so receiveWithAuthorization
+      // is a no-op transfer that just burns the nonce.
+      _executeAuthorization(tokenIn, 0, derivedAuthData);
+      return 0;
+    }
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
     amountOut =
       mint ? _quoteMintExactInput(collatInfo, amountIn) : _quoteBurnExactInput(tokenOut, collatInfo, amountIn);
     if (amountOut < amountOutMin) revert TooSmallAmountOut();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", abi.encode(params));
+    if (amountOut == 0) revert ZeroAmount();
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", derivedAuthData);
   }
 
   /// @inheritdoc ISwapper
@@ -197,11 +206,20 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     params.nonce = LibAuthorization.computeSwapExactOutputNonce(
       params.from, tokenIn, tokenOut, amountOut, amountInMax, to, deadline, params.nonce
     );
+    bytes memory derivedAuthData = abi.encode(params);
+    if (amountOut == 0) {
+      // Bailsec Issue_08: consume the nonce so the signed zero-output payload cannot be replayed.
+      // _executeAuthorization pulls params.value (= amountInMax) and refunds it atomically with
+      // amountNeeded = 0, so no value moves but the nonce is burned.
+      _executeAuthorization(tokenIn, 0, derivedAuthData);
+      return 0;
+    }
     (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
     amountIn =
       mint ? _quoteMintExactOutput(collatInfo, amountOut) : _quoteBurnExactOutput(tokenOut, collatInfo, amountOut);
     if (amountIn > amountInMax) revert TooBigAmountIn();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", abi.encode(params));
+    if (amountIn == 0) revert ZeroAmount();
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", derivedAuthData);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
