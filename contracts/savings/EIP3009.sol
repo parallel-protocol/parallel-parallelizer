@@ -39,7 +39,7 @@ abstract contract EIP3009 is ERC20Upgradeable, IEIP3009 {
   }
 
   // keccak256(abi.encode(uint256(keccak256("cooperlabs.storage.EIP3009")) - 1)) & ~bytes32(uint256(0xff))
-  bytes32 private constant EIP3009StorageLocation = 0x0f2e86d677e57958274060fd7e3f94ab58d8026e3c78e0e811418ca3fbe98e00;
+  bytes32 private constant EIP3009StorageLocation = 0x34292e02e92581dc72dd1eedcc379a97daab830d016799aa096bf08b96bd9500;
 
   function _getEIP3009Storage() private pure returns (EIP3009Storage storage $) {
     assembly {
