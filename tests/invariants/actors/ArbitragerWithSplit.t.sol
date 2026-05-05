@@ -227,7 +227,23 @@ contract ArbitragerWithSplit is BaseActor {
     splitProportion = bound(splitProportion, 1, BASE_9);
     if (amount == 0) return;
 
+    // Build forfeitTokens from isForfeitTokens so the protocol skips them; the post-redeem
+    // assertions below assume forfeited tokens are not credited to the actor.
     address[] memory forfeitTokens;
+    {
+      uint256 count;
+      for (uint256 i; i < isForfeitTokens.length; ++i) {
+        if (isForfeitTokens[i]) count++;
+      }
+      forfeitTokens = new address[](count);
+      count = 0;
+      for (uint256 i; i < isForfeitTokens.length; ++i) {
+        if (isForfeitTokens[i]) {
+          forfeitTokens[count] = _collaterals[i];
+          count++;
+        }
+      }
+    }
     // Redeem on the true parallelizer
     {
       uint256[] memory balanceTokens = new uint256[](_collaterals.length);
