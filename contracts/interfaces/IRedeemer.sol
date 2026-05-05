@@ -34,15 +34,17 @@ interface IRedeemer {
     external
     returns (address[] memory tokens, uint256[] memory amounts);
 
-  /// @notice Same as `redeem` but using a single EIP-3009 authorization for the tokenP transfer.
+  /// @notice Same as `redeemWithForfeit` but using a single EIP-3009 authorization for the tokenP
+  /// transfer.
   /// @dev The signed EIP-3009 nonce MUST equal `LibAuthorization.computeRedeemNonce(...)` so that
-  /// mutating `receiver`, `amount`, `deadline` or `minAmountOuts` invalidates the signature.
-  /// `authData.nonce` carries the caller-chosen `userSalt`.
+  /// mutating `receiver`, `amount`, `deadline`, `minAmountOuts` or `forfeitTokens` invalidates the
+  /// signature. `authData.nonce` carries the caller-chosen `userSalt`.
   function redeemWithAuthorization(
     uint256 amount,
     address receiver,
     uint256 deadline,
     uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
     bytes memory authData
   )
     external

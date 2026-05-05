@@ -13,6 +13,13 @@ import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 /// @notice Abstract implementation of EIP-3009: Transfer With Authorization
 /// @dev Supports both EOA (v,r,s) and smart contract wallet (EIP-1271) signatures.
 /// The EIP-712 domain separator is computed dynamically from `name()` so no initialization is required.
+/// SECURITY: `transferWithAuthorization` has no `msg.sender` restriction and is therefore
+/// vulnerable to nonce-burn frontrunning - any observer of the mempool can submit a valid
+/// signature ahead of the intended caller, consuming the nonce. Integrations that bind the
+/// transfer to follow-on logic (swap, deposit, redeem, etc.) MUST use `receiveWithAuthorization`
+/// instead, which enforces `msg.sender == to` and atomically pairs the pull with downstream
+/// execution. `transferWithAuthorization` is intended only for direct payouts to a passive
+/// recipient.
 abstract contract EIP3009 is ERC20Upgradeable, IEIP3009 {
   // keccak256("TransferWithAuthorization(address from,address to,
   //   uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
@@ -28,8 +35,8 @@ abstract contract EIP3009 is ERC20Upgradeable, IEIP3009 {
   bytes32 public constant CANCEL_AUTHORIZATION_TYPEHASH =
     0x158b0a9edf7a828aad02f63cd515c68ef2f50ba807396f6d12842833a1597429;
 
-  bytes32 private constant EIP712_DOMAIN_TYPEHASH =
-    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+  // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
+  bytes32 private constant EIP712_DOMAIN_TYPEHASH = 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
 
   bytes32 private constant VERSION_HASH = keccak256(bytes("1"));
 
@@ -39,7 +46,7 @@ abstract contract EIP3009 is ERC20Upgradeable, IEIP3009 {
   }
 
   // keccak256(abi.encode(uint256(keccak256("cooperlabs.storage.EIP3009")) - 1)) & ~bytes32(uint256(0xff))
-  bytes32 private constant EIP3009StorageLocation = 0x0f2e86d677e57958274060fd7e3f94ab58d8026e3c78e0e811418ca3fbe98e00;
+  bytes32 private constant EIP3009StorageLocation = 0x34292e02e92581dc72dd1eedcc379a97daab830d016799aa096bf08b96bd9500;
 
   function _getEIP3009Storage() private pure returns (EIP3009Storage storage $) {
     assembly {

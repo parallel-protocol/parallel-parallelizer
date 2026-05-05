@@ -75,9 +75,7 @@ struct AuthorizationParams {
   uint256 validAfter; // The time after which this is valid (unix time)
   uint256 validBefore; // The time before which this is valid (unix time)
   bytes32 nonce; // Unique nonce
-  uint8 v; // v of the signature
-  bytes32 r; // r of the signature
-  bytes32 s; // s of the signature
+  bytes signature; // EOA (r,s,v packed) or arbitrary-length EIP-1271 contract signature
 }
 
 struct FacetCut {

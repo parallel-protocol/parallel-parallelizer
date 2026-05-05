@@ -39,6 +39,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
 
       - name: Compile foundry
         run: forge build --sizes
@@ -70,6 +72,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
 
       - uses: actions/cache/restore@v4
         with:
@@ -96,6 +100,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
 
       - uses: actions/cache/restore@v4
         with:

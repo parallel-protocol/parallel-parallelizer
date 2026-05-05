@@ -5,6 +5,12 @@ pragma solidity 0.8.28;
 /// @notice Interface for EIP-3009: Transfer With Authorization
 interface IEIP3009 {
   /// @notice Execute a transfer with a signed authorization (EOA signature)
+  /// @dev SECURITY: anyone may submit this call (no `msg.sender` restriction). Integrators that
+  /// pair the transfer with downstream logic (e.g. swap, deposit, redeem) MUST use
+  /// `receiveWithAuthorization` instead: a mempool watcher can otherwise frontrun the original
+  /// transaction with a raw `transferWithAuthorization`, burning the nonce so the original
+  /// reverts while the funds still move - causing the post-transfer logic to be skipped.
+  /// Use this primitive only for direct payouts to a passive recipient (`msg.sender != to`).
   /// @param from The address of the sender
   /// @param to The address of the recipient
   /// @param value The amount of tokens to transfer
@@ -28,6 +34,8 @@ interface IEIP3009 {
     external;
 
   /// @notice Execute a transfer with a signed authorization (EIP-1271 compatible)
+  /// @dev SECURITY: see the EOA overload - this primitive is frontrun-prone and must not be used
+  /// when the transfer is bound to follow-on logic. Use `receiveWithAuthorization` in that case.
   /// @param from The payer's address (Authorizer)
   /// @param to The payee's address
   /// @param value The amount to be transferred

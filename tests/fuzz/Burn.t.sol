@@ -9,12 +9,23 @@ import "contracts/parallelizer/Storage.sol" as Storage;
 import "contracts/utils/Errors.sol" as Errors;
 
 import { ManagerStorage, ManagerType, WhitelistType } from "contracts/parallelizer/Storage.sol";
+import { LibAuthorization } from "contracts/parallelizer/libraries/LibAuthorization.sol";
 import { MockManager } from "../mock/MockManager.sol";
+import { Mock1271Signer } from "../mock/Mock1271Signer.sol";
 import "../Fixture.sol";
 import "../utils/FunctionUtils.sol";
 
 contract BurnTest is Fixture, FunctionUtils {
   using SafeERC20 for IERC20;
+
+  event Swap(
+    address indexed tokenIn,
+    address indexed tokenOut,
+    uint256 amountIn,
+    uint256 amountOut,
+    address indexed from,
+    address to
+  );
 
   uint256 internal _maxAmountWithoutDecimals = 10 ** 15;
   // making this value smaller worsen rounding and make test harder to pass.
@@ -1616,23 +1627,228 @@ contract BurnTest is Fixture, FunctionUtils {
     bytes32 userSalt = bytes32("reuse1");
     uint256 deadline = block.timestamp + 1 hours;
 
-    bytes memory authData1 = _buildSwapExactInputAuth(
-      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt
-    );
+    bytes memory authData1 =
+      _buildSwapExactInputAuth(1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt);
 
     vm.prank(bob);
     parallelizer.swapExactInputWithAuthorization(
       mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData1
     );
 
-    bytes memory authData2 = _buildSwapExactInputAuth(
-      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt
-    );
+    bytes memory authData2 =
+      _buildSwapExactInputAuth(1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt);
 
     vm.prank(bob);
     vm.expectRevert();
     parallelizer.swapExactInputWithAuthorization(
       mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData2
+    );
+  }
+
+  /// @notice Bailsec Issue_08: a zero-amount signed payload must consume the nonce so it cannot be
+  /// replayed, even though no swap happens.
+  function test_SwapExactInputWithAuthorization_ZeroAmountConsumesNonce() public {
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes32 userSalt = bytes32("zeroIn");
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, 0, 0, alice, deadline, userSalt
+    );
+
+    vm.prank(bob);
+    uint256 amountOut = parallelizer.swapExactInputWithAuthorization(
+      0, 0, address(eurA), address(tokenP), alice, deadline, authData
+    );
+    assertEq(amountOut, 0);
+
+    // Replaying the same signature must now revert because the nonce is consumed.
+    bytes memory replayAuthData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, 0, 0, alice, deadline, userSalt
+    );
+    vm.prank(bob);
+    vm.expectRevert(bytes("authorization is used"));
+    parallelizer.swapExactInputWithAuthorization(
+      0, 0, address(eurA), address(tokenP), alice, deadline, replayAuthData
+    );
+  }
+
+  function test_SwapExactOutputWithAuthorization_ZeroAmountConsumesNonce() public {
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes32 userSalt = bytes32("zeroOut");
+    bytes memory authData = _buildSwapExactOutputAuth(
+      1, address(eurA), address(tokenP), alice, 0, 0, alice, deadline, userSalt
+    );
+
+    vm.prank(bob);
+    uint256 amountIn = parallelizer.swapExactOutputWithAuthorization(
+      0, 0, address(eurA), address(tokenP), alice, deadline, authData
+    );
+    assertEq(amountIn, 0);
+
+    bytes memory replayAuthData = _buildSwapExactOutputAuth(
+      1, address(eurA), address(tokenP), alice, 0, 0, alice, deadline, userSalt
+    );
+    vm.prank(bob);
+    vm.expectRevert(bytes("authorization is used"));
+    parallelizer.swapExactOutputWithAuthorization(
+      0, 0, address(eurA), address(tokenP), alice, deadline, replayAuthData
+    );
+  }
+
+  function test_SwapExactInputWithAuthorization_EmitsAuthorizerNotRelayer() public {
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), alice, mintAmount);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactInputAuth(
+      1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, bytes32("event_attr")
+    );
+
+    uint256 expectedAmountOut = parallelizer.quoteIn(mintAmount, address(eurA), address(tokenP));
+    vm.expectEmit(address(parallelizer));
+    emit Swap(address(eurA), address(tokenP), mintAmount, expectedAmountOut, alice, alice);
+
+    vm.prank(bob);
+    parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData
+    );
+  }
+
+  function test_SwapExactInputWithAuthorization_EIP1271_NonStandardSignatureLength() public {
+    Mock1271Signer signer = new Mock1271Signer();
+    uint256 mintAmount = 100 * BASE_6;
+    deal(address(eurA), address(signer), mintAmount);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes32 userSalt = bytes32("eip1271");
+    bytes32 derivedNonce = LibAuthorization.computeSwapExactInputNonce(
+      address(signer), address(eurA), address(tokenP), mintAmount, 0, address(signer), deadline, userSalt
+    );
+
+    bytes32 structHash = keccak256(
+      abi.encode(
+        RECEIVE_WITH_AUTHORIZATION_TYPEHASH,
+        address(signer),
+        address(parallelizer),
+        mintAmount,
+        uint256(0),
+        deadline,
+        derivedNonce
+      )
+    );
+    bytes32 typedDataHash =
+      MessageHashUtils.toTypedDataHash(MockTokenPermit(address(eurA)).DOMAIN_SEPARATOR(), structHash);
+
+    bytes memory signature = new bytes(130);
+    for (uint256 i; i < 130; ++i) {
+      signature[i] = bytes1(uint8(i + 1));
+    }
+    signer.setAuthorized(typedDataHash, signature);
+
+    bytes memory authData = abi.encode(
+      AuthorizationParams({
+        from: address(signer),
+        value: mintAmount,
+        validAfter: 0,
+        validBefore: deadline,
+        nonce: userSalt,
+        signature: signature
+      })
+    );
+
+    vm.prank(bob);
+    uint256 amountOut = parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), address(signer), deadline, authData
+    );
+
+    assertGt(amountOut, 0);
+    assertEq(tokenP.balanceOf(address(signer)), amountOut);
+    assertEq(IERC20(address(eurA)).balanceOf(address(signer)), 0);
+  }
+
+  function testFuzz_RevertWhen_AuthorizationDoesNotTransferTokens_ExactInput(
+    uint256 mintAmount,
+    bytes32 userSalt
+  )
+    public
+  {
+    mintAmount = bound(mintAmount, BASE_6, 10_000 * BASE_6);
+    deal(address(eurA), alice, mintAmount);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData =
+      _buildSwapExactInputAuth(1, address(eurA), address(tokenP), alice, mintAmount, 0, alice, deadline, userSalt);
+
+    vm.mockCall(
+      address(eurA),
+      abi.encodeWithSelector(
+        bytes4(keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,bytes)"))
+      ),
+      ""
+    );
+
+    vm.prank(bob);
+    vm.expectRevert(AuthorizationTransferMismatch.selector);
+    parallelizer.swapExactInputWithAuthorization(
+      mintAmount, 0, address(eurA), address(tokenP), alice, deadline, authData
+    );
+  }
+
+  function testFuzz_RevertWhen_AuthorizationDoesNotTransferTokens_ExactOutput(
+    uint256 amountOut,
+    bytes32 userSalt
+  )
+    public
+  {
+    amountOut = bound(amountOut, BASE_18, 1000 * BASE_18);
+    uint256 maxIn = (amountOut / 1e12) * 4;
+    deal(address(eurA), alice, maxIn);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData = _buildSwapExactOutputAuth(
+      1, address(eurA), address(tokenP), alice, amountOut, maxIn, alice, deadline, userSalt
+    );
+
+    vm.mockCall(
+      address(eurA),
+      abi.encodeWithSelector(
+        bytes4(keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,bytes)"))
+      ),
+      ""
+    );
+
+    vm.prank(bob);
+    vm.expectRevert(AuthorizationTransferMismatch.selector);
+    parallelizer.swapExactOutputWithAuthorization(
+      amountOut, maxIn, address(eurA), address(tokenP), alice, deadline, authData
+    );
+  }
+
+  function testFuzz_RevertWhen_AuthorizationDoesNotTransferTokens_BurnTokenP(
+    uint256 burnAmount,
+    bytes32 userSalt
+  )
+    public
+  {
+    _mintExactInput(alice, address(eurA), 10_000 * BASE_6, 0);
+    uint256 tokenPBal = tokenP.balanceOf(alice);
+    burnAmount = bound(burnAmount, BASE_18, tokenPBal / 2);
+
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes memory authData =
+      _buildSwapExactInputAuth(1, address(tokenP), address(eurA), alice, burnAmount, 0, alice, deadline, userSalt);
+
+    vm.mockCall(
+      address(tokenP),
+      abi.encodeWithSelector(
+        bytes4(keccak256("receiveWithAuthorization(address,address,uint256,uint256,uint256,bytes32,bytes)"))
+      ),
+      ""
+    );
+
+    vm.prank(bob);
+    vm.expectRevert(AuthorizationTransferMismatch.selector);
+    parallelizer.swapExactInputWithAuthorization(
+      burnAmount, 0, address(tokenP), address(eurA), alice, deadline, authData
     );
   }
 }
