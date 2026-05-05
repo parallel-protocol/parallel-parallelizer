@@ -83,8 +83,11 @@ contract ArbitragerWithSplit is BaseActor {
       testS.amountIn = _parallelizer.quoteOut(testS.amountOut, testS.tokenIn, testS.tokenOut);
       // divided by 2 because we need to do for both the parallelizer and the replica
       uint256 actorBalance = tokenP.balanceOf(_currentActor) / 2;
-      // we need to decrease the amountOut wanted
+      // If the actor cannot fund the requested exact-output, fall back to exact-input
+      // semantics ("burn what you have"). swapExactInput consumes amountIn exactly, so the
+      // post-swap balance assertion stays exact (no quoteIn/quoteOut rounding asymmetry).
       if (actorBalance < testS.amountIn) {
+        quoteType = QuoteType.BurnExactInput;
         testS.amountIn = actorBalance;
         testS.amountOut = _parallelizer.quoteIn(actorBalance, testS.tokenIn, testS.tokenOut);
       }
