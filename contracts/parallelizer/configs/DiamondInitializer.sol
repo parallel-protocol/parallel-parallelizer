@@ -30,15 +30,15 @@ contract DiamondInitializer {
       LibSetters.setFees(collateral.token, collateral.xMintFee, collateral.yMintFee, true);
       // Burn fees
       LibSetters.setFees(collateral.token, collateral.xBurnFee, collateral.yBurnFee, false);
-      LibSetters.togglePause(collateral.token, ActionType.Mint);
-      LibSetters.togglePause(collateral.token, ActionType.Burn);
+      LibSetters.unpause(collateral.token, ActionType.Mint);
+      LibSetters.unpause(collateral.token, ActionType.Burn);
       LibSetters.setStablecoinCap(collateral.token, 100_000_000 ether);
       if (collateral.targetMax) LibOracle.updateOracle(collateral.token);
     }
 
     // setRedemptionCurveParams
     if (_redemptionSetup.xRedeemFee.length > 0) {
-      LibSetters.togglePause(address(0), ActionType.Redeem);
+      LibSetters.unpause(address(0), ActionType.Redeem);
       LibSetters.setRedemptionCurveParams(_redemptionSetup.xRedeemFee, _redemptionSetup.yRedeemFee);
     }
   }

@@ -144,8 +144,8 @@ contract SwapTest is Fixture, FunctionUtils {
     _updateOracles(latestOracleValue);
 
     vm.startPrank(guardian);
-    parallelizer.togglePause(_collaterals[fromToken], Storage.ActionType.Mint);
-    parallelizer.togglePause(_collaterals[fromToken], Storage.ActionType.Burn);
+    parallelizer.pause(_collaterals[fromToken], Storage.ActionType.Mint);
+    parallelizer.pause(_collaterals[fromToken], Storage.ActionType.Burn);
     vm.stopPrank();
 
     vm.startPrank(alice);
@@ -173,8 +173,8 @@ contract SwapTest is Fixture, FunctionUtils {
     _updateOracles(latestOracleValue);
 
     vm.startPrank(guardian);
-    parallelizer.togglePause(_collaterals[fromToken], Storage.ActionType.Mint);
-    parallelizer.togglePause(_collaterals[fromToken], Storage.ActionType.Burn);
+    parallelizer.pause(_collaterals[fromToken], Storage.ActionType.Mint);
+    parallelizer.pause(_collaterals[fromToken], Storage.ActionType.Burn);
     vm.stopPrank();
 
     vm.startPrank(alice);

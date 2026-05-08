@@ -183,25 +183,45 @@ library LibSetters {
     ONLY GUARDIAN ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-  /// @notice Internal version of `togglePause`
-  function togglePause(address collateral, ActionType action) internal {
-    uint8 isLive;
+  /// @notice Internal version of `pause` — sets the action's live flag to `0`
+  /// @dev Reverts with `AlreadyPaused` if the action is already paused so a no-op governance
+  /// call cannot pass silently
+  function pause(address collateral, ActionType action) internal {
+    _setPauseState(collateral, action, 0);
+  }
+
+  /// @notice Internal version of `unpause` — sets the action's live flag to `1`
+  /// @dev Reverts with `NotPaused` if the action is already unpaused so a no-op governance
+  /// call cannot pass silently
+  function unpause(address collateral, ActionType action) internal {
+    _setPauseState(collateral, action, 1);
+  }
+
+  /// @dev Shared accessor for `pause` and `unpause`. `targetIsLive` is `0` to pause and `1`
+  /// to unpause. Reverts on no-op transitions.
+  function _setPauseState(address collateral, ActionType action, uint8 targetIsLive) private {
     if (action == ActionType.Mint || action == ActionType.Burn) {
       Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
       if (collatInfo.decimals == 0) revert NotCollateral();
+      uint8 currentIsLive = action == ActionType.Mint ? collatInfo.isMintLive : collatInfo.isBurnLive;
+      if (currentIsLive == targetIsLive) {
+        if (targetIsLive == 0) revert AlreadyPaused();
+        revert NotPaused();
+      }
       if (action == ActionType.Mint) {
-        isLive = 1 - collatInfo.isMintLive;
-        collatInfo.isMintLive = isLive;
+        collatInfo.isMintLive = targetIsLive;
       } else {
-        isLive = 1 - collatInfo.isBurnLive;
-        collatInfo.isBurnLive = isLive;
+        collatInfo.isBurnLive = targetIsLive;
       }
     } else {
       ParallelizerStorage storage ts = s.transmuterStorage();
-      isLive = 1 - ts.isRedemptionLive;
-      ts.isRedemptionLive = isLive;
+      if (ts.isRedemptionLive == targetIsLive) {
+        if (targetIsLive == 0) revert AlreadyPaused();
+        revert NotPaused();
+      }
+      ts.isRedemptionLive = targetIsLive;
     }
-    emit PauseToggled(collateral, uint256(action), isLive == 0);
+    emit PauseToggled(collateral, uint256(action), targetIsLive == 0);
   }
 
   /// @notice Internal version of `setFees`
