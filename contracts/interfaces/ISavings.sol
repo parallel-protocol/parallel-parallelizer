@@ -62,15 +62,19 @@ interface ISavings is IEIP3009 {
   // solhint-disable-next-line func-name-mixedcase
   function DOMAIN_SEPARATOR() external view returns (bytes32);
 
-  function estimatedAPR() external view returns (uint256 apr);
+  function estimatedAPY() external view returns (uint256 apy);
 
   function computeUpdatedAssets(uint256 totalAssets, uint256 exp) external view returns (uint256);
 
-  function togglePause() external;
+  function pause() external;
+
+  function unpause() external;
 
   function toggleTrusted(address trustedAddress) external;
 
   function setRate(uint208 newRate) external;
 
   function setMaxRate(uint256 newMaxRate) external;
+
+  function recoverSurplus(address to) external returns (uint256 surplus);
 }
