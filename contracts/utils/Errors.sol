@@ -44,6 +44,8 @@ error OdosSwapFailed();
 error OracleUpdateFailed();
 error SurplusBufferRatioNotSet();
 error Paused();
+error AlreadyPaused();
+error NotPaused();
 error ReentrantCall();
 error RemoveFacetAddressMustBeZeroAddress(address _facetAddress);
 error TooBigAmountIn();
