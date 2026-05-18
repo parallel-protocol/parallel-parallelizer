@@ -129,3 +129,63 @@ contract SavingsInitializeValidationTest is Fixture {
     assertEq(IERC20Metadata(s).symbol(), symbol);
   }
 }
+
+contract SavingsMaxViewsPauseTest is Fixture {
+  function setUp() public override {
+    super.setUp();
+    saving = SavingsNameable(deploySavings(governor, address(tokenP), address(accessManager)));
+    vm.label(address(saving), "saving");
+
+    vm.startPrank(governor);
+    accessManager.setTargetFunctionRole(address(saving), getGuardianSavingsSelectorAccess(), GUARDIAN_ROLE);
+    vm.stopPrank();
+  }
+
+  function _pause() internal {
+    vm.prank(guardian);
+    saving.togglePause();
+    assertEq(saving.paused(), 1, "savings must be paused");
+  }
+
+  function test_maxViews_returnZeroWhenPaused() public {
+    assertEq(saving.maxDeposit(alice), type(uint256).max);
+    assertEq(saving.maxMint(alice), type(uint256).max);
+
+    _pause();
+
+    assertEq(saving.maxDeposit(alice), 0, "maxDeposit must be 0 when paused");
+    assertEq(saving.maxMint(alice), 0, "maxMint must be 0 when paused");
+    assertEq(saving.maxWithdraw(alice), 0, "maxWithdraw must be 0 when paused");
+    assertEq(saving.maxRedeem(alice), 0, "maxRedeem must be 0 when paused");
+  }
+
+  function test_maxViews_restoredAfterUnpause() public {
+    _pause();
+
+    vm.prank(guardian);
+    saving.togglePause();
+    assertEq(saving.paused(), 0, "savings must be unpaused");
+
+    assertEq(saving.maxDeposit(alice), type(uint256).max);
+    assertEq(saving.maxMint(alice), type(uint256).max);
+  }
+
+  function test_maxWithdraw_reflectsOwnerBalanceWhenPaused() public {
+    deal({ token: address(tokenP), to: alice, give: Constants.BASE_18 });
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(saving), Constants.BASE_18);
+    uint256 shares = saving.deposit(Constants.BASE_18, alice);
+    vm.stopPrank();
+    assertGt(shares, 0);
+
+    uint256 withdrawableBefore = saving.maxWithdraw(alice);
+    uint256 redeemableBefore = saving.maxRedeem(alice);
+    assertGt(withdrawableBefore, 0);
+    assertEq(redeemableBefore, shares);
+
+    _pause();
+
+    assertEq(saving.maxWithdraw(alice), 0, "maxWithdraw must be 0 when paused even with balance");
+    assertEq(saving.maxRedeem(alice), 0, "maxRedeem must be 0 when paused even with balance");
+  }
+}

@@ -138,6 +138,26 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     return _computeUpdatedAssets(super.totalAssets(), block.timestamp - lastUpdate);
   }
 
+  /// @inheritdoc ERC4626Upgradeable
+  function maxDeposit(address receiver) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxDeposit(receiver);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxMint(address receiver) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxMint(receiver);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxWithdraw(address owner) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxWithdraw(owner);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxRedeem(address owner) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxRedeem(owner);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ERC4626 INTERACTION FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
