@@ -270,3 +270,88 @@ contract SavingsSetMaxRateTest is Fixture {
     assertEq(saving.rate(), uint208(newMaxRate));
   }
 }
+
+contract SavingsTogglePauseAccrueTest is Fixture {
+  uint208 internal constant _rate = 10 ** (27 - 8);
+  uint256 internal constant _maxRate = 10 ** (27 - 6);
+
+  function setUp() public override {
+    super.setUp();
+    saving = SavingsNameable(deploySavings(governor, address(tokenP), address(accessManager)));
+    vm.label(address(saving), "saving");
+
+    vm.startPrank(governor);
+    accessManager.setTargetFunctionRole(address(saving), getGovernorSavingsSelectorAccess(), GOVERNOR_ROLE);
+    accessManager.setTargetFunctionRole(address(saving), getGuardianSavingsSelectorAccess(), GUARDIAN_ROLE);
+    saving.setMaxRate(_maxRate);
+    vm.stopPrank();
+
+    vm.prank(guardian);
+    saving.setRate(_rate);
+
+    deal({ token: address(tokenP), to: alice, give: Constants.BASE_18 });
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(saving), Constants.BASE_18);
+    saving.deposit(Constants.BASE_18, alice);
+    vm.stopPrank();
+  }
+
+  function test_togglePause_accruesYieldOnPause() public {
+    uint256 assetsBefore = saving.totalAssets();
+    skip(1 days);
+    uint256 expectedAtPause = saving.computeUpdatedAssets(assetsBefore, 1 days);
+    assertGt(expectedAtPause, assetsBefore, "yield must have accrued during the pre-pause window");
+
+    vm.prank(guardian);
+    saving.togglePause();
+
+    assertEq(saving.paused(), 1);
+    assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate must snapshot the pause timestamp");
+    assertEq(saving.totalAssets(), expectedAtPause, "yield must be settled at pause time");
+  }
+
+  function test_togglePause_advancesLastUpdateOnUnpause() public {
+    vm.prank(guardian);
+    saving.togglePause();
+    uint40 lastUpdateAtPause = saving.lastUpdate();
+    uint256 assetsAtPause = saving.totalAssets();
+
+    skip(7 days);
+
+    uint256 expectedAfterPauseWindow = saving.computeUpdatedAssets(assetsAtPause, 7 days);
+
+    vm.prank(guardian);
+    saving.togglePause();
+
+    assertEq(saving.paused(), 0);
+    assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate must advance to the unpause timestamp");
+    assertGt(saving.lastUpdate(), lastUpdateAtPause);
+    assertEq(saving.totalAssets(), expectedAfterPauseWindow, "unpause must settle pause-window yield in one shot");
+  }
+
+  function test_togglePause_firstInteractionAfterUnpauseEarnsNoStaleYield() public {
+    vm.prank(guardian);
+    saving.togglePause();
+
+    skip(30 days);
+
+    vm.prank(guardian);
+    saving.togglePause();
+
+    uint256 assetsAtUnpause = saving.totalAssets();
+
+    skip(1 days);
+
+    uint256 expectedAfterOneDay = saving.computeUpdatedAssets(assetsAtUnpause, 1 days);
+
+    vm.prank(guardian);
+    saving.setRate(_rate);
+
+    assertApproxEqAbs(
+      saving.totalAssets(),
+      expectedAfterOneDay,
+      1,
+      "post-unpause accrual must be priced from the unpause timestamp, not the pause start"
+    );
+  }
+}

@@ -398,6 +398,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
 
   /// @notice Pauses the contract
   function togglePause() external restricted {
+    _accrue();
     uint8 pauseStatus = 1 - paused;
     paused = pauseStatus;
     emit ToggledPause(pauseStatus);
