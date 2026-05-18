@@ -7,6 +7,7 @@ import { IAccessManaged } from "contracts/utils/AccessManagedUpgradeable.sol";
 
 import { SavingsNameable } from "contracts/savings/nameable/SavingsNameable.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { Vm } from "@forge-std/Vm.sol";
 
 import "../Fixture.sol";
 
@@ -187,5 +188,85 @@ contract SavingsMaxViewsPauseTest is Fixture {
 
     assertEq(saving.maxWithdraw(alice), 0, "maxWithdraw must be 0 when paused even with balance");
     assertEq(saving.maxRedeem(alice), 0, "maxRedeem must be 0 when paused even with balance");
+  }
+}
+
+contract SavingsSetMaxRateTest is Fixture {
+  event MaxRateUpdated(uint256 newMaxRate);
+  event RateUpdated(uint256 newRate);
+
+  uint208 internal constant _initialRate = 10 ** (27 - 8);
+  uint256 internal constant _initialMaxRate = 10 ** (27 - 6);
+
+  function setUp() public override {
+    super.setUp();
+    saving = SavingsNameable(deploySavings(governor, address(tokenP), address(accessManager)));
+    vm.label(address(saving), "saving");
+
+    vm.startPrank(governor);
+    accessManager.setTargetFunctionRole(address(saving), getGovernorSavingsSelectorAccess(), GOVERNOR_ROLE);
+    accessManager.setTargetFunctionRole(address(saving), getGuardianSavingsSelectorAccess(), GUARDIAN_ROLE);
+    saving.setMaxRate(_initialMaxRate);
+    vm.stopPrank();
+
+    vm.prank(guardian);
+    saving.setRate(_initialRate);
+  }
+
+  function test_setMaxRate_clampsRateWhenBelowCurrent() public {
+    uint256 newMaxRate = uint256(_initialRate) / 2;
+
+    vm.expectEmit(address(saving));
+    emit RateUpdated(newMaxRate);
+    vm.expectEmit(address(saving));
+    emit MaxRateUpdated(newMaxRate);
+    vm.prank(governor);
+    saving.setMaxRate(newMaxRate);
+
+    assertEq(saving.maxRate(), newMaxRate);
+    assertEq(saving.rate(), uint208(newMaxRate), "rate must be clamped to new cap");
+    assertLe(saving.rate(), saving.maxRate(), "rate <= maxRate invariant must hold");
+  }
+
+  function test_setMaxRate_leavesRateUntouchedWhenAboveCurrent() public {
+    uint256 newMaxRate = uint256(_initialRate) * 10;
+
+    vm.recordLogs();
+    vm.prank(governor);
+    saving.setMaxRate(newMaxRate);
+    Vm.Log[] memory logs = vm.getRecordedLogs();
+
+    assertEq(saving.maxRate(), newMaxRate);
+    assertEq(saving.rate(), _initialRate, "rate must be untouched");
+
+    bytes32 rateUpdatedSig = keccak256("RateUpdated(uint256)");
+    for (uint256 i; i < logs.length; ++i) {
+      assertTrue(logs[i].topics[0] != rateUpdatedSig, "RateUpdated must not be emitted when cap is raised");
+    }
+  }
+
+  function test_setMaxRate_accruesYieldAtOldRateBeforeClamping() public {
+    deal({ token: address(tokenP), to: alice, give: Constants.BASE_18 });
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(saving), Constants.BASE_18);
+    saving.deposit(Constants.BASE_18, alice);
+    vm.stopPrank();
+
+    uint256 assetsBefore = saving.totalAssets();
+    uint40 t0 = uint40(block.timestamp);
+
+    skip(1 days);
+
+    uint256 expectedAccrued = saving.computeUpdatedAssets(assetsBefore, 1 days);
+    assertGt(expectedAccrued, assetsBefore, "old rate must produce accrual over the elapsed window");
+
+    uint256 newMaxRate = uint256(_initialRate) / 2;
+    vm.prank(governor);
+    saving.setMaxRate(newMaxRate);
+
+    assertEq(saving.totalAssets(), expectedAccrued, "yield must be settled at old rate before clamp");
+    assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate must advance to current block");
+    assertGt(saving.lastUpdate(), t0);
+    assertEq(saving.rate(), uint208(newMaxRate));
   }
 }
