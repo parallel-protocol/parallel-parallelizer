@@ -71,6 +71,8 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     initializer
   {
     if (address(_authority) == address(0)) revert ZeroAddress();
+    if (bytes(name_).length == 0 || bytes(symbol_).length == 0) revert InvalidParam();
+    if (divizer == 0 || BASE_18 / divizer == 0 || 10 ** asset_.decimals() / divizer == 0) revert InvalidParam();
     __ERC4626_init(asset_);
     __ERC20_init(name_, symbol_);
     __UUPSUpgradeable_init();

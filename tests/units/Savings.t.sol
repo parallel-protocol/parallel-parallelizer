@@ -5,6 +5,9 @@ import { IERC20Metadata } from "@openzeppelin/contracts/interfaces/IERC20Metadat
 
 import { IAccessManaged } from "contracts/utils/AccessManagedUpgradeable.sol";
 
+import { SavingsNameable } from "contracts/savings/nameable/SavingsNameable.sol";
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+
 import "../Fixture.sol";
 
 contract SavingsNameableUpgradeTest is Fixture {
@@ -64,5 +67,65 @@ contract SavingsNameableUpgradeTest is Fixture {
     address newSavingsImpl = address(new SavingsNameable());
     vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
     saving.upgradeToAndCall(newSavingsImpl, "");
+  }
+}
+
+contract SavingsInitializeValidationTest is Fixture {
+  SavingsNameable internal savingsImpl;
+
+  function setUp() public override {
+    super.setUp();
+    savingsImpl = new SavingsNameable();
+    deal({ token: address(tokenP), to: governor, give: 1e18 });
+  }
+
+  function _initData(string memory n, string memory s, uint256 divizer) internal view returns (bytes memory) {
+    return abi.encodeWithSelector(
+      savingsImpl.initialize.selector, address(accessManager), IERC20Metadata(address(tokenP)), n, s, divizer
+    );
+  }
+
+  function test_initialize_RevertWhen_DivizerIsZero() public {
+    vm.prank(governor);
+    vm.expectRevert(InvalidParam.selector);
+    new ERC1967Proxy(address(savingsImpl), _initData(name, symbol, 0));
+  }
+
+  function test_initialize_RevertWhen_DivizerExceedsBase18() public {
+    vm.prank(governor);
+    vm.expectRevert(InvalidParam.selector);
+    new ERC1967Proxy(address(savingsImpl), _initData(name, symbol, Constants.BASE_18 + 1));
+  }
+
+  function test_initialize_RevertWhen_DivizerExceedsAssetDecimalsScale() public {
+    uint256 divizer = 10 ** uint256(IERC20Metadata(address(tokenP)).decimals()) + 1;
+    vm.prank(governor);
+    vm.expectRevert(InvalidParam.selector);
+    new ERC1967Proxy(address(savingsImpl), _initData(name, symbol, divizer));
+  }
+
+  function test_initialize_RevertWhen_NameIsEmpty() public {
+    vm.prank(governor);
+    vm.expectRevert(InvalidParam.selector);
+    new ERC1967Proxy(address(savingsImpl), _initData("", symbol, 1));
+  }
+
+  function test_initialize_RevertWhen_SymbolIsEmpty() public {
+    vm.prank(governor);
+    vm.expectRevert(InvalidParam.selector);
+    new ERC1967Proxy(address(savingsImpl), _initData(name, "", 1));
+  }
+
+  function test_initialize_SucceedsWithValidDivizer() public {
+    vm.startPrank(governor);
+    address futureProxy = vm.computeCreateAddress(governor, vm.getNonce(governor));
+    IERC20(address(tokenP)).approve(futureProxy, 1e18);
+    address proxy = address(new ERC1967Proxy(address(savingsImpl), _initData(name, symbol, 1)));
+    vm.stopPrank();
+    SavingsNameable s = SavingsNameable(proxy);
+    assertGt(s.totalSupply(), 0, "dead-share moat must be planted");
+    assertGt(s.totalAssets(), 0, "seed assets must be deposited");
+    assertEq(IERC20Metadata(s).name(), name);
+    assertEq(IERC20Metadata(s).symbol(), symbol);
   }
 }
