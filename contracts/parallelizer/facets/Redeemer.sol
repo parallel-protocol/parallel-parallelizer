@@ -264,6 +264,13 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
 
   /// @dev This function reverts if `stablecoinsIssued==0`, which is expected behavior as there is nothing to redeem
   /// anyway in this case, or if the `amountBurnt` is greater than `stablecoinsIssued`
+  /// @dev Invariant: `penaltyFactor` is evaluated once at the entry-time `collatRatio` and applied uniformly to the
+  /// full `amountBurnt`. The curve is not path-integrated, so a single redemption that traverses into a lower-penalty
+  /// segment still pays the entry-time rate on every unit burned. Splitting the same redemption into smaller calls
+  /// can yield a strictly better blended rate when the path crosses an ascending segment of the curve. This is a
+  /// deliberate design choice consistent with penalizing early redemptions during under-collateralization; the gap
+  /// between single-call and path-integrated pricing scales with the ascending-segment slope and should be
+  /// considered when calibrating `xRedemptionCurve`/`yRedemptionCurve`.
   function _quoteRedemptionCurve(uint256 amountBurnt)
     internal
     view
