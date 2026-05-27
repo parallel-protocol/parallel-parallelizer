@@ -81,13 +81,14 @@ abstract contract ConfigAccessManager is Helper {
   }
 
   function getParallelizerGuardianSelectorAccess() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](6);
-    selectors[0] = SettersGuardian.togglePause.selector;
-    selectors[1] = SettersGuardian.setFees.selector;
-    selectors[2] = SettersGuardian.setRedemptionCurveParams.selector;
-    selectors[3] = SettersGuardian.toggleWhitelist.selector;
-    selectors[4] = SettersGuardian.setStablecoinCap.selector;
-    selectors[5] = DiamondEtherscan.setDummyImplementation.selector;
+    bytes4[] memory selectors = new bytes4[](7);
+    selectors[0] = SettersGuardian.pause.selector;
+    selectors[1] = SettersGuardian.unpause.selector;
+    selectors[2] = SettersGuardian.setFees.selector;
+    selectors[3] = SettersGuardian.setRedemptionCurveParams.selector;
+    selectors[4] = SettersGuardian.toggleWhitelist.selector;
+    selectors[5] = SettersGuardian.setStablecoinCap.selector;
+    selectors[6] = DiamondEtherscan.setDummyImplementation.selector;
     return selectors;
   }
 

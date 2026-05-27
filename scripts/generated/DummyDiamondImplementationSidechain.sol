@@ -166,7 +166,9 @@ contract DummyDiamondImplementation {
 
   function setStablecoinCap(address collateral, uint256 stablecoinCap) external { }
 
-  function togglePause(address collateral, uint8 pausedType) external { }
+  function pause(address collateral, uint8 action) external { }
+
+  function unpause(address collateral, uint8 action) external { }
 
   function toggleWhitelist(uint8 whitelistType, address who) external { }
 

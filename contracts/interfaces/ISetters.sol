@@ -78,8 +78,13 @@ interface ISettersGovernor {
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 interface ISettersGuardian {
-  /// @notice Changes the pause status for mint or burn transactions for `collateral`
-  function togglePause(address collateral, ActionType action) external;
+  /// @notice Pauses `action` for `collateral` (or pauses redemption protocol-wide when
+  /// `action == Redeem`). Reverts if the action is already paused.
+  function pause(address collateral, ActionType action) external;
+
+  /// @notice Unpauses `action` for `collateral` (or unpauses redemption protocol-wide when
+  /// `action == Redeem`). Reverts if the action is not paused.
+  function unpause(address collateral, ActionType action) external;
 
   /// @notice Sets the mint or burn fees for `collateral`
   function setFees(address collateral, uint64[] memory xFee, int64[] memory yFee, bool mint) external;
