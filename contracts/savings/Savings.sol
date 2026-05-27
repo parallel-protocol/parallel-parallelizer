@@ -30,8 +30,6 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   uint8 public paused;
 
   /// @notice Maximum inflation rate
-  /// @dev Note that `rate` can still be greater than `maxRate` if this `maxRate` is reduced by governance
-  /// to a level inferior to the current rate
   uint256 public maxRate;
 
   /// @notice Checks whether the address is trusted to set the rate
@@ -71,6 +69,8 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     initializer
   {
     if (address(_authority) == address(0)) revert ZeroAddress();
+    if (bytes(name_).length == 0 || bytes(symbol_).length == 0) revert InvalidParam();
+    if (divizer == 0 || BASE_18 / divizer == 0 || 10 ** asset_.decimals() / divizer == 0) revert InvalidParam();
     __ERC4626_init(asset_);
     __ERC20_init(name_, symbol_);
     __UUPSUpgradeable_init();
@@ -134,6 +134,26 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   /// @inheritdoc ERC4626Upgradeable
   function totalAssets() public view override returns (uint256) {
     return _computeUpdatedAssets(super.totalAssets(), block.timestamp - lastUpdate);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxDeposit(address receiver) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxDeposit(receiver);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxMint(address receiver) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxMint(receiver);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxWithdraw(address owner) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxWithdraw(owner);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxRedeem(address owner) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxRedeem(owner);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -378,6 +398,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
 
   /// @notice Pauses the contract
   function togglePause() external restricted {
+    _accrue();
     uint8 pauseStatus = 1 - paused;
     paused = pauseStatus;
     emit ToggledPause(pauseStatus);
@@ -401,8 +422,16 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   }
 
   /// @notice Updates the maximum rate settable
+  /// @dev Settles outstanding yield at the prior rate before mutating `maxRate`, then clamps the active `rate`
+  /// down to the new cap when it would otherwise exceed it. This keeps the `rate <= maxRate` invariant intact
+  /// across both setters in a single transaction.
   function setMaxRate(uint256 newMaxRate) external restricted {
+    _accrue();
     maxRate = newMaxRate;
+    if (rate > newMaxRate) {
+      rate = uint208(newMaxRate);
+      emit RateUpdated(newMaxRate);
+    }
     emit MaxRateUpdated(newMaxRate);
   }
 }

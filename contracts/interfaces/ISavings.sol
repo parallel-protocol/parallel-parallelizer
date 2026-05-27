@@ -73,6 +73,4 @@ interface ISavings is IEIP3009 {
   function setRate(uint208 newRate) external;
 
   function setMaxRate(uint256 newMaxRate) external;
-
-  function initializeEIP3009(string memory name_) external;
 }
