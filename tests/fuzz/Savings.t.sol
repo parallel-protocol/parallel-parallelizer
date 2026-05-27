@@ -5,6 +5,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC20Errors } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IAccessManaged } from "contracts/utils/AccessManagedUpgradeable.sol";
+import { EIP3009 } from "contracts/savings/EIP3009.sol";
 
 import { UD60x18, ud, pow, powu, unwrap } from "@prb/math/UD60x18.sol";
 
@@ -796,6 +797,272 @@ contract SavingsTest is Fixture, FunctionUtils {
     uint256 amount = saving.mint(shares, receiver);
     vm.stopPrank();
     return (amount, shares, receiver);
+  }
+
+  /// @notice Signs both the outer Savings-domain intent and the inner underlying-token EIP-3009
+  /// authorization required by `Savings.depositWithAuthorization`.
+  function _signDepositAuth(
+    uint256 privateKey,
+    address owner,
+    address receiver,
+    uint256 assets,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce
+  )
+    internal
+    view
+    returns (bytes memory savingsSig, bytes memory tokenSig)
+  {
+    savingsSig = _signSavingsDepositAuth(privateKey, owner, receiver, assets, validAfter, validBefore, nonce);
+    tokenSig = _signTokenReceiveAuth(privateKey, owner, assets, validAfter, validBefore, nonce);
+  }
+
+  /// @dev Split to keep each frame under the stack-too-deep threshold without via-ir.
+  function _signSavingsDepositAuth(
+    uint256 privateKey,
+    address owner,
+    address receiver,
+    uint256 assets,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce
+  )
+    private
+    view
+    returns (bytes memory sig)
+  {
+    bytes32 digest = MessageHashUtils.toTypedDataHash(
+      saving.DOMAIN_SEPARATOR(),
+      keccak256(
+        abi.encode(
+          saving.DEPOSIT_WITH_AUTHORIZATION_TYPEHASH(),
+          address(saving),
+          owner,
+          receiver,
+          assets,
+          validAfter,
+          validBefore,
+          nonce
+        )
+      )
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+    sig = abi.encodePacked(r, s, v);
+  }
+
+  function _signTokenReceiveAuth(
+    uint256 privateKey,
+    address owner,
+    uint256 assets,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce
+  )
+    private
+    view
+    returns (bytes memory sig)
+  {
+    bytes32 digest = MessageHashUtils.toTypedDataHash(
+      MockTokenPermit(address(tokenP)).DOMAIN_SEPARATOR(),
+      keccak256(
+        abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, owner, address(saving), assets, validAfter, validBefore, nonce)
+      )
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+    sig = abi.encodePacked(r, s, v);
+  }
+
+  /// @notice Signs a `Savings.redeemWithAuthorization` intent against the Savings EIP-712 domain.
+  function _signRedeemAuth(
+    uint256 privateKey,
+    address owner,
+    address receiver,
+    uint256 shares,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce
+  )
+    internal
+    view
+    returns (uint8 v, bytes32 r, bytes32 s)
+  {
+    bytes32 digest = MessageHashUtils.toTypedDataHash(
+      saving.DOMAIN_SEPARATOR(),
+      keccak256(
+        abi.encode(
+          saving.REDEEM_WITH_AUTHORIZATION_TYPEHASH(),
+          address(saving),
+          owner,
+          receiver,
+          shares,
+          validAfter,
+          validBefore,
+          nonce
+        )
+      )
+    );
+    (v, r, s) = vm.sign(privateKey, digest);
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    EIP-3009
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function test_DepositWithAuthorization() public {
+    uint256 amount = 100 * BASE_18;
+    deal(address(tokenP), alice, amount);
+
+    bytes32 nonce = bytes32("dep1");
+    uint256 deadline = block.timestamp + 1 hours;
+    (bytes memory savingsSig, bytes memory tokenSig) = _signDepositAuth(1, alice, alice, amount, 0, deadline, nonce);
+
+    // bob relays alice's signed authorization
+    vm.prank(bob);
+    uint256 shares =
+      saving.depositWithAuthorization(amount, alice, alice, 0, deadline, nonce, savingsSig, tokenSig);
+
+    assertGt(shares, 0);
+    assertGt(saving.balanceOf(alice), 0);
+    assertEq(IERC20(address(tokenP)).balanceOf(alice), 0);
+  }
+
+  function test_DepositWithAuthorization_RevertWhen_Paused() public {
+    uint256 amount = 100 * BASE_18;
+    deal(address(tokenP), alice, amount);
+
+    bytes32 nonce = bytes32("dep2");
+    uint256 deadline = block.timestamp + 1 hours;
+    (bytes memory savingsSig, bytes memory tokenSig) = _signDepositAuth(1, alice, alice, amount, 0, deadline, nonce);
+
+    vm.prank(guardian);
+    saving.togglePause();
+
+    vm.prank(bob);
+    vm.expectRevert(Errors.Paused.selector);
+    saving.depositWithAuthorization(amount, alice, alice, 0, deadline, nonce, savingsSig, tokenSig);
+  }
+
+  /// @notice Alice signs a deposit to herself. A relayer tries to front-run by swapping `receiver`
+  /// to an attacker-controlled address. The outer Savings signature binds `receiver`, so the
+  /// signature recovery yields a different address and the call reverts.
+  function test_DepositWithAuthorization_RevertWhen_ReceiverFrontRun() public {
+    uint256 amount = 100 * BASE_18;
+    deal(address(tokenP), alice, amount);
+
+    bytes32 nonce = bytes32("dep_frontrun");
+    uint256 deadline = block.timestamp + 1 hours;
+    // Alice signs with receiver = alice
+    (bytes memory savingsSig, bytes memory tokenSig) = _signDepositAuth(1, alice, alice, amount, 0, deadline, nonce);
+
+    // Relayer submits with receiver = bob
+    vm.prank(bob);
+    vm.expectRevert(EIP3009.InvalidSignature.selector);
+    saving.depositWithAuthorization(amount, bob, alice, 0, deadline, nonce, savingsSig, tokenSig);
+  }
+
+  function test_RedeemWithAuthorization_Savings() public {
+    // First deposit
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 redeemShares = shares / 2;
+
+    bytes32 nonce = bytes32("redeem_sav1");
+    uint256 deadline = block.timestamp + 1 hours;
+    (uint8 v, bytes32 r, bytes32 s) = _signRedeemAuth(1, alice, alice, redeemShares, 0, deadline, nonce);
+
+    vm.prank(bob);
+    uint256 assets = saving.redeemWithAuthorization(redeemShares, alice, alice, 0, deadline, nonce, v, r, s);
+
+    assertGt(assets, 0);
+    assertEq(saving.balanceOf(alice), shares - redeemShares);
+  }
+
+  /// @notice Alice signs a redeem to herself. A relayer tries to front-run by swapping `receiver`
+  /// to bob. The signature binds `receiver`, so the outer call reverts.
+  function test_RedeemWithAuthorization_Savings_RevertWhen_ReceiverFrontRun() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 redeemShares = shares / 2;
+
+    bytes32 nonce = bytes32("redeem_frontrun");
+    uint256 deadline = block.timestamp + 1 hours;
+    // Alice signs with receiver = alice
+    (uint8 v, bytes32 r, bytes32 s) = _signRedeemAuth(1, alice, alice, redeemShares, 0, deadline, nonce);
+
+    // Relayer submits with receiver = bob
+    vm.prank(bob);
+    vm.expectRevert(EIP3009.InvalidSignature.selector);
+    saving.redeemWithAuthorization(redeemShares, bob, alice, 0, deadline, nonce, v, r, s);
+  }
+
+  function test_TransferWithAuthorization_Savings() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 transferAmount = shares / 2;
+
+    bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
+    bytes32 structHash = keccak256(
+      abi.encode(
+        TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+        alice,
+        bob,
+        transferAmount,
+        0,
+        block.timestamp + 1 hours,
+        bytes32("xfer1")
+      )
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+      1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash)
+    );
+
+    vm.prank(dylan);
+    saving.transferWithAuthorization(
+      alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("xfer1"), v, r, s
+    );
+
+    assertEq(saving.balanceOf(alice), shares - transferAmount);
+    assertEq(saving.balanceOf(bob), transferAmount);
+  }
+
+  function test_ReceiveWithAuthorization_Savings() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 transferAmount = shares / 2;
+
+    bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
+    bytes32 structHash = keccak256(
+      abi.encode(
+        RECEIVE_WITH_AUTHORIZATION_TYPEHASH, alice, bob, transferAmount,
+        0, block.timestamp + 1 hours, bytes32("recv1")
+      )
+    );
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+      1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash)
+    );
+
+    // bob calls receiveWithAuthorization (to == msg.sender)
+    vm.prank(bob);
+    saving.receiveWithAuthorization(
+      alice, bob, transferAmount, 0, block.timestamp + 1 hours, bytes32("recv1"), v, r, s
+    );
+
+    assertEq(saving.balanceOf(alice), shares - transferAmount);
+    assertEq(saving.balanceOf(bob), transferAmount);
+  }
+
+  function test_CancelAuthorization_Savings() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    bytes32 nonce = bytes32("cancel1");
+
+    bytes32 domainSeparator = saving.DOMAIN_SEPARATOR();
+    bytes32 cancelTypehash = 0x158b0a9edf7a828aad02f63cd515c68ef2f50ba807396f6d12842833a1597429;
+    bytes32 structHash = keccak256(abi.encode(cancelTypehash, alice, nonce));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, MessageHashUtils.toTypedDataHash(domainSeparator, structHash));
+
+    saving.cancelAuthorization(alice, nonce, v, r, s);
+    assertTrue(saving.authorizationState(alice, nonce));
   }
 
   function _sweepBalances(address owner, address[] memory tokens) internal {

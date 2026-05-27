@@ -72,6 +72,41 @@ interface ISwapper {
     external
     returns (uint256 amountIn);
 
+  /// @notice Same as `swapExactInput`, but using a single EIP-3009 authorization for `tokenIn`.
+  /// @dev The signed EIP-3009 nonce MUST equal `LibAuthorization.computeSwapExactInputNonce(...)`,
+  /// which binds the full swap intent. `authData.nonce` carries the caller-chosen `userSalt`; the
+  /// facet recomputes the derived nonce from the call arguments before forwarding it to the
+  /// token, so any tampering with `to`/slippage/deadline invalidates the signature.
+  /// @param authData ABI-encoded `AuthorizationParams` with `nonce = userSalt`
+  function swapExactInputWithAuthorization(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address tokenIn,
+    address tokenOut,
+    address to,
+    uint256 deadline,
+    bytes calldata authData
+  )
+    external
+    returns (uint256 amountOut);
+
+  /// @notice Same as `swapExactOutput`, but using a single EIP-3009 authorization for `tokenIn`.
+  /// @dev The authorization must be signed for `amountInMax`; the excess is refunded to the
+  /// authorizer. Derived-nonce scheme as in `swapExactInputWithAuthorization`, using
+  /// `LibAuthorization.computeSwapExactOutputNonce(...)`.
+  /// @param authData ABI-encoded `AuthorizationParams` with `nonce = userSalt`
+  function swapExactOutputWithAuthorization(
+    uint256 amountOut,
+    uint256 amountInMax,
+    address tokenIn,
+    address tokenOut,
+    address to,
+    uint256 deadline,
+    bytes calldata authData
+  )
+    external
+    returns (uint256 amountIn);
+
   /// @notice Simulates what a call to `swapExactInput` with `amountIn` of `tokenIn` for `tokenOut` would give.
   /// If called right before and at the same block, the `amountOut` outputted by this function is exactly the
   /// amount that will be obtained with `swapExactInput`

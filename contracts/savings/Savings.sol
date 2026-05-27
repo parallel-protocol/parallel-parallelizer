@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
+import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
+
 import "./BaseSavings.sol";
+import "./SavingsEIP3009.sol";
 
 /// @title Savings
 /// @author Cooper Labs
@@ -9,12 +12,12 @@ import "./BaseSavings.sol";
 /// @notice In this implementation, assets in the contract increase in value following a `rate` chosen by governance
 /// @dev This contract is an authorized fork of Angle's Savings contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/savings/Savings.sol
-contract Savings is BaseSavings {
+contract Savings is BaseSavings, SavingsEIP3009 {
   using SafeERC20 for IERC20Metadata;
   using Math for uint256;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    PARAMETERS / REFERENCES                                             
+    PARAMETERS / REFERENCES
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Inflation rate (per second) in BASE_27
@@ -27,8 +30,6 @@ contract Savings is BaseSavings {
   uint8 public paused;
 
   /// @notice Maximum inflation rate
-  /// @dev Note that `rate` can still be greater than `maxRate` if this `maxRate` is reduced by governance
-  /// to a level inferior to the current rate
   uint256 public maxRate;
 
   /// @notice Checks whether the address is trusted to set the rate
@@ -37,7 +38,7 @@ contract Savings is BaseSavings {
   uint256[48] private __gap;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    EVENTS                                                      
+    EVENTS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   event Accrued(uint256 interest);
@@ -47,7 +48,7 @@ contract Savings is BaseSavings {
   event RateUpdated(uint256 newRate);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INITIALIZATION                                                  
+    INITIALIZATION
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Initializes the contract
@@ -68,6 +69,8 @@ contract Savings is BaseSavings {
     initializer
   {
     if (address(_authority) == address(0)) revert ZeroAddress();
+    if (bytes(name_).length == 0 || bytes(symbol_).length == 0) revert InvalidParam();
+    if (divizer == 0 || BASE_18 / divizer == 0 || 10 ** asset_.decimals() / divizer == 0) revert InvalidParam();
     __ERC4626_init(asset_);
     __ERC20_init(name_, symbol_);
     __UUPSUpgradeable_init();
@@ -77,7 +80,7 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    MODIFIERS                                                    
+    MODIFIERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Checks whether the whole contract is paused or not
@@ -95,7 +98,7 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CONTRACT LOGIC                                                  
+    CONTRACT LOGIC
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Accrues interest to this contract by minting tokenPs
@@ -125,7 +128,7 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ERC4626 VIEW FUNCTIONS                                              
+    ERC4626 VIEW FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
@@ -133,8 +136,28 @@ contract Savings is BaseSavings {
     return _computeUpdatedAssets(super.totalAssets(), block.timestamp - lastUpdate);
   }
 
+  /// @inheritdoc ERC4626Upgradeable
+  function maxDeposit(address receiver) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxDeposit(receiver);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxMint(address receiver) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxMint(receiver);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxWithdraw(address owner) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxWithdraw(owner);
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  function maxRedeem(address owner) public view override returns (uint256) {
+    return paused > 0 ? 0 : super.maxRedeem(owner);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ERC4626 INTERACTION FUNCTIONS                                          
+    ERC4626 INTERACTION FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
@@ -184,7 +207,126 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INTERNAL HELPERS                                                 
+    AUTHORIZED DEPOSITS / REDEMPTIONS
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  /// @notice Deposits the underlying asset on behalf of `owner` using a signed authorization,
+  /// and mints shares to `receiver`.
+  /// @dev Two signatures:
+  ///   - `savingsSignature` binds `receiver` via `DEPOSIT_WITH_AUTHORIZATION_TYPEHASH` on this
+  ///     contract's EIP-712 domain (front-run protection on the shares recipient).
+  ///   - `tokenSignature` is a standard EIP-3009 `ReceiveWithAuthorization` on the underlying
+  ///     asset that pulls `assets` from `owner` into this contract.
+  /// Both may share the same `nonce`/validity window — they're tracked on different contracts.
+  function depositWithAuthorization(
+    uint256 assets,
+    address receiver,
+    address owner,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    bytes calldata savingsSignature,
+    bytes calldata tokenSignature
+  )
+    external
+    whenNotPaused
+    returns (uint256 shares)
+  {
+    _consumeDepositAuthorization(
+      address(this), owner, receiver, assets, validAfter, validBefore, nonce, savingsSignature
+    );
+
+    uint256 newTotalAssets = _accrue();
+    shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Floor);
+    IEIP3009(asset())
+      .receiveWithAuthorization(owner, address(this), assets, validAfter, validBefore, nonce, tokenSignature);
+    _mint(receiver, shares);
+    emit Deposit(owner, receiver, assets, shares);
+  }
+
+  /// @notice Burns `shares` from `owner` using a signed authorization, and sends the underlying
+  /// asset to `receiver`.
+  /// @dev The signature is signed over `REDEEM_WITH_AUTHORIZATION_TYPEHASH` against this
+  /// contract's EIP-712 domain. It binds `receiver` so a relayer cannot redirect the redeemed
+  /// underlying to an attacker-controlled address.
+  /// @param shares The amount of shares to redeem
+  /// @param receiver The address to receive the redeemed underlying
+  /// @param owner The address of the owner of the shares
+  /// @param validAfter The timestamp after which the authorization is valid
+  /// @param validBefore The timestamp before which the authorization is valid
+  /// @param nonce The nonce of the authorization
+  /// @param v The recovery id of the signature
+  /// @param r The r value of the signature
+  /// @param s The s value of the signature
+  /// @return assets The amount of underlying assets received
+  function redeemWithAuthorization(
+    uint256 shares,
+    address receiver,
+    address owner,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  )
+    external
+    whenNotPaused
+    returns (uint256 assets)
+  {
+    return _redeemWithAuthorization(shares, receiver, owner, validAfter, validBefore, nonce, abi.encodePacked(r, s, v));
+  }
+
+  /// @notice EIP-1271 compatible variant of `redeemWithAuthorization`.
+  /// @dev The signature is signed over `REDEEM_WITH_AUTHORIZATION_TYPEHASH` against this
+  /// contract's EIP-712 domain. It binds `receiver` so a relayer cannot redirect the redeemed
+  /// underlying to an attacker-controlled address.
+  /// @param shares The amount of shares to redeem
+  /// @param receiver The address to receive the redeemed underlying
+  /// @param owner The address of the owner of the shares
+  /// @param validAfter The timestamp after which the authorization is valid
+  /// @param validBefore The timestamp before which the authorization is valid
+  /// @param nonce The nonce of the authorization
+  /// @param signature The signature bytes signed by an EOA wallet or a contract wallet
+  /// @return assets The amount of underlying assets received
+  function redeemWithAuthorization(
+    uint256 shares,
+    address receiver,
+    address owner,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    bytes calldata signature
+  )
+    external
+    whenNotPaused
+    returns (uint256 assets)
+  {
+    return _redeemWithAuthorization(shares, receiver, owner, validAfter, validBefore, nonce, signature);
+  }
+
+  function _redeemWithAuthorization(
+    uint256 shares,
+    address receiver,
+    address owner,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    bytes memory signature
+  )
+    internal
+    returns (uint256 assets)
+  {
+    _consumeRedeemAuthorization(address(this), owner, receiver, shares, validAfter, validBefore, nonce, signature);
+    uint256 newTotalAssets = _accrue();
+    assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Floor);
+    _burn(owner, shares);
+    SafeERC20.safeTransfer(IERC20Metadata(asset()), receiver, assets);
+    emit Withdraw(msg.sender, receiver, owner, assets, shares);
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    INTERNAL HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
@@ -229,10 +371,14 @@ contract Savings is BaseSavings {
       : shares.mulDiv(newTotalAssets, supply, rounding);
   }
 
+  function decimals() public view override(ERC4626Upgradeable, ERC20Upgradeable) returns (uint8) {
+    return super.decimals();
+  }
+
   function _setNameAndSymbol(string memory newName, string memory newSymbol) internal virtual { }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    HELPERS                                                     
+    HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Provides an estimated Annual Percentage Rate for base depositors on this contract
@@ -247,11 +393,12 @@ contract Savings is BaseSavings {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    GOVERNANCE                                                    
+    GOVERNANCE
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Pauses the contract
   function togglePause() external restricted {
+    _accrue();
     uint8 pauseStatus = 1 - paused;
     paused = pauseStatus;
     emit ToggledPause(pauseStatus);
@@ -275,8 +422,16 @@ contract Savings is BaseSavings {
   }
 
   /// @notice Updates the maximum rate settable
+  /// @dev Settles outstanding yield at the prior rate before mutating `maxRate`, then clamps the active `rate`
+  /// down to the new cap when it would otherwise exceed it. This keeps the `rate <= maxRate` invariant intact
+  /// across both setters in a single transaction.
   function setMaxRate(uint256 newMaxRate) external restricted {
+    _accrue();
     maxRate = newMaxRate;
+    if (rate > newMaxRate) {
+      rate = uint208(newMaxRate);
+      emit RateUpdated(newMaxRate);
+    }
     emit MaxRateUpdated(newMaxRate);
   }
 }

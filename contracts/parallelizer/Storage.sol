@@ -69,6 +69,15 @@ struct Permit2Details {
   bytes signature; // Permit signature of the user
 }
 
+struct AuthorizationParams {
+  address from; // Payer's address (Authorizer)
+  uint256 value; // Amount authorized to be transferred
+  uint256 validAfter; // The time after which this is valid (unix time)
+  uint256 validBefore; // The time before which this is valid (unix time)
+  bytes32 nonce; // Unique nonce
+  bytes signature; // EOA (r,s,v packed) or arbitrary-length EIP-1271 contract signature
+}
+
 struct FacetCut {
   address facetAddress; // Facet contract address
   FacetCutAction action; // Can be add, remove or replace

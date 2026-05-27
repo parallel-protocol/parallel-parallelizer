@@ -5,6 +5,7 @@ error AboveCap();
 error AccessManagedUnauthorized(address caller);
 error AlreadyAdded();
 error ArrayLengthMismatch();
+error AuthorizationTransferMismatch();
 error CannotAddFunctionToDiamondThatAlreadyExists(bytes4 _selector);
 error CannotAddSelectorsToZeroAddress(bytes4[] _selectors);
 error CannotRemoveFunctionThatDoesNotExist(bytes4 _selector);
@@ -15,6 +16,7 @@ error CannotReplaceFunctionWithTheSameFunctionFromTheSameFacet(bytes4 _selector)
 error CannotReplaceImmutableFunction(bytes4 _selector);
 error ContractHasNoCode();
 error CollateralBacked();
+error CannotBurnAllStableIssued();
 error FunctionNotFound(bytes4 _functionSelector);
 error IncorrectFacetCutAction(uint8 _action);
 error InitializationFunctionReverted(address _initializationContractAddress, bytes _calldata);

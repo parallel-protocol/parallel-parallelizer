@@ -11,8 +11,10 @@ import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { ISwapper } from "contracts/interfaces/ISwapper.sol";
 import { IPermit2, PermitTransferFrom } from "contracts/interfaces/external/permit2/IPermit2.sol";
 import { SignatureTransferDetails, TokenPermissions } from "contracts/interfaces/external/permit2/IPermit2.sol";
+import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
+import { LibAuthorization } from "../libraries/LibAuthorization.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibManager } from "../libraries/LibManager.sol";
 import { LibOracle } from "../libraries/LibOracle.sol";
@@ -69,7 +71,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   );
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    EXTERNAL ACTION FUNCTIONS                                            
+    EXTERNAL ACTION FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ISwapper
@@ -89,7 +91,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     amountOut =
       mint ? _quoteMintExactInput(collatInfo, amountIn) : _quoteBurnExactInput(tokenOut, collatInfo, amountIn);
     if (amountOut < amountOutMin) revert TooSmallAmountOut();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "");
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", "");
   }
 
   /// @inheritdoc ISwapper
@@ -108,7 +110,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     amountOut = _quoteMintExactInput(collatInfo, amountIn);
     if (amountOut < amountOutMin) revert TooSmallAmountOut();
     permitData = _buildPermitTransferPayload(amountIn, amountIn, tokenIn, deadline, permitData, collatInfo);
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, true, collatInfo, permitData);
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, true, collatInfo, permitData, "");
   }
 
   /// @inheritdoc ISwapper
@@ -130,7 +132,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     amountIn =
       mint ? _quoteMintExactOutput(collatInfo, amountOut) : _quoteBurnExactOutput(tokenOut, collatInfo, amountOut);
     if (amountIn > amountInMax) revert TooBigAmountIn();
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "");
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", "");
   }
 
   /// @inheritdoc ISwapper
@@ -149,11 +151,71 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     amountIn = _quoteMintExactOutput(collatInfo, amountOut);
     if (amountIn > amountInMax) revert TooBigAmountIn();
     permitData = _buildPermitTransferPayload(amountIn, amountInMax, tokenIn, deadline, permitData, collatInfo);
-    _swap(amountIn, amountOut, tokenIn, tokenOut, to, true, collatInfo, permitData);
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, true, collatInfo, permitData, "");
+  }
+
+  /// @inheritdoc ISwapper
+  function swapExactInputWithAuthorization(
+    uint256 amountIn,
+    uint256 amountOutMin,
+    address tokenIn,
+    address tokenOut,
+    address to,
+    uint256 deadline,
+    bytes memory authData
+  )
+    external
+    returns (uint256 amountOut)
+  {
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value != amountIn) revert InvalidSwap();
+    params.nonce = LibAuthorization.computeSwapExactInputNonce(
+      params.from, tokenIn, tokenOut, amountIn, amountOutMin, to, deadline, params.nonce
+    );
+    if (amountIn == 0) {
+      _executeAuthorization(tokenIn, 0, abi.encode(params));
+      return 0;
+    }
+    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
+    amountOut =
+      mint ? _quoteMintExactInput(collatInfo, amountIn) : _quoteBurnExactInput(tokenOut, collatInfo, amountIn);
+    if (amountOut < amountOutMin) revert TooSmallAmountOut();
+    if (amountOut == 0) revert ZeroAmount();
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", abi.encode(params));
+  }
+
+  /// @inheritdoc ISwapper
+  function swapExactOutputWithAuthorization(
+    uint256 amountOut,
+    uint256 amountInMax,
+    address tokenIn,
+    address tokenOut,
+    address to,
+    uint256 deadline,
+    bytes memory authData
+  )
+    external
+    returns (uint256 amountIn)
+  {
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value != amountInMax) revert InvalidSwap();
+    params.nonce = LibAuthorization.computeSwapExactOutputNonce(
+      params.from, tokenIn, tokenOut, amountOut, amountInMax, to, deadline, params.nonce
+    );
+    if (amountOut == 0) {
+      _executeAuthorization(tokenIn, 0, abi.encode(params));
+      return 0;
+    }
+    (bool mint, Collateral storage collatInfo) = _getMintBurn(tokenIn, tokenOut, deadline);
+    amountIn =
+      mint ? _quoteMintExactOutput(collatInfo, amountOut) : _quoteBurnExactOutput(tokenOut, collatInfo, amountOut);
+    if (amountIn > amountInMax) revert TooBigAmountIn();
+    if (amountIn == 0) revert ZeroAmount();
+    _swap(amountIn, amountOut, tokenIn, tokenOut, to, mint, collatInfo, "", abi.encode(params));
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    VIEW HELPERS                                                   
+    VIEW HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   // If these functions return a 0 `amountOut` or `amountIn` value, then calling one of the swap functions above
@@ -188,7 +250,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INTERNAL ACTIONS                                                 
+    INTERNAL ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Processes the internal metric updates and the transfers following mint or burn operations
@@ -200,7 +262,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
     address to,
     bool mint,
     Collateral storage collatInfo,
-    bytes memory permitData
+    bytes memory permitData,
+    bytes memory authData
   )
     internal
     nonReentrant
@@ -216,10 +279,14 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         ts.normalizedStables = ts.normalizedStables + changeAmount;
         if (permitData.length > 0) {
           PERMIT_2.functionCall(permitData);
+        } else if (authData.length > 0) {
+          _executeAuthorization(tokenIn, amountIn, authData);
+          if (collatInfo.isManaged > 0) {
+            IERC20(tokenIn).safeTransfer(LibManager.transferRecipient(collatInfo.managerData.config), amountIn);
+          }
         } else if (collatInfo.isManaged > 0) {
-          IERC20(tokenIn).safeTransferFrom(
-            msg.sender, LibManager.transferRecipient(collatInfo.managerData.config), amountIn
-          );
+          IERC20(tokenIn)
+            .safeTransferFrom(msg.sender, LibManager.transferRecipient(collatInfo.managerData.config), amountIn);
         } else {
           IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         }
@@ -231,24 +298,65 @@ contract Swapper is ISwapper, AccessManagedModifiers {
         if (collatInfo.onlyWhitelisted > 0 && !LibWhitelist.checkWhitelist(collatInfo.whitelistData, to)) {
           revert NotWhitelisted();
         }
+
         uint128 changeAmount = ((amountIn * BASE_27) / ts.normalizer).toUint128();
+        if (changeAmount >= ts.normalizedStables) revert CannotBurnAllStableIssued();
         // This will underflow when the system is trying to burn more stablecoins than what has been issued
         // from this collateral
         collatInfo.normalizedStables = collatInfo.normalizedStables - uint216(changeAmount);
         ts.normalizedStables = ts.normalizedStables - changeAmount;
-        ITokenP(tokenIn).burnSelf(amountIn, msg.sender);
+        if (authData.length > 0) {
+          _executeAuthorization(tokenIn, amountIn, authData);
+          ITokenP(tokenIn).burnSelf(amountIn, address(this));
+        } else {
+          ITokenP(tokenIn).burnSelf(amountIn, msg.sender);
+        }
         if (collatInfo.isManaged > 0) {
           LibManager.release(tokenOut, to, amountOut, collatInfo.managerData.config);
         } else {
           IERC20(tokenOut).safeTransfer(to, amountOut);
         }
       }
-      emit Swap(tokenIn, tokenOut, amountIn, amountOut, msg.sender, to);
+      // `from` decoded inline so `_swap` does not need to keep it on the stack across the
+      // mint/burn branch (compiles without via-IR).
+      emit Swap(
+        tokenIn,
+        tokenOut,
+        amountIn,
+        amountOut,
+        authData.length > 0 ? abi.decode(authData, (AuthorizationParams)).from : msg.sender,
+        to
+      );
+    }
+  }
+
+  /// @notice Executes an EIP-3009 receiveWithAuthorization to address(this) and refunds excess if any
+  /// @param token The token to receive via authorization
+  /// @param amountNeeded The actual amount needed for the swap
+  /// @param authData ABI-encoded AuthorizationParams
+  function _executeAuthorization(address token, uint256 amountNeeded, bytes memory authData) internal {
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value < amountNeeded) revert InvalidSwap();
+    uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+    IEIP3009(token)
+      .receiveWithAuthorization(
+        params.from,
+        address(this),
+        params.value,
+        params.validAfter,
+        params.validBefore,
+        params.nonce,
+        params.signature
+      );
+    uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+    if (balanceAfter != balanceBefore + params.value) revert AuthorizationTransferMismatch();
+    if (params.value > amountNeeded) {
+      IERC20(token).safeTransfer(params.from, params.value - amountNeeded);
     }
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INTERNAL VIEW                                                  
+    INTERNAL VIEW
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Computes the `amountOut` of stablecoins to mint from `tokenIn` of a collateral with data `collatInfo`
@@ -276,9 +384,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   {
     uint256 oracleValue = LibOracle.readMint(collatInfo.oracleConfig);
     amountIn = _quoteFees(collatInfo, QuoteType.MintExactOutput, amountOut);
-    amountIn = LibHelpers.convertDecimalTo(
-      (amountIn * BASE_18) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Ceil
-    );
+    amountIn =
+      LibHelpers.convertDecimalTo((amountIn * BASE_18) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Ceil);
   }
 
   /// @notice Computes the `amountIn` of stablecoins to burn to release `amountOut` of `collateral`
@@ -310,9 +417,8 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   {
     (uint256 ratio, uint256 oracleValue) = LibOracle.getBurnOracle(collateral, collatInfo.oracleConfig);
     amountOut = _quoteFees(collatInfo, QuoteType.BurnExactInput, amountIn);
-    amountOut = LibHelpers.convertDecimalTo(
-      (amountOut * ratio) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Floor
-    );
+    amountOut =
+      LibHelpers.convertDecimalTo((amountOut * ratio) / oracleValue, 18, collatInfo.decimals, Math.Rounding.Floor);
   }
 
   /// @notice Computes the fees to apply during a mint or burn operation
@@ -434,10 +540,9 @@ contract Swapper is ISwapper, AccessManagedModifiers {
               // And so: g(0)+(f_{i+1}-f_i)/(b_{i+1}-b_i)m_t/2
               //                      = (g(0)-1+sqrt[(1+g(0))**2+2M(f_{i+1}-g(0))/b_{i+1}]) / 2
               midFee = int64(
-                (
-                  int256(Math.sqrt((uint256(int256(BASE_9) + currentFees)) ** 2 + ac4, Math.Rounding.Ceil))
-                    + currentFees - int256(BASE_9)
-                ) / 2
+                (int256(Math.sqrt((uint256(int256(BASE_9) + currentFees)) ** 2 + ac4, Math.Rounding.Ceil))
+                    + currentFees
+                    - int256(BASE_9)) / 2
               );
             } else {
               // In the burn case:
@@ -580,7 +685,7 @@ contract Swapper is ISwapper, AccessManagedModifiers {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INTERNAL PURE                                                  
+    INTERNAL PURE
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Applies or inverts `fees` to an `amount` based on the type of operation

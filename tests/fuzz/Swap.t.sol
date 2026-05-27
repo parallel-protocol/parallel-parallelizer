@@ -59,7 +59,7 @@ contract SwapTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                        REVERTS                                                     
+                                                        REVERTS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function test_RevertWhen_InvalidTokens(
@@ -226,9 +226,8 @@ contract SwapTest is Fixture, FunctionUtils {
       // With Ceil rounding in quoteOut, amountIn may be rounded up enough that
       // quoteIn(amountIn) >= stableAmount + 1, so the slippage check wouldn't trigger.
       // Only expect TooSmallAmountOut when the reflexive quote confirms slippage.
-      uint256 reflexiveMintOut = amountIn > 0
-        ? parallelizer.quoteIn(amountIn, _collaterals[fromTokenMint], address(tokenP))
-        : 0;
+      uint256 reflexiveMintOut =
+        amountIn > 0 ? parallelizer.quoteIn(amountIn, _collaterals[fromTokenMint], address(tokenP)) : 0;
       if (reflexiveMintOut < stableAmount + 1) {
         vm.expectRevert(Errors.TooSmallAmountOut.selector);
         parallelizer.swapExactInput(
@@ -312,7 +311,7 @@ contract SwapTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                         UTILS                                                      
+                                                         UTILS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _loadReserves(
@@ -332,8 +331,9 @@ contract SwapTest is Fixture, FunctionUtils {
       deal(_collaterals[i], owner, initialAmounts[i]);
       IERC20(_collaterals[i]).approve(address(parallelizer), initialAmounts[i]);
 
-      collateralMintedStables[i] =
-        parallelizer.swapExactInput(initialAmounts[i], 0, _collaterals[i], address(tokenP), owner, block.timestamp * 2);
+      collateralMintedStables[i] = parallelizer.swapExactInput(
+        initialAmounts[i], 0, _collaterals[i], address(tokenP), owner, block.timestamp * 2
+      );
       mintedStables += collateralMintedStables[i];
     }
 
@@ -362,8 +362,12 @@ contract SwapTest is Fixture, FunctionUtils {
 
     vm.startPrank(governor);
     for (uint256 i; i < _collaterals.length; i++) {
-      (Storage.OracleReadType readType, Storage.OracleReadType targetType, bytes memory data, bytes memory targetData,)
-      = parallelizer.getOracle(address(_collaterals[i]));
+      (
+        Storage.OracleReadType readType,
+        Storage.OracleReadType targetType,
+        bytes memory data,
+        bytes memory targetData,
+      ) = parallelizer.getOracle(address(_collaterals[i]));
       parallelizer.setOracle(
         _collaterals[i],
         abi.encode(
