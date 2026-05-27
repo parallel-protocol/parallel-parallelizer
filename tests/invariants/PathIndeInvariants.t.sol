@@ -216,9 +216,9 @@ contract PathIndeInvariants is Fixture {
   // Path independence holds exactly only where the mint/burn/redemption curves are flat. The
   // redemption penalty is evaluated at the entry-time collateral ratio on the full amount (Cyfrin
   // finding I-6) and governance may install non-flat fee curves, so single-path and split-path
-  // outcomes legitimately diverge by a bounded amount. The redeem handler caps per-call CR
-  // excursions; these tolerances bound the residual intended path dependence (1% on collateral
-  // balances, 0.2% on the collateral ratio) while still catching gross path-dependence regressions.
+  // outcomes legitimately diverge by a bounded amount. These tolerances bound that intended path
+  // dependence (1% on collateral balances, 0.2% on the collateral ratio) while still catching gross
+  // path-dependence regressions.
   function invariant_PathIndependenceBalanceCollaterals() public {
     for (uint256 i; i < _collaterals.length; i++) {
       uint256 balance = IERC20(_collaterals[i]).balanceOf(address(parallelizer));

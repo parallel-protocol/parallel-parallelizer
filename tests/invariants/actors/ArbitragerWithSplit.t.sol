@@ -223,15 +223,7 @@ contract ArbitragerWithSplit is BaseActor {
     countCall("redeem")
   {
     uint256 balancetokenP = tokenP.balanceOf(_currentActor);
-    // Bound a single redeem to a small fraction of total issuance. The redemption penalty curve is
-    // evaluated at the entry-time collateral ratio on the full amount (see Cyfrin finding I-6), so a
-    // large single redeem and its split equivalent legitimately diverge once they span a non-flat
-    // curve segment. Capping the per-call collateral-ratio excursion keeps that intended path
-    // dependence within the tolerance asserted by the path-independence invariants.
-    uint256 upper = balancetokenP / 2;
-    uint256 maxRedeem = _parallelizer.getTotalIssued() / 20;
-    if (maxRedeem < upper) upper = maxRedeem;
-    amount = bound(amount, 0, upper);
+    amount = bound(amount, 0, balancetokenP / 2);
     splitProportion = bound(splitProportion, 1, BASE_9);
     if (amount == 0) return;
 
