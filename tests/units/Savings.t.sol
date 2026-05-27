@@ -170,7 +170,9 @@ contract SavingsUpgradeTest is Fixture {
       address(
         new ERC1967Proxy(
           address(legacyImpl),
-          abi.encodeWithSelector(legacyImpl.initialize.selector, accessManager, IERC20Metadata(address(tokenP)), name, symbol, 1)
+          abi.encodeWithSelector(
+            legacyImpl.initialize.selector, accessManager, IERC20Metadata(address(tokenP)), name, symbol, 1
+          )
         )
       )
     );
