@@ -464,12 +464,12 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   }
 
   /// @notice Unpauses the contract
-  /// @dev Reverts if not paused, so a no-op governance call cannot pass silently. Accrues
-  /// outstanding yield before flipping the flag so `lastUpdate` advances to the unpause timestamp,
-  /// eliminating the stale gap that would otherwise persist until the first interaction.
+  /// @dev Reverts if not paused, so a no-op governance call cannot pass silently. Advances
+  /// `lastUpdate` to the unpause timestamp so the paused interval is dropped rather than minted:
+  /// pausing halts emission. `pause()` already settles yield up to the pause moment.
   function unpause() external restricted {
     if (paused == 0) revert NotPaused();
-    _accrue();
+    lastUpdate = uint40(block.timestamp);
     paused = 0;
     emit ToggledPause(0);
   }

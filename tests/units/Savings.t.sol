@@ -633,7 +633,7 @@ contract SavingsTogglePauseAccrueTest is Fixture {
     assertEq(saving.totalAssets(), expectedAtPause, "yield must be settled at pause time");
   }
 
-  function test_unpause_advancesLastUpdateOnUnpause() public {
+  function test_unpause_dropsPausedWindowYield() public {
     vm.prank(guardian);
     saving.pause();
     uint40 lastUpdateAtPause = saving.lastUpdate();
@@ -641,15 +641,13 @@ contract SavingsTogglePauseAccrueTest is Fixture {
 
     skip(7 days);
 
-    uint256 expectedAfterPauseWindow = saving.computeUpdatedAssets(assetsAtPause, 7 days);
-
     vm.prank(guardian);
     saving.unpause();
 
     assertEq(saving.paused(), 0);
     assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate must advance to the unpause timestamp");
     assertGt(saving.lastUpdate(), lastUpdateAtPause);
-    assertEq(saving.totalAssets(), expectedAfterPauseWindow, "unpause must settle pause-window yield in one shot");
+    assertEq(saving.totalAssets(), assetsAtPause, "pausing halts emission: the paused window is not minted");
   }
 
   function test_unpause_firstInteractionAfterUnpauseEarnsNoStaleYield() public {
