@@ -140,6 +140,20 @@ contract SavingsUpgradeTest is Fixture {
     saving.initializeStoredAssets();
   }
 
+  function test_initializeStoredAssets_RevertWhen_AccrualStale() public {
+    skip(30 minutes + 1);
+    vm.prank(governor);
+    vm.expectRevert(Errors.StaleAccrual.selector);
+    saving.initializeStoredAssets();
+  }
+
+  function test_initializeStoredAssets_SucceedsWithinFreshnessWindow() public {
+    skip(30 minutes);
+    vm.prank(governor);
+    saving.initializeStoredAssets();
+    assertEq(saving.storedAssets(), IERC20(address(tokenP)).balanceOf(address(saving)));
+  }
+
   function test_upgradeFromLegacy_postUpgradePauseUnpauseWorks() public {
     SavingsNameable savingProxy = _deployLegacySavings();
     _upgradeSavings(savingProxy);

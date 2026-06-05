@@ -93,6 +93,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   /// legitimately deposited assets remain backing. Any subsequent direct transfer is treated as a
   /// donation surplus and ignored by `totalAssets()` until `recoverSurplus` is called.
   function initializeStoredAssets() external restricted reinitializer(2) {
+    if (block.timestamp - lastUpdate > MAX_STORED_ASSETS_INIT_STALENESS) revert StaleAccrual();
     storedAssets = IERC20Metadata(asset()).balanceOf(address(this));
   }
 
