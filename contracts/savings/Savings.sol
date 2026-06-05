@@ -85,6 +85,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     __AccessManaged_init(_authority);
     _setNameAndSymbol(name_, symbol_);
     _deposit(msg.sender, address(this), 10 ** (asset_.decimals()) / divizer, BASE_18 / divizer);
+    lastUpdate = uint40(block.timestamp);
   }
 
   /// @notice One-shot reinitializer for upgrades that introduce `storedAssets`

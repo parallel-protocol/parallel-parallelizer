@@ -40,7 +40,7 @@ contract SavingsUpgradeTest is Fixture {
     assertEq(saving.totalSupply(), Constants.BASE_18);
     assertEq(saving.maxRate(), 0);
     assertEq(saving.paused(), 0);
-    assertEq(saving.lastUpdate(), 0);
+    assertEq(saving.lastUpdate(), block.timestamp);
     assertEq(saving.rate(), 0);
   }
 
@@ -64,7 +64,7 @@ contract SavingsUpgradeTest is Fixture {
     assertEq(saving.totalSupply(), Constants.BASE_18);
     assertEq(saving.maxRate(), 0);
     assertEq(saving.paused(), 0);
-    assertEq(saving.lastUpdate(), 0);
+    assertEq(saving.lastUpdate(), block.timestamp);
     assertEq(saving.rate(), 0);
   }
 
