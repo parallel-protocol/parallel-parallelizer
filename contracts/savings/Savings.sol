@@ -92,7 +92,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   /// @dev Seeds `storedAssets` with the current ERC20 balance held by the contract, so existing
   /// legitimately deposited assets remain backing. Any subsequent direct transfer is treated as a
   /// donation surplus and ignored by `totalAssets()` until `recoverSurplus` is called.
-  function initializeStoredAssets() external reinitializer(2) {
+  function initializeStoredAssets() external restricted reinitializer(2) {
     storedAssets = IERC20Metadata(asset()).balanceOf(address(this));
   }
 

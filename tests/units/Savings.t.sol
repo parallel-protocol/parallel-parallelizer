@@ -129,8 +129,15 @@ contract SavingsUpgradeTest is Fixture {
     SavingsNameable savingProxy = _deployLegacySavings();
     _upgradeSavings(savingProxy);
 
+    vm.prank(governor);
     vm.expectRevert(bytes4(keccak256("InvalidInitialization()")));
     savingProxy.initializeStoredAssets();
+  }
+
+  function test_initializeStoredAssets_RevertWhen_CallerUnauthorized() public {
+    vm.prank(alice);
+    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    saving.initializeStoredAssets();
   }
 
   function test_upgradeFromLegacy_postUpgradePauseUnpauseWorks() public {
