@@ -40,7 +40,7 @@ contract SavingsUpgradeTest is Fixture {
     assertEq(saving.totalSupply(), Constants.BASE_18);
     assertEq(saving.maxRate(), 0);
     assertEq(saving.paused(), 0);
-    assertEq(saving.lastUpdate(), 0);
+    assertEq(saving.lastUpdate(), block.timestamp);
     assertEq(saving.rate(), 0);
   }
 
@@ -64,7 +64,7 @@ contract SavingsUpgradeTest is Fixture {
     assertEq(saving.totalSupply(), Constants.BASE_18);
     assertEq(saving.maxRate(), 0);
     assertEq(saving.paused(), 0);
-    assertEq(saving.lastUpdate(), 0);
+    assertEq(saving.lastUpdate(), block.timestamp);
     assertEq(saving.rate(), 0);
   }
 
@@ -129,8 +129,29 @@ contract SavingsUpgradeTest is Fixture {
     SavingsNameable savingProxy = _deployLegacySavings();
     _upgradeSavings(savingProxy);
 
+    vm.prank(governor);
     vm.expectRevert(bytes4(keccak256("InvalidInitialization()")));
     savingProxy.initializeStoredAssets();
+  }
+
+  function test_initializeStoredAssets_RevertWhen_CallerUnauthorized() public {
+    vm.prank(alice);
+    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    saving.initializeStoredAssets();
+  }
+
+  function test_initializeStoredAssets_RevertWhen_AccrualStale() public {
+    skip(30 minutes + 1);
+    vm.prank(governor);
+    vm.expectRevert(Errors.StaleAccrual.selector);
+    saving.initializeStoredAssets();
+  }
+
+  function test_initializeStoredAssets_SucceedsWithinFreshnessWindow() public {
+    skip(30 minutes);
+    vm.prank(governor);
+    saving.initializeStoredAssets();
+    assertEq(saving.storedAssets(), IERC20(address(tokenP)).balanceOf(address(saving)));
   }
 
   function test_upgradeFromLegacy_postUpgradePauseUnpauseWorks() public {
@@ -612,7 +633,7 @@ contract SavingsTogglePauseAccrueTest is Fixture {
     assertEq(saving.totalAssets(), expectedAtPause, "yield must be settled at pause time");
   }
 
-  function test_unpause_advancesLastUpdateOnUnpause() public {
+  function test_unpause_dropsPausedWindowYield() public {
     vm.prank(guardian);
     saving.pause();
     uint40 lastUpdateAtPause = saving.lastUpdate();
@@ -620,15 +641,13 @@ contract SavingsTogglePauseAccrueTest is Fixture {
 
     skip(7 days);
 
-    uint256 expectedAfterPauseWindow = saving.computeUpdatedAssets(assetsAtPause, 7 days);
-
     vm.prank(guardian);
     saving.unpause();
 
     assertEq(saving.paused(), 0);
     assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate must advance to the unpause timestamp");
     assertGt(saving.lastUpdate(), lastUpdateAtPause);
-    assertEq(saving.totalAssets(), expectedAfterPauseWindow, "unpause must settle pause-window yield in one shot");
+    assertEq(saving.totalAssets(), assetsAtPause, "pausing halts emission: the paused window is not minted");
   }
 
   function test_unpause_firstInteractionAfterUnpauseEarnsNoStaleYield() public {

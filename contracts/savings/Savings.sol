@@ -85,13 +85,15 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     __AccessManaged_init(_authority);
     _setNameAndSymbol(name_, symbol_);
     _deposit(msg.sender, address(this), 10 ** (asset_.decimals()) / divizer, BASE_18 / divizer);
+    lastUpdate = uint40(block.timestamp);
   }
 
   /// @notice One-shot reinitializer for upgrades that introduce `storedAssets`
   /// @dev Seeds `storedAssets` with the current ERC20 balance held by the contract, so existing
   /// legitimately deposited assets remain backing. Any subsequent direct transfer is treated as a
   /// donation surplus and ignored by `totalAssets()` until `recoverSurplus` is called.
-  function initializeStoredAssets() external reinitializer(2) {
+  function initializeStoredAssets() external restricted reinitializer(2) {
+    if (block.timestamp - lastUpdate > MAX_STORED_ASSETS_INIT_STALENESS) revert StaleAccrual();
     storedAssets = IERC20Metadata(asset()).balanceOf(address(this));
   }
 
@@ -462,12 +464,12 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   }
 
   /// @notice Unpauses the contract
-  /// @dev Reverts if not paused, so a no-op governance call cannot pass silently. Accrues
-  /// outstanding yield before flipping the flag so `lastUpdate` advances to the unpause timestamp,
-  /// eliminating the stale gap that would otherwise persist until the first interaction.
+  /// @dev Reverts if not paused, so a no-op governance call cannot pass silently. Advances
+  /// `lastUpdate` to the unpause timestamp so the paused interval is dropped rather than minted:
+  /// pausing halts emission. `pause()` already settles yield up to the pause moment.
   function unpause() external restricted {
     if (paused == 0) revert NotPaused();
-    _accrue();
+    lastUpdate = uint40(block.timestamp);
     paused = 0;
     emit ToggledPause(0);
   }

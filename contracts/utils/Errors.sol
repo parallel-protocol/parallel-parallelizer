@@ -58,3 +58,4 @@ error SwapError();
 error SlippageTooHigh();
 error InsufficientFunds();
 error Undercollateralized();
+error StaleAccrual();
