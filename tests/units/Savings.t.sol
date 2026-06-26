@@ -154,6 +154,13 @@ contract SavingsUpgradeTest is Fixture {
     assertEq(saving.storedAssets(), IERC20(address(tokenP)).balanceOf(address(saving)));
   }
 
+  function test_initializeStoredAssets_reAnchorsLastUpdate() public {
+    skip(20 minutes);
+    vm.prank(governor);
+    saving.initializeStoredAssets();
+    assertEq(saving.lastUpdate(), block.timestamp);
+  }
+
   function test_upgradeFromLegacy_postUpgradePauseUnpauseWorks() public {
     SavingsNameable savingProxy = _deployLegacySavings();
     _upgradeSavings(savingProxy);
