@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC20Errors } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC4626Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 import { IAccessManaged } from "contracts/utils/AccessManagedUpgradeable.sol";
 import { EIP3009 } from "contracts/savings/EIP3009.sol";
 import { Savings } from "contracts/savings/Savings.sol";
@@ -690,7 +691,11 @@ contract SavingsTest is Fixture, FunctionUtils {
     );
 
     vm.startPrank(alice);
-    vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, alice, shares, shares + 1));
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ERC4626Upgradeable.ERC4626ExceededMaxWithdraw.selector, alice, withdrawableAmount + 1, withdrawableAmount
+      )
+    );
     saving.withdraw(withdrawableAmount + 1, receiver, alice);
     uint256 sharesBurnt = saving.withdraw(withdrawableAmount, receiver, alice);
     vm.stopPrank();

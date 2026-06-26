@@ -192,6 +192,8 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   /// @inheritdoc ERC4626Upgradeable
   function deposit(uint256 assets, address receiver) public override whenNotPaused returns (uint256 shares) {
     uint256 newTotalAssets = _accrue();
+    uint256 maxAssets = maxDeposit(receiver);
+    if (assets > maxAssets) revert ERC4626ExceededMaxDeposit(receiver, assets, maxAssets);
     shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Floor);
     _deposit(_msgSender(), receiver, assets, shares);
   }
@@ -199,6 +201,8 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   /// @inheritdoc ERC4626Upgradeable
   function mint(uint256 shares, address receiver) public override whenNotPaused returns (uint256 assets) {
     uint256 newTotalAssets = _accrue();
+    uint256 maxShares = maxMint(receiver);
+    if (shares > maxShares) revert ERC4626ExceededMaxMint(receiver, shares, maxShares);
     assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Ceil);
     _deposit(_msgSender(), receiver, assets, shares);
   }
@@ -215,6 +219,8 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     returns (uint256 shares)
   {
     uint256 newTotalAssets = _accrue();
+    uint256 maxAssets = maxWithdraw(owner);
+    if (assets > maxAssets) revert ERC4626ExceededMaxWithdraw(owner, assets, maxAssets);
     shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Ceil);
     _withdraw(_msgSender(), receiver, owner, assets, shares);
   }
@@ -231,6 +237,8 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     returns (uint256 assets)
   {
     uint256 newTotalAssets = _accrue();
+    uint256 maxShares = maxRedeem(owner);
+    if (shares > maxShares) revert ERC4626ExceededMaxRedeem(owner, shares, maxShares);
     assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Floor);
     _withdraw(_msgSender(), receiver, owner, assets, shares);
   }
