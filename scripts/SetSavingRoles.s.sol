@@ -21,11 +21,12 @@ contract SetSavingRoles is BaseScript {
     keeperSelectors[0] = Savings.setRate.selector;
     accessManager.setTargetFunctionRole(saving, keeperSelectors, Roles.KEEPER_ROLE);
 
-    bytes4[] memory governorSelectors = new bytes4[](4);
+    bytes4[] memory governorSelectors = new bytes4[](5);
     governorSelectors[0] = SavingsNameable.setNameAndSymbol.selector;
     governorSelectors[1] = Savings.setMaxRate.selector;
     governorSelectors[2] = UUPSUpgradeable.upgradeToAndCall.selector;
     governorSelectors[3] = Savings.recoverSurplus.selector;
+    governorSelectors[4] = Savings.initializeStoredAssets.selector;
     accessManager.setTargetFunctionRole(saving, governorSelectors, Roles.GOVERNOR_ROLE);
 
     accessManager.grantRole(Roles.USDp_MINTER_ROLE, address(saving), 0);

@@ -51,11 +51,12 @@ abstract contract ConfigAccessManager is Helper {
   }
 
   function getGovernorSavingsSelectorAccess() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](4);
+    bytes4[] memory selectors = new bytes4[](5);
     selectors[0] = SavingsNameable.setNameAndSymbol.selector;
     selectors[1] = Savings.setMaxRate.selector;
     selectors[2] = UUPSUpgradeable.upgradeToAndCall.selector;
     selectors[3] = Savings.recoverSurplus.selector;
+    selectors[4] = Savings.initializeStoredAssets.selector;
     return selectors;
   }
 
