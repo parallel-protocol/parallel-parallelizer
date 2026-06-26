@@ -59,3 +59,4 @@ error SlippageTooHigh();
 error InsufficientFunds();
 error Undercollateralized();
 error StaleAccrual();
+error NotInitialized();

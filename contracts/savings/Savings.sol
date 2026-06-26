@@ -116,6 +116,12 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     _;
   }
 
+  /// @notice Reverts when shares exist but `storedAssets` was never seeded (non-atomic upgrade)
+  modifier onlyInitialized() {
+    if (storedAssets == 0 && totalSupply() != 0) revert NotInitialized();
+    _;
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CONTRACT LOGIC
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -190,7 +196,16 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
-  function deposit(uint256 assets, address receiver) public override whenNotPaused returns (uint256 shares) {
+  function deposit(
+    uint256 assets,
+    address receiver
+  )
+    public
+    override
+    whenNotPaused
+    onlyInitialized
+    returns (uint256 shares)
+  {
     uint256 newTotalAssets = _accrue();
     uint256 maxAssets = maxDeposit(receiver);
     if (assets > maxAssets) revert ERC4626ExceededMaxDeposit(receiver, assets, maxAssets);
@@ -199,7 +214,16 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   }
 
   /// @inheritdoc ERC4626Upgradeable
-  function mint(uint256 shares, address receiver) public override whenNotPaused returns (uint256 assets) {
+  function mint(
+    uint256 shares,
+    address receiver
+  )
+    public
+    override
+    whenNotPaused
+    onlyInitialized
+    returns (uint256 assets)
+  {
     uint256 newTotalAssets = _accrue();
     uint256 maxShares = maxMint(receiver);
     if (shares > maxShares) revert ERC4626ExceededMaxMint(receiver, shares, maxShares);
@@ -216,6 +240,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     public
     override
     whenNotPaused
+    onlyInitialized
     returns (uint256 shares)
   {
     uint256 newTotalAssets = _accrue();
@@ -234,6 +259,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     public
     override
     whenNotPaused
+    onlyInitialized
     returns (uint256 assets)
   {
     uint256 newTotalAssets = _accrue();
@@ -267,6 +293,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   )
     external
     whenNotPaused
+    onlyInitialized
     returns (uint256 shares)
   {
     _consumeDepositAuthorization(
@@ -353,6 +380,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     bytes memory signature
   )
     internal
+    onlyInitialized
     returns (uint256 assets)
   {
     _consumeRedeemAuthorization(address(this), owner, receiver, shares, validAfter, validBefore, nonce, signature);

@@ -161,6 +161,30 @@ contract SavingsUpgradeTest is Fixture {
     assertEq(saving.lastUpdate(), block.timestamp);
   }
 
+  function test_nonAtomicUpgrade_revertsEntryPointsUntilInitialized() public {
+    SavingsNameable savingProxy = _deployLegacySavings();
+    _depositInSavings(savingProxy, 100e18, alice);
+
+    SavingsNameable newImpl = new SavingsNameable();
+    vm.prank(governor);
+    UUPSUpgradeable(address(savingProxy)).upgradeToAndCall(address(newImpl), "");
+
+    assertEq(savingProxy.storedAssets(), 0, "storedAssets left unseeded by non-atomic upgrade");
+    assertGt(savingProxy.totalSupply(), 0);
+
+    deal(address(tokenP), alice, 1e18);
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(savingProxy), 1e18);
+    vm.expectRevert(Errors.NotInitialized.selector);
+    savingProxy.deposit(1e18, alice);
+    vm.stopPrank();
+
+    uint256 aliceShares = savingProxy.balanceOf(alice);
+    vm.prank(alice);
+    vm.expectRevert(Errors.NotInitialized.selector);
+    savingProxy.redeem(aliceShares, alice, alice);
+  }
+
   function test_upgradeFromLegacy_postUpgradePauseUnpauseWorks() public {
     SavingsNameable savingProxy = _deployLegacySavings();
     _upgradeSavings(savingProxy);
