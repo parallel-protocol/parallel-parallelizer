@@ -125,6 +125,10 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   /// can never inflate the accrual base.
   function _accrue() internal returns (uint256 newTotalAssets) {
     uint256 currentBalance = storedAssets;
+    if (paused > 0) {
+      lastUpdate = uint40(block.timestamp);
+      return currentBalance;
+    }
     newTotalAssets = _computeUpdatedAssets(currentBalance, block.timestamp - lastUpdate);
     lastUpdate = uint40(block.timestamp);
     uint256 earned = newTotalAssets - currentBalance;

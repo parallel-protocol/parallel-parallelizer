@@ -651,6 +651,37 @@ contract SavingsTogglePauseAccrueTest is Fixture {
     assertEq(saving.totalAssets(), saving.storedAssets());
   }
 
+  function test_setRate_whilePaused_doesNotMintPausedYield() public {
+    vm.prank(guardian);
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+    uint256 balAtPause = IERC20(address(tokenP)).balanceOf(address(saving));
+
+    skip(30 days);
+
+    vm.prank(guardian);
+    saving.setRate(_rate);
+
+    assertEq(saving.storedAssets(), storedAtPause, "no paused yield minted into storedAssets");
+    assertEq(IERC20(address(tokenP)).balanceOf(address(saving)), balAtPause, "no tokenP minted while paused");
+    assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate advanced to now");
+  }
+
+  function test_setMaxRate_whilePaused_doesNotMintPausedYield() public {
+    vm.prank(guardian);
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+    uint256 balAtPause = IERC20(address(tokenP)).balanceOf(address(saving));
+
+    skip(30 days);
+
+    vm.prank(governor);
+    saving.setMaxRate(_maxRate);
+
+    assertEq(saving.storedAssets(), storedAtPause, "no paused yield minted into storedAssets");
+    assertEq(IERC20(address(tokenP)).balanceOf(address(saving)), balAtPause, "no tokenP minted while paused");
+  }
+
   function test_unpause_dropsPausedWindowYield() public {
     vm.prank(guardian);
     saving.pause();
