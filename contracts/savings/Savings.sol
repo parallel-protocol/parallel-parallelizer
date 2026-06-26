@@ -157,6 +157,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   /// @dev Returns the projection of `storedAssets` rather than `IERC20.balanceOf(self)`.
   /// Direct ERC20 transfers to this contract do not affect this value.
   function totalAssets() public view override returns (uint256) {
+    if (paused > 0) return storedAssets;
     return _computeUpdatedAssets(storedAssets, block.timestamp - lastUpdate);
   }
 

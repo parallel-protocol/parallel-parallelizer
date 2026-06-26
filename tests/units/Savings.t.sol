@@ -640,6 +640,17 @@ contract SavingsTogglePauseAccrueTest is Fixture {
     assertEq(saving.totalAssets(), expectedAtPause, "yield must be settled at pause time");
   }
 
+  function test_totalAssets_doesNotProjectYieldWhilePaused() public {
+    vm.prank(guardian);
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+
+    skip(30 days);
+
+    assertEq(saving.totalAssets(), storedAtPause, "totalAssets must not project yield while paused");
+    assertEq(saving.totalAssets(), saving.storedAssets());
+  }
+
   function test_unpause_dropsPausedWindowYield() public {
     vm.prank(guardian);
     saving.pause();
