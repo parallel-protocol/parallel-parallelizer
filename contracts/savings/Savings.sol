@@ -301,6 +301,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     );
 
     uint256 newTotalAssets = _accrue();
+    if (assets > maxDeposit(receiver)) revert ERC4626ExceededMaxDeposit(receiver, assets, maxDeposit(receiver));
     shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Floor);
     IEIP3009(asset())
       .receiveWithAuthorization(owner, address(this), assets, validAfter, validBefore, nonce, tokenSignature);
@@ -385,6 +386,8 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   {
     _consumeRedeemAuthorization(address(this), owner, receiver, shares, validAfter, validBefore, nonce, signature);
     uint256 newTotalAssets = _accrue();
+    uint256 maxShares = maxRedeem(owner);
+    if (shares > maxShares) revert ERC4626ExceededMaxRedeem(owner, shares, maxShares);
     assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Floor);
     storedAssets -= assets;
     _burn(owner, shares);

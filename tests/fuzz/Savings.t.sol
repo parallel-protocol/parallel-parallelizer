@@ -1025,6 +1025,22 @@ contract SavingsTest is Fixture, FunctionUtils {
     saving.redeemWithAuthorization(redeemShares, bob, alice, 0, deadline, nonce, v, r, s);
   }
 
+  function test_RedeemWithAuthorization_RevertWhen_ExceedsMaxRedeem() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 tooMany = shares + 1;
+
+    bytes32 nonce = bytes32("redeem_max");
+    uint256 deadline = block.timestamp + 1 hours;
+    (uint8 v, bytes32 r, bytes32 s) = _signRedeemAuth(1, alice, alice, tooMany, 0, deadline, nonce);
+
+    vm.prank(bob);
+    vm.expectRevert(
+      abi.encodeWithSelector(ERC4626Upgradeable.ERC4626ExceededMaxRedeem.selector, alice, tooMany, shares)
+    );
+    saving.redeemWithAuthorization(tooMany, alice, alice, 0, deadline, nonce, v, r, s);
+  }
+
   function test_TransferWithAuthorization_Savings() public {
     _deposit(100 * BASE_18, alice, alice, 0);
     uint256 shares = saving.balanceOf(alice);
