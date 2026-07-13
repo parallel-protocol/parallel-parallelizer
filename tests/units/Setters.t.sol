@@ -17,25 +17,25 @@ import "contracts/utils/Errors.sol" as Errors;
 
 import { Fixture } from "../Fixture.sol";
 
-contract Test_Setters_TogglePause is Fixture {
+contract Test_Setters_Pause is Fixture {
   function test_RevertWhen_NotGuardian() public {
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, governor));
     hoax(governor);
-    parallelizer.togglePause(address(eurA), ActionType.Mint);
+    parallelizer.pause(address(eurA), ActionType.Mint);
 
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, alice));
     hoax(alice);
-    parallelizer.togglePause(address(eurA), ActionType.Mint);
+    parallelizer.pause(address(eurA), ActionType.Mint);
 
     vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, bob));
     hoax(bob);
-    parallelizer.togglePause(address(eurA), ActionType.Mint);
+    parallelizer.pause(address(eurA), ActionType.Mint);
   }
 
   function test_RevertWhen_NotCollateral() public {
     vm.expectRevert(Errors.NotCollateral.selector);
     hoax(guardian);
-    parallelizer.togglePause(address(tokenP), ActionType.Mint);
+    parallelizer.pause(address(tokenP), ActionType.Mint);
   }
 
   function test_PauseMint() public {
@@ -43,7 +43,7 @@ contract Test_Setters_TogglePause is Fixture {
     emit LibSetters.PauseToggled(address(eurA), uint256(ActionType.Mint), true);
 
     hoax(guardian);
-    parallelizer.togglePause(address(eurA), ActionType.Mint);
+    parallelizer.pause(address(eurA), ActionType.Mint);
 
     assert(parallelizer.isPaused(address(eurA), ActionType.Mint));
 
@@ -59,7 +59,7 @@ contract Test_Setters_TogglePause is Fixture {
     emit LibSetters.PauseToggled(address(eurA), uint256(ActionType.Burn), true);
 
     hoax(guardian);
-    parallelizer.togglePause(address(eurA), ActionType.Burn);
+    parallelizer.pause(address(eurA), ActionType.Burn);
 
     assert(parallelizer.isPaused(address(eurA), ActionType.Burn));
 
@@ -75,7 +75,7 @@ contract Test_Setters_TogglePause is Fixture {
     emit LibSetters.PauseToggled(address(eurA), uint256(ActionType.Redeem), true);
 
     hoax(guardian);
-    parallelizer.togglePause(address(eurA), ActionType.Redeem);
+    parallelizer.pause(address(eurA), ActionType.Redeem);
 
     assert(parallelizer.isPaused(address(eurA), ActionType.Redeem));
 

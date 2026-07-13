@@ -161,7 +161,9 @@ contract DummyDiamondImplementation {
 
   function setRedemptionCurveParams(uint64[] memory xFee, int64[] memory yFee) external { }
 
-  function togglePause(address collateral, uint8 pausedType) external { }
+  function pause(address collateral, uint8 action) external { }
+
+  function unpause(address collateral, uint8 action) external { }
 
   function toggleWhitelist(uint8 whitelistType, address who) external { }
 

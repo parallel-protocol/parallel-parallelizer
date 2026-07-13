@@ -1,24 +1,29 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
+import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/interfaces/IERC20Metadata.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import { IAccessManaged } from "contracts/utils/AccessManagedUpgradeable.sol";
+import { Savings } from "contracts/savings/Savings.sol";
 
 import { SavingsNameable } from "contracts/savings/nameable/SavingsNameable.sol";
-import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { Vm } from "@forge-std/Vm.sol";
-
+import "contracts/utils/Errors.sol" as Errors;
 import "../Fixture.sol";
+import { SavingsLegacyMock } from "../mock/SavingsLegacyMock.sol";
 
-contract SavingsNameableUpgradeTest is Fixture {
+contract SavingsUpgradeTest is Fixture {
+  uint256 internal constant _initDeposit = 1e18;
+
   function setUp() public override {
     super.setUp();
 
     saving = SavingsNameable(deploySavings(governor, address(tokenP), address(accessManager)));
     vm.label(address(saving), "saving");
 
-    // grant access to required functions for governor role
     vm.startPrank(governor);
     accessManager.setTargetFunctionRole(address(saving), getGovernorSavingsSelectorAccess(), GOVERNOR_ROLE);
     vm.stopPrank();
@@ -35,7 +40,7 @@ contract SavingsNameableUpgradeTest is Fixture {
     assertEq(saving.totalSupply(), Constants.BASE_18);
     assertEq(saving.maxRate(), 0);
     assertEq(saving.paused(), 0);
-    assertEq(saving.lastUpdate(), 0);
+    assertEq(saving.lastUpdate(), block.timestamp);
     assertEq(saving.rate(), 0);
   }
 
@@ -59,7 +64,7 @@ contract SavingsNameableUpgradeTest is Fixture {
     assertEq(saving.totalSupply(), Constants.BASE_18);
     assertEq(saving.maxRate(), 0);
     assertEq(saving.paused(), 0);
-    assertEq(saving.lastUpdate(), 0);
+    assertEq(saving.lastUpdate(), block.timestamp);
     assertEq(saving.rate(), 0);
   }
 
@@ -68,6 +73,355 @@ contract SavingsNameableUpgradeTest is Fixture {
     address newSavingsImpl = address(new SavingsNameable());
     vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
     saving.upgradeToAndCall(newSavingsImpl, "");
+  }
+
+  function test_upgradeFromLegacy_neutralizesDonationAttack() public {
+    SavingsNameable savingProxy = _deployLegacySavings();
+    _depositInSavings(savingProxy, 100e18, alice);
+
+    uint256 priceBeforeDonation = savingProxy.previewRedeem(1e18);
+
+    uint256 donation = 10_000_000e18;
+    deal(address(tokenP), address(this), donation);
+    IERC20(address(tokenP)).transfer(address(savingProxy), donation);
+
+    assertGt(
+      savingProxy.previewRedeem(1e18),
+      priceBeforeDonation * 1000,
+      "legacy: donation must inflate share price"
+    );
+
+    _upgradeSavings(savingProxy);
+
+    assertGe(
+      savingProxy.storedAssets(),
+      _initDeposit + 100e18 + donation,
+      "post-upgrade storedAssets includes pre-upgrade donation as backing"
+    );
+
+    uint256 priceAfterUpgrade = savingProxy.previewRedeem(1e18);
+
+    uint256 newDonation = 50_000_000e18;
+    deal(address(tokenP), address(this), newDonation);
+    IERC20(address(tokenP)).transfer(address(savingProxy), newDonation);
+
+    assertEq(savingProxy.previewRedeem(1e18), priceAfterUpgrade, "new donation must not move price");
+    assertEq(savingProxy.totalAssets(), savingProxy.storedAssets(), "totalAssets tracks storedAssets");
+
+    vm.prank(governor);
+    assertEq(savingProxy.recoverSurplus(treasury), newDonation, "new donation recoverable");
+  }
+
+  function test_upgradeFromLegacy_existingDepositorsCanStillRedeem() public {
+    SavingsNameable savingProxy = _deployLegacySavings();
+    _depositInSavings(savingProxy, 100e18, alice);
+
+    _upgradeSavings(savingProxy);
+
+    uint256 aliceShares = savingProxy.balanceOf(alice);
+    vm.prank(alice);
+    uint256 received = savingProxy.redeem(aliceShares, alice, alice);
+    assertGt(received, 0, "alice can redeem after upgrade");
+    assertEq(savingProxy.balanceOf(alice), 0, "shares burned");
+  }
+
+  function test_upgradeFromLegacy_initializeStoredAssetsRevertsWhenCalledTwice() public {
+    SavingsNameable savingProxy = _deployLegacySavings();
+    _upgradeSavings(savingProxy);
+
+    vm.prank(governor);
+    vm.expectRevert(bytes4(keccak256("InvalidInitialization()")));
+    savingProxy.initializeStoredAssets();
+  }
+
+  function test_initializeStoredAssets_RevertWhen_CallerUnauthorized() public {
+    vm.prank(alice);
+    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    saving.initializeStoredAssets();
+  }
+
+  function test_initializeStoredAssets_RevertWhen_AccrualStale() public {
+    skip(30 minutes + 1);
+    vm.prank(governor);
+    vm.expectRevert(Errors.StaleAccrual.selector);
+    saving.initializeStoredAssets();
+  }
+
+  function test_initializeStoredAssets_SucceedsWithinFreshnessWindow() public {
+    skip(30 minutes);
+    vm.prank(governor);
+    saving.initializeStoredAssets();
+    assertEq(saving.storedAssets(), IERC20(address(tokenP)).balanceOf(address(saving)));
+  }
+
+  function test_initializeStoredAssets_reAnchorsLastUpdate() public {
+    skip(20 minutes);
+    vm.prank(governor);
+    saving.initializeStoredAssets();
+    assertEq(saving.lastUpdate(), block.timestamp);
+  }
+
+  function test_nonAtomicUpgrade_revertsEntryPointsUntilInitialized() public {
+    SavingsNameable savingProxy = _deployLegacySavings();
+    _depositInSavings(savingProxy, 100e18, alice);
+
+    SavingsNameable newImpl = new SavingsNameable();
+    vm.prank(governor);
+    UUPSUpgradeable(address(savingProxy)).upgradeToAndCall(address(newImpl), "");
+
+    assertEq(savingProxy.storedAssets(), 0, "storedAssets left unseeded by non-atomic upgrade");
+    assertGt(savingProxy.totalSupply(), 0);
+
+    deal(address(tokenP), alice, 1e18);
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(savingProxy), 1e18);
+    vm.expectRevert(Errors.NotInitialized.selector);
+    savingProxy.deposit(1e18, alice);
+    vm.stopPrank();
+
+    uint256 aliceShares = savingProxy.balanceOf(alice);
+    vm.prank(alice);
+    vm.expectRevert(Errors.NotInitialized.selector);
+    savingProxy.redeem(aliceShares, alice, alice);
+  }
+
+  function test_upgradeFromLegacy_postUpgradePauseUnpauseWorks() public {
+    SavingsNameable savingProxy = _deployLegacySavings();
+    _upgradeSavings(savingProxy);
+
+    vm.prank(governor);
+    accessManager.setTargetFunctionRole(address(savingProxy), getGuardianSavingsSelectorAccess(), GUARDIAN_ROLE);
+
+    vm.prank(guardian);
+    savingProxy.pause();
+    deal(address(tokenP), alice, 1e18);
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(savingProxy), 1e18);
+    vm.expectRevert(Errors.Paused.selector);
+    savingProxy.deposit(1e18, alice);
+    vm.stopPrank();
+
+    vm.prank(guardian);
+    savingProxy.unpause();
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                       HELPERS
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function _deployLegacySavings() internal returns (SavingsNameable savingProxy) {
+    vm.startPrank(governor);
+
+    deal(address(tokenP), governor, _initDeposit);
+
+    SavingsLegacyMock legacyImpl = new SavingsLegacyMock();
+    address futureProxy = vm.computeCreateAddress(governor, vm.getNonce(governor));
+    IERC20(address(tokenP)).approve(futureProxy, _initDeposit);
+
+    savingProxy = SavingsNameable(
+      address(
+        new ERC1967Proxy(
+          address(legacyImpl),
+          abi.encodeWithSelector(
+            legacyImpl.initialize.selector, accessManager, IERC20Metadata(address(tokenP)), name, symbol, 1
+          )
+        )
+      )
+    );
+
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;
+    accessManager.setTargetFunctionRole(address(savingProxy), selectors, GOVERNOR_ROLE);
+
+    vm.stopPrank();
+
+    vm.label(address(savingProxy), "savingProxy");
+  }
+
+  function _depositInSavings(SavingsNameable savingProxy, uint256 amount, address depositor) internal {
+    deal(address(tokenP), depositor, amount);
+    vm.startPrank(depositor);
+    IERC20(address(tokenP)).approve(address(savingProxy), amount);
+    savingProxy.deposit(amount, depositor);
+    vm.stopPrank();
+  }
+
+  function _upgradeSavings(SavingsNameable savingProxy) internal {
+    SavingsNameable newImpl = new SavingsNameable();
+    vm.prank(governor);
+    UUPSUpgradeable(address(savingProxy)).upgradeToAndCall(
+      address(newImpl),
+      abi.encodeWithSelector(Savings.initializeStoredAssets.selector)
+    );
+
+    assertEq(
+      savingProxy.storedAssets(),
+      IERC20(address(tokenP)).balanceOf(address(savingProxy)),
+      "post-upgrade storedAssets == balance"
+    );
+  }
+}
+
+contract SavingsDonationAttackTest is Fixture {
+  function setUp() public override {
+    super.setUp();
+
+    saving = SavingsNameable(deploySavings(governor, address(tokenP), address(accessManager)));
+    vm.label(address(saving), "saving");
+
+    vm.startPrank(governor);
+    accessManager.setTargetFunctionRole(address(saving), getGovernorSavingsSelectorAccess(), GOVERNOR_ROLE);
+    accessManager.setTargetFunctionRole(address(saving), getGuardianSavingsSelectorAccess(), GUARDIAN_ROLE);
+    saving.setMaxRate(type(uint256).max);
+    vm.stopPrank();
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                       DONATION ATTACK
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function test_DonationAttackIsNeutralized() public {
+    uint256 attackerDeposit = 1e18;
+    uint256 attackerShares = _depositInSavings(attackerDeposit, alice);
+
+    uint256 priceBefore = saving.previewRedeem(1e18);
+    uint256 totalAssetsBefore = saving.totalAssets();
+    uint256 storedBefore = saving.storedAssets();
+
+    uint256 donation = 225_000_000e18;
+    deal(address(tokenP), address(this), donation);
+    IERC20(address(tokenP)).transfer(address(saving), donation);
+
+    assertEq(saving.totalAssets(), totalAssetsBefore, "totalAssets unchanged by donation");
+    assertEq(saving.previewRedeem(1e18), priceBefore, "share price unchanged");
+    assertEq(saving.storedAssets(), storedBefore, "storedAssets unchanged");
+
+    uint256 expectedOut = saving.previewRedeem(attackerShares);
+    vm.prank(alice);
+    uint256 received = saving.redeem(attackerShares, alice, alice);
+    assertEq(received, expectedOut, "redeem returns preview");
+    assertLe(received, attackerDeposit + 1, "attacker did not capture donation");
+
+    uint256 surplus = IERC20(address(tokenP)).balanceOf(address(saving)) - saving.storedAssets();
+    assertEq(surplus, donation, "donation persists as recoverable surplus");
+  }
+
+  function test_DonationAttackDormantAccrualIsAccountedNotSurplus() public {
+    _depositInSavings(1e18, alice);
+
+    vm.startPrank(guardian);
+    uint208 ratePerSecond = uint208(uint256(BASE_27) / SECONDS_PER_YEAR / 100); // ~1% APY
+    saving.setRate(ratePerSecond);
+    vm.stopPrank();
+
+    skip(39 days);
+
+    uint256 storedBefore = saving.storedAssets();
+    _depositInSavings(1, alice); // any interaction triggers _accrue
+
+    assertGt(saving.storedAssets(), storedBefore, "accrual increases storedAssets");
+    assertEq(
+      IERC20(address(tokenP)).balanceOf(address(saving)) - saving.storedAssets(),
+      0,
+      "minted accrual is backing, not surplus"
+    );
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                       RECOVER SURPLUS
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function test_RecoverSurplusReturnsZeroWhenNoDonation() public {
+    _depositInSavings(1e18, alice);
+
+    vm.prank(governor);
+    uint256 recovered = saving.recoverSurplus(treasury);
+    assertEq(recovered, 0, "no surplus expected");
+    assertEq(IERC20(address(tokenP)).balanceOf(treasury), 0, "treasury untouched");
+  }
+
+  function test_RecoverSurplusDrainsDonationWithoutAffectingDepositors() public {
+    uint256 honestShares = _depositInSavings(1e18, alice);
+    uint256 storedBeforeDonation = saving.storedAssets();
+
+    uint256 donation = 5_000_000e18;
+    deal(address(tokenP), address(this), donation);
+    IERC20(address(tokenP)).transfer(address(saving), donation);
+
+    vm.expectEmit(true, false, false, true, address(saving));
+    emit Savings.SurplusRecovered(treasury, donation);
+    vm.prank(governor);
+    uint256 recovered = saving.recoverSurplus(treasury);
+
+    assertEq(recovered, donation, "recovered amount");
+    assertEq(IERC20(address(tokenP)).balanceOf(treasury), donation, "treasury credited");
+    assertEq(saving.storedAssets(), storedBeforeDonation, "storedAssets stable");
+    assertEq(
+      IERC20(address(tokenP)).balanceOf(address(saving)),
+      saving.storedAssets(),
+      "vault balance == storedAssets after recover"
+    );
+
+    vm.prank(alice);
+    uint256 received = saving.redeem(honestShares, alice, alice);
+    assertGt(received, 0, "alice can still redeem");
+  }
+
+  function test_RecoverSurplusRevertsOnZeroAddress() public {
+    deal(address(tokenP), address(saving), 100e18);
+
+    vm.prank(governor);
+    vm.expectRevert(Errors.ZeroAddress.selector);
+    saving.recoverSurplus(address(0));
+  }
+
+  function test_RecoverSurplusRevertsWhenCallerNotGovernor() public {
+    deal(address(tokenP), address(saving), 100e18);
+
+    vm.prank(alice);
+    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    saving.recoverSurplus(treasury);
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                       PAUSE / UNPAUSE
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function test_PauseRevertsWhenAlreadyPaused() public {
+    vm.startPrank(guardian);
+    saving.pause();
+    vm.expectRevert(Errors.AlreadyPaused.selector);
+    saving.pause();
+    vm.stopPrank();
+  }
+
+  function test_UnpauseRevertsWhenNotPaused() public {
+    vm.prank(guardian);
+    vm.expectRevert(Errors.NotPaused.selector);
+    saving.unpause();
+  }
+
+  function test_PauseThenUnpauseRestoresInteractions() public {
+    _depositInSavings(1e18, alice);
+
+    vm.startPrank(guardian);
+    saving.pause();
+    saving.unpause();
+    vm.stopPrank();
+
+    _depositInSavings(1e18, alice);
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                       HELPERS
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  function _depositInSavings(uint256 amount, address depositor) internal returns (uint256 shares) {
+    deal(address(tokenP), depositor, amount);
+    vm.startPrank(depositor);
+    IERC20(address(tokenP)).approve(address(saving), amount);
+    shares = saving.deposit(amount, depositor);
+    vm.stopPrank();
   }
 }
 
@@ -144,7 +498,7 @@ contract SavingsMaxViewsPauseTest is Fixture {
 
   function _pause() internal {
     vm.prank(guardian);
-    saving.togglePause();
+    saving.pause();
     assertEq(saving.paused(), 1, "savings must be paused");
   }
 
@@ -164,7 +518,7 @@ contract SavingsMaxViewsPauseTest is Fixture {
     _pause();
 
     vm.prank(guardian);
-    saving.togglePause();
+    saving.unpause();
     assertEq(saving.paused(), 0, "savings must be unpaused");
 
     assertEq(saving.maxDeposit(alice), type(uint256).max);
@@ -296,47 +650,87 @@ contract SavingsTogglePauseAccrueTest is Fixture {
     vm.stopPrank();
   }
 
-  function test_togglePause_accruesYieldOnPause() public {
+  function test_pause_accruesYieldOnPause() public {
     uint256 assetsBefore = saving.totalAssets();
     skip(1 days);
     uint256 expectedAtPause = saving.computeUpdatedAssets(assetsBefore, 1 days);
     assertGt(expectedAtPause, assetsBefore, "yield must have accrued during the pre-pause window");
 
     vm.prank(guardian);
-    saving.togglePause();
+    saving.pause();
 
     assertEq(saving.paused(), 1);
     assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate must snapshot the pause timestamp");
     assertEq(saving.totalAssets(), expectedAtPause, "yield must be settled at pause time");
   }
 
-  function test_togglePause_advancesLastUpdateOnUnpause() public {
+  function test_totalAssets_doesNotProjectYieldWhilePaused() public {
     vm.prank(guardian);
-    saving.togglePause();
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+
+    skip(30 days);
+
+    assertEq(saving.totalAssets(), storedAtPause, "totalAssets must not project yield while paused");
+    assertEq(saving.totalAssets(), saving.storedAssets());
+  }
+
+  function test_setRate_whilePaused_doesNotMintPausedYield() public {
+    vm.prank(guardian);
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+    uint256 balAtPause = IERC20(address(tokenP)).balanceOf(address(saving));
+
+    skip(30 days);
+
+    vm.prank(guardian);
+    saving.setRate(_rate);
+
+    assertEq(saving.storedAssets(), storedAtPause, "no paused yield minted into storedAssets");
+    assertEq(IERC20(address(tokenP)).balanceOf(address(saving)), balAtPause, "no tokenP minted while paused");
+    assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate advanced to now");
+  }
+
+  function test_setMaxRate_whilePaused_doesNotMintPausedYield() public {
+    vm.prank(guardian);
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+    uint256 balAtPause = IERC20(address(tokenP)).balanceOf(address(saving));
+
+    skip(30 days);
+
+    vm.prank(governor);
+    saving.setMaxRate(_maxRate);
+
+    assertEq(saving.storedAssets(), storedAtPause, "no paused yield minted into storedAssets");
+    assertEq(IERC20(address(tokenP)).balanceOf(address(saving)), balAtPause, "no tokenP minted while paused");
+  }
+
+  function test_unpause_dropsPausedWindowYield() public {
+    vm.prank(guardian);
+    saving.pause();
     uint40 lastUpdateAtPause = saving.lastUpdate();
     uint256 assetsAtPause = saving.totalAssets();
 
     skip(7 days);
 
-    uint256 expectedAfterPauseWindow = saving.computeUpdatedAssets(assetsAtPause, 7 days);
-
     vm.prank(guardian);
-    saving.togglePause();
+    saving.unpause();
 
     assertEq(saving.paused(), 0);
     assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate must advance to the unpause timestamp");
     assertGt(saving.lastUpdate(), lastUpdateAtPause);
-    assertEq(saving.totalAssets(), expectedAfterPauseWindow, "unpause must settle pause-window yield in one shot");
+    assertEq(saving.totalAssets(), assetsAtPause, "pausing halts emission: the paused window is not minted");
   }
 
-  function test_togglePause_firstInteractionAfterUnpauseEarnsNoStaleYield() public {
+  function test_unpause_firstInteractionAfterUnpauseEarnsNoStaleYield() public {
     vm.prank(guardian);
-    saving.togglePause();
+    saving.pause();
 
     skip(30 days);
 
     vm.prank(guardian);
-    saving.togglePause();
+    saving.unpause();
 
     uint256 assetsAtUnpause = saving.totalAssets();
 

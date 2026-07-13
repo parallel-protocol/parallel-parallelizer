@@ -69,7 +69,7 @@ contract Test {
     yMintFee[3] = int64(uint64(BASE_12 - 1));
 
     LibSetters.setFees(eurA.collateral, xMintFee, yMintFee, true);
-    LibSetters.togglePause(eurA.collateral, ActionType.Mint);
+    LibSetters.unpause(eurA.collateral, ActionType.Mint);
 
     uint64[] memory xBurnFee = new uint64[](4);
     xBurnFee[0] = uint64(BASE_9);
@@ -85,7 +85,7 @@ contract Test {
     yBurnFee[3] = int64(uint64(MAX_BURN_FEE - 1));
 
     LibSetters.setFees(eurA.collateral, xBurnFee, yBurnFee, false);
-    LibSetters.togglePause(eurA.collateral, ActionType.Burn);
+    LibSetters.unpause(eurA.collateral, ActionType.Burn);
 
     // Setup second collateral
     LibSetters.addCollateral(eurB.collateral);
@@ -121,7 +121,7 @@ contract Test {
     yMintFee[3] = int64(uint64(BASE_12 - 1));
 
     LibSetters.setFees(eurB.collateral, xMintFee, yMintFee, true);
-    LibSetters.togglePause(eurB.collateral, ActionType.Mint);
+    LibSetters.unpause(eurB.collateral, ActionType.Mint);
 
     xBurnFee = new uint64[](4);
     xBurnFee[0] = uint64(BASE_9);
@@ -137,7 +137,7 @@ contract Test {
     yBurnFee[3] = int64(uint64(MAX_BURN_FEE - 1));
 
     LibSetters.setFees(eurB.collateral, xBurnFee, yBurnFee, false);
-    LibSetters.togglePause(eurB.collateral, ActionType.Burn);
+    LibSetters.unpause(eurB.collateral, ActionType.Burn);
 
     // Setup third collateral
     LibSetters.addCollateral(eurY.collateral);
@@ -173,7 +173,7 @@ contract Test {
     yMintFee[3] = int64(uint64(BASE_12 - 1));
 
     LibSetters.setFees(eurY.collateral, xMintFee, yMintFee, true);
-    LibSetters.togglePause(eurY.collateral, ActionType.Mint);
+    LibSetters.unpause(eurY.collateral, ActionType.Mint);
 
     xBurnFee = new uint64[](4);
     xBurnFee[0] = uint64(BASE_9);
@@ -189,7 +189,7 @@ contract Test {
     yBurnFee[3] = int64(uint64(MAX_BURN_FEE - 1));
 
     LibSetters.setFees(eurY.collateral, xBurnFee, yBurnFee, false);
-    LibSetters.togglePause(eurY.collateral, ActionType.Burn);
+    LibSetters.unpause(eurY.collateral, ActionType.Burn);
 
     // Set no hard limits on stablecoin minting per collateral
     LibSetters.setStablecoinCap(eurA.collateral, type(uint256).max);
@@ -197,6 +197,6 @@ contract Test {
     LibSetters.setStablecoinCap(eurY.collateral, type(uint256).max);
 
     // Redeem
-    LibSetters.togglePause(eurA.collateral, ActionType.Redeem);
+    LibSetters.unpause(eurA.collateral, ActionType.Redeem);
   }
 }

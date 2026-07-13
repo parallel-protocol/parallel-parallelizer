@@ -10,13 +10,14 @@ contract SetParallelizerRoles is BaseScript {
   address parallelizer = 0x1250304F66404cd153fA39388DDCDAec7E0f1707;
 
   function run() public broadcast {
-    bytes4[] memory guardianSelectors = new bytes4[](6);
-    guardianSelectors[0] = ISettersGuardian.togglePause.selector;
-    guardianSelectors[1] = ISettersGuardian.setFees.selector;
-    guardianSelectors[2] = ISettersGuardian.setRedemptionCurveParams.selector;
-    guardianSelectors[3] = ISettersGuardian.toggleWhitelist.selector;
-    guardianSelectors[4] = ISettersGuardian.setStablecoinCap.selector;
-    guardianSelectors[5] = IDiamondEtherscan.setDummyImplementation.selector;
+    bytes4[] memory guardianSelectors = new bytes4[](7);
+    guardianSelectors[0] = ISettersGuardian.pause.selector;
+    guardianSelectors[1] = ISettersGuardian.unpause.selector;
+    guardianSelectors[2] = ISettersGuardian.setFees.selector;
+    guardianSelectors[3] = ISettersGuardian.setRedemptionCurveParams.selector;
+    guardianSelectors[4] = ISettersGuardian.toggleWhitelist.selector;
+    guardianSelectors[5] = ISettersGuardian.setStablecoinCap.selector;
+    guardianSelectors[6] = IDiamondEtherscan.setDummyImplementation.selector;
     accessManager.setTargetFunctionRole(parallelizer, guardianSelectors, Roles.GUARDIAN_ROLE);
 
     bytes4[] memory governorSelectors = new bytes4[](11);

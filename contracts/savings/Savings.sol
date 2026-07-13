@@ -35,7 +35,14 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   /// @notice Checks whether the address is trusted to set the rate
   mapping(address => uint256) public isTrustedUpdater;
 
-  uint256[48] private __gap;
+  /// @notice Tracked balance of `asset` backing share holders
+  /// @dev Distinct from `IERC20(asset()).balanceOf(address(this))`: only updated by `deposit`/`mint`,
+  /// `withdraw`/`redeem`, the EIP-3009 authorized variants and `_accrue`. Direct ERC20 transfers
+  /// to this contract are *not* counted as backing, neutralizing donation/inflation attacks.
+  /// The surplus (`balanceOf(self) - storedAssets`) can be retrieved via `recoverSurplus`.
+  uint256 public storedAssets;
+
+  uint256[47] private __gap;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     EVENTS
@@ -46,6 +53,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   event ToggledPause(uint128 pauseStatus);
   event ToggledTrusted(address indexed trustedAddress, uint256 trustedStatus);
   event RateUpdated(uint256 newRate);
+  event SurplusRecovered(address indexed to, uint256 amount);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     INITIALIZATION
@@ -77,6 +85,17 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     __AccessManaged_init(_authority);
     _setNameAndSymbol(name_, symbol_);
     _deposit(msg.sender, address(this), 10 ** (asset_.decimals()) / divizer, BASE_18 / divizer);
+    lastUpdate = uint40(block.timestamp);
+  }
+
+  /// @notice One-shot reinitializer for upgrades that introduce `storedAssets`
+  /// @dev Seeds `storedAssets` with the current ERC20 balance held by the contract, so existing
+  /// legitimately deposited assets remain backing. Any subsequent direct transfer is treated as a
+  /// donation surplus and ignored by `totalAssets()` until `recoverSurplus` is called.
+  function initializeStoredAssets() external restricted reinitializer(2) {
+    if (block.timestamp - lastUpdate > MAX_STORED_ASSETS_INIT_STALENESS) revert StaleAccrual();
+    storedAssets = IERC20Metadata(asset()).balanceOf(address(this));
+    lastUpdate = uint40(block.timestamp);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,18 +116,31 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     _;
   }
 
+  /// @notice Reverts when shares exist but `storedAssets` was never seeded (non-atomic upgrade)
+  modifier onlyInitialized() {
+    if (storedAssets == 0 && totalSupply() != 0) revert NotInitialized();
+    _;
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CONTRACT LOGIC
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Accrues interest to this contract by minting tokenPs
+  /// @dev Uses the tracked `storedAssets` rather than `IERC20.balanceOf(self)` so that donations
+  /// can never inflate the accrual base.
   function _accrue() internal returns (uint256 newTotalAssets) {
-    uint256 currentBalance = super.totalAssets();
+    uint256 currentBalance = storedAssets;
+    if (paused > 0) {
+      lastUpdate = uint40(block.timestamp);
+      return currentBalance;
+    }
     newTotalAssets = _computeUpdatedAssets(currentBalance, block.timestamp - lastUpdate);
     lastUpdate = uint40(block.timestamp);
     uint256 earned = newTotalAssets - currentBalance;
     if (earned > 0) {
       ITokenP(asset()).mint(address(this), earned);
+      storedAssets = newTotalAssets;
       emit Accrued(earned);
     }
   }
@@ -132,8 +164,11 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
+  /// @dev Returns the projection of `storedAssets` rather than `IERC20.balanceOf(self)`.
+  /// Direct ERC20 transfers to this contract do not affect this value.
   function totalAssets() public view override returns (uint256) {
-    return _computeUpdatedAssets(super.totalAssets(), block.timestamp - lastUpdate);
+    if (paused > 0) return storedAssets;
+    return _computeUpdatedAssets(storedAssets, block.timestamp - lastUpdate);
   }
 
   /// @inheritdoc ERC4626Upgradeable
@@ -161,15 +196,37 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc ERC4626Upgradeable
-  function deposit(uint256 assets, address receiver) public override whenNotPaused returns (uint256 shares) {
+  function deposit(
+    uint256 assets,
+    address receiver
+  )
+    public
+    override
+    whenNotPaused
+    onlyInitialized
+    returns (uint256 shares)
+  {
     uint256 newTotalAssets = _accrue();
+    uint256 maxAssets = maxDeposit(receiver);
+    if (assets > maxAssets) revert ERC4626ExceededMaxDeposit(receiver, assets, maxAssets);
     shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Floor);
     _deposit(_msgSender(), receiver, assets, shares);
   }
 
   /// @inheritdoc ERC4626Upgradeable
-  function mint(uint256 shares, address receiver) public override whenNotPaused returns (uint256 assets) {
+  function mint(
+    uint256 shares,
+    address receiver
+  )
+    public
+    override
+    whenNotPaused
+    onlyInitialized
+    returns (uint256 assets)
+  {
     uint256 newTotalAssets = _accrue();
+    uint256 maxShares = maxMint(receiver);
+    if (shares > maxShares) revert ERC4626ExceededMaxMint(receiver, shares, maxShares);
     assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Ceil);
     _deposit(_msgSender(), receiver, assets, shares);
   }
@@ -183,9 +240,12 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     public
     override
     whenNotPaused
+    onlyInitialized
     returns (uint256 shares)
   {
     uint256 newTotalAssets = _accrue();
+    uint256 maxAssets = maxWithdraw(owner);
+    if (assets > maxAssets) revert ERC4626ExceededMaxWithdraw(owner, assets, maxAssets);
     shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Ceil);
     _withdraw(_msgSender(), receiver, owner, assets, shares);
   }
@@ -199,9 +259,12 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     public
     override
     whenNotPaused
+    onlyInitialized
     returns (uint256 assets)
   {
     uint256 newTotalAssets = _accrue();
+    uint256 maxShares = maxRedeem(owner);
+    if (shares > maxShares) revert ERC4626ExceededMaxRedeem(owner, shares, maxShares);
     assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Floor);
     _withdraw(_msgSender(), receiver, owner, assets, shares);
   }
@@ -230,6 +293,7 @@ contract Savings is BaseSavings, SavingsEIP3009 {
   )
     external
     whenNotPaused
+    onlyInitialized
     returns (uint256 shares)
   {
     _consumeDepositAuthorization(
@@ -237,9 +301,11 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     );
 
     uint256 newTotalAssets = _accrue();
+    if (assets > maxDeposit(receiver)) revert ERC4626ExceededMaxDeposit(receiver, assets, maxDeposit(receiver));
     shares = _convertToShares(assets, newTotalAssets, Math.Rounding.Floor);
     IEIP3009(asset())
       .receiveWithAuthorization(owner, address(this), assets, validAfter, validBefore, nonce, tokenSignature);
+    storedAssets += assets;
     _mint(receiver, shares);
     emit Deposit(owner, receiver, assets, shares);
   }
@@ -315,11 +381,15 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     bytes memory signature
   )
     internal
+    onlyInitialized
     returns (uint256 assets)
   {
     _consumeRedeemAuthorization(address(this), owner, receiver, shares, validAfter, validBefore, nonce, signature);
     uint256 newTotalAssets = _accrue();
+    uint256 maxShares = maxRedeem(owner);
+    if (shares > maxShares) revert ERC4626ExceededMaxRedeem(owner, shares, maxShares);
     assets = _convertToAssets(shares, newTotalAssets, Math.Rounding.Floor);
+    storedAssets -= assets;
     _burn(owner, shares);
     SafeERC20.safeTransfer(IERC20Metadata(asset()), receiver, assets);
     emit Withdraw(msg.sender, receiver, owner, assets, shares);
@@ -377,14 +447,44 @@ contract Savings is BaseSavings, SavingsEIP3009 {
 
   function _setNameAndSymbol(string memory newName, string memory newSymbol) internal virtual { }
 
+  /// @inheritdoc ERC4626Upgradeable
+  /// @dev Mirrors deposits into `storedAssets` so direct transfers stay outside the backing.
+  function _deposit(
+    address caller,
+    address receiver,
+    uint256 assets,
+    uint256 shares
+  )
+    internal
+    override
+  {
+    super._deposit(caller, receiver, assets, shares);
+    storedAssets += assets;
+  }
+
+  /// @inheritdoc ERC4626Upgradeable
+  /// @dev Mirrors withdrawals out of `storedAssets`.
+  function _withdraw(
+    address caller,
+    address receiver,
+    address owner,
+    uint256 assets,
+    uint256 shares
+  )
+    internal
+    override
+  {
+    storedAssets -= assets;
+    super._withdraw(caller, receiver, owner, assets, shares);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-  /// @notice Provides an estimated Annual Percentage Rate for base depositors on this contract
-  function estimatedAPR() external view returns (uint256 apr) {
-    // 365 days = 31536000 seconds
-    return _computeUpdatedAssets(BASE_18, 31_536_000) - BASE_18;
+  /// @notice Provides an estimated Annual Percentage Yield for base depositors on this contract
+  function estimatedAPY() external view returns (uint256 apy) {
+    return _computeUpdatedAssets(BASE_18, SECONDS_PER_YEAR) - BASE_18;
   }
 
   /// @notice Wrapper on top of the `computeUpdatedAssets` function
@@ -396,12 +496,27 @@ contract Savings is BaseSavings, SavingsEIP3009 {
     GOVERNANCE
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-  /// @notice Pauses the contract
-  function togglePause() external restricted {
+  /// @notice Pauses the contract — blocks `deposit`, `mint`, `withdraw`, `redeem` and the
+  /// EIP-3009 authorized variants
+  /// @dev Reverts if already paused, so a no-op governance call cannot pass silently. Accrues
+  /// outstanding yield before flipping the flag so holders are settled the moment the vault stops
+  /// accepting interactions, removing the stale-window deferral.
+  function pause() external restricted {
+    if (paused == 1) revert AlreadyPaused();
     _accrue();
-    uint8 pauseStatus = 1 - paused;
-    paused = pauseStatus;
-    emit ToggledPause(pauseStatus);
+    paused = 1;
+    emit ToggledPause(1);
+  }
+
+  /// @notice Unpauses the contract
+  /// @dev Reverts if not paused, so a no-op governance call cannot pass silently. Advances
+  /// `lastUpdate` to the unpause timestamp so the paused interval is dropped rather than minted:
+  /// pausing halts emission. `pause()` already settles yield up to the pause moment.
+  function unpause() external restricted {
+    if (paused == 0) revert NotPaused();
+    lastUpdate = uint40(block.timestamp);
+    paused = 0;
+    emit ToggledPause(0);
   }
 
   /// @notice Toggles an address
@@ -433,5 +548,23 @@ contract Savings is BaseSavings, SavingsEIP3009 {
       emit RateUpdated(newMaxRate);
     }
     emit MaxRateUpdated(newMaxRate);
+  }
+
+  /// @notice Transfers any `asset` balance held by the contract that is not part of the tracked
+  /// `storedAssets` (i.e. donated or otherwise sent directly) to `to`
+  /// @dev Scope is limited to the underlying `asset()`: it recovers the `balanceOf(self) - storedAssets`
+  /// surplus only, and never any third-party ERC20 mistakenly sent here (use a dedicated rescue path for
+  /// those). Restricted to governance. Cannot drain assets backing share holders since it returns `0`
+  /// whenever the actual balance does not exceed `storedAssets`.
+  /// @param to Recipient of the recovered surplus
+  /// @return surplus Amount of `asset()` transferred out (0 when there is no surplus)
+  function recoverSurplus(address to) external restricted returns (uint256 surplus) {
+    if (to == address(0)) revert ZeroAddress();
+    uint256 actualBalance = IERC20Metadata(asset()).balanceOf(address(this));
+    uint256 stored = storedAssets;
+    if (actualBalance <= stored) return 0;
+    surplus = actualBalance - stored;
+    IERC20Metadata(asset()).safeTransfer(to, surplus);
+    emit SurplusRecovered(to, surplus);
   }
 }

@@ -1770,8 +1770,8 @@ contract RedeemTest is Fixture, FunctionUtils {
     address attacker = vm.addr(10);
 
     vm.startPrank(guardian);
-    parallelizer.togglePause(address(eurB), ActionType.Redeem);
-    parallelizer.togglePause(address(eurY), ActionType.Redeem);
+    parallelizer.pause(address(eurB), ActionType.Redeem);
+    parallelizer.unpause(address(eurY), ActionType.Redeem);
     uint64[] memory xRedemption = new uint64[](1);
     xRedemption[0] = uint64(0);
     int64[] memory yRedemption = new int64[](1);

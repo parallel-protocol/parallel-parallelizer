@@ -4,8 +4,10 @@ pragma solidity 0.8.28;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IERC20Errors } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC4626Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC4626Upgradeable.sol";
 import { IAccessManaged } from "contracts/utils/AccessManagedUpgradeable.sol";
 import { EIP3009 } from "contracts/savings/EIP3009.sol";
+import { Savings } from "contracts/savings/Savings.sol";
 
 import { UD60x18, ud, pow, powu, unwrap } from "@prb/math/UD60x18.sol";
 
@@ -59,7 +61,7 @@ contract SavingsTest is Fixture, FunctionUtils {
     _deposit(BASE_18, alice, alice, 0);
 
     vm.startPrank(guardian);
-    saving.togglePause();
+    saving.pause();
 
     vm.startPrank(alice);
     vm.expectRevert(Errors.Paused.selector);
@@ -90,6 +92,29 @@ contract SavingsTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                  DONATION ATTACK
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  /// @notice Locks in the invariant the storedAssets fix protects: an honest depositor's
+  ///         redemption is strictly equal to the preview computed before the donation,
+  ///         regardless of how large the donation is.
+  function testFuzz_DonationAttackInflationLockedDown(uint256 donation) public {
+    donation = bound(donation, 1, 1_000_000_000e18);
+
+    (uint256 honestShares,) = _deposit(BASE_18, alice, alice, 0);
+    uint256 baselinePreview = saving.previewRedeem(honestShares);
+
+    deal(address(tokenP), address(this), donation);
+    tokenP.transfer(address(saving), donation);
+
+    assertEq(saving.previewRedeem(honestShares), baselinePreview, "preview unchanged");
+
+    vm.prank(alice);
+    uint256 received = saving.redeem(honestShares, alice, alice);
+    assertEq(received, baselinePreview, "received == baseline (no donation captured)");
+  }
+
+  /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                          APRS                                                       
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
@@ -107,7 +132,7 @@ contract SavingsTest is Fixture, FunctionUtils {
       (BASE_18 * unwrap(powu(ud(BASE_18 + rate / BASE_9), 365 days))) / unwrap(powu(ud(BASE_18), 365 days)) - BASE_18;
 
     _assertApproxEqRelDecimalWithTolerance(
-      saving.estimatedAPR(), estimatedAPR, estimatedAPR, _MAX_PERCENTAGE_DEVIATION * 5000, 18
+      saving.estimatedAPY(), estimatedAPR, estimatedAPR, _MAX_PERCENTAGE_DEVIATION * 5000, 18
     );
   }
 
@@ -131,7 +156,7 @@ contract SavingsTest is Fixture, FunctionUtils {
       (BASE_18 * unwrap(powu(ud(BASE_18 + rate / BASE_9), 365 days))) / unwrap(powu(ud(BASE_18), 365 days)) - BASE_18;
 
     _assertApproxEqRelDecimalWithTolerance(
-      saving.estimatedAPR(), estimatedAPR, estimatedAPR, _MAX_PERCENTAGE_DEVIATION * 5000, 18
+      saving.estimatedAPY(), estimatedAPR, estimatedAPR, _MAX_PERCENTAGE_DEVIATION * 5000, 18
     );
 
     vm.startPrank(guardian);
@@ -666,7 +691,11 @@ contract SavingsTest is Fixture, FunctionUtils {
     );
 
     vm.startPrank(alice);
-    vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, alice, shares, shares + 1));
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        ERC4626Upgradeable.ERC4626ExceededMaxWithdraw.selector, alice, withdrawableAmount + 1, withdrawableAmount
+      )
+    );
     saving.withdraw(withdrawableAmount + 1, receiver, alice);
     uint256 sharesBurnt = saving.withdraw(withdrawableAmount, receiver, alice);
     vm.stopPrank();
@@ -936,7 +965,7 @@ contract SavingsTest is Fixture, FunctionUtils {
     (bytes memory savingsSig, bytes memory tokenSig) = _signDepositAuth(1, alice, alice, amount, 0, deadline, nonce);
 
     vm.prank(guardian);
-    saving.togglePause();
+    saving.pause();
 
     vm.prank(bob);
     vm.expectRevert(Errors.Paused.selector);
@@ -994,6 +1023,22 @@ contract SavingsTest is Fixture, FunctionUtils {
     vm.prank(bob);
     vm.expectRevert(EIP3009.InvalidSignature.selector);
     saving.redeemWithAuthorization(redeemShares, bob, alice, 0, deadline, nonce, v, r, s);
+  }
+
+  function test_RedeemWithAuthorization_RevertWhen_ExceedsMaxRedeem() public {
+    _deposit(100 * BASE_18, alice, alice, 0);
+    uint256 shares = saving.balanceOf(alice);
+    uint256 tooMany = shares + 1;
+
+    bytes32 nonce = bytes32("redeem_max");
+    uint256 deadline = block.timestamp + 1 hours;
+    (uint8 v, bytes32 r, bytes32 s) = _signRedeemAuth(1, alice, alice, tooMany, 0, deadline, nonce);
+
+    vm.prank(bob);
+    vm.expectRevert(
+      abi.encodeWithSelector(ERC4626Upgradeable.ERC4626ExceededMaxRedeem.selector, alice, tooMany, shares)
+    );
+    saving.redeemWithAuthorization(tooMany, alice, alice, 0, deadline, nonce, v, r, s);
   }
 
   function test_TransferWithAuthorization_Savings() public {
