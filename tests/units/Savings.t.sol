@@ -154,6 +154,37 @@ contract SavingsUpgradeTest is Fixture {
     assertEq(saving.storedAssets(), IERC20(address(tokenP)).balanceOf(address(saving)));
   }
 
+  function test_initializeStoredAssets_reAnchorsLastUpdate() public {
+    skip(20 minutes);
+    vm.prank(governor);
+    saving.initializeStoredAssets();
+    assertEq(saving.lastUpdate(), block.timestamp);
+  }
+
+  function test_nonAtomicUpgrade_revertsEntryPointsUntilInitialized() public {
+    SavingsNameable savingProxy = _deployLegacySavings();
+    _depositInSavings(savingProxy, 100e18, alice);
+
+    SavingsNameable newImpl = new SavingsNameable();
+    vm.prank(governor);
+    UUPSUpgradeable(address(savingProxy)).upgradeToAndCall(address(newImpl), "");
+
+    assertEq(savingProxy.storedAssets(), 0, "storedAssets left unseeded by non-atomic upgrade");
+    assertGt(savingProxy.totalSupply(), 0);
+
+    deal(address(tokenP), alice, 1e18);
+    vm.startPrank(alice);
+    IERC20(address(tokenP)).approve(address(savingProxy), 1e18);
+    vm.expectRevert(Errors.NotInitialized.selector);
+    savingProxy.deposit(1e18, alice);
+    vm.stopPrank();
+
+    uint256 aliceShares = savingProxy.balanceOf(alice);
+    vm.prank(alice);
+    vm.expectRevert(Errors.NotInitialized.selector);
+    savingProxy.redeem(aliceShares, alice, alice);
+  }
+
   function test_upgradeFromLegacy_postUpgradePauseUnpauseWorks() public {
     SavingsNameable savingProxy = _deployLegacySavings();
     _upgradeSavings(savingProxy);
@@ -631,6 +662,48 @@ contract SavingsTogglePauseAccrueTest is Fixture {
     assertEq(saving.paused(), 1);
     assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate must snapshot the pause timestamp");
     assertEq(saving.totalAssets(), expectedAtPause, "yield must be settled at pause time");
+  }
+
+  function test_totalAssets_doesNotProjectYieldWhilePaused() public {
+    vm.prank(guardian);
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+
+    skip(30 days);
+
+    assertEq(saving.totalAssets(), storedAtPause, "totalAssets must not project yield while paused");
+    assertEq(saving.totalAssets(), saving.storedAssets());
+  }
+
+  function test_setRate_whilePaused_doesNotMintPausedYield() public {
+    vm.prank(guardian);
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+    uint256 balAtPause = IERC20(address(tokenP)).balanceOf(address(saving));
+
+    skip(30 days);
+
+    vm.prank(guardian);
+    saving.setRate(_rate);
+
+    assertEq(saving.storedAssets(), storedAtPause, "no paused yield minted into storedAssets");
+    assertEq(IERC20(address(tokenP)).balanceOf(address(saving)), balAtPause, "no tokenP minted while paused");
+    assertEq(saving.lastUpdate(), block.timestamp, "lastUpdate advanced to now");
+  }
+
+  function test_setMaxRate_whilePaused_doesNotMintPausedYield() public {
+    vm.prank(guardian);
+    saving.pause();
+    uint256 storedAtPause = saving.storedAssets();
+    uint256 balAtPause = IERC20(address(tokenP)).balanceOf(address(saving));
+
+    skip(30 days);
+
+    vm.prank(governor);
+    saving.setMaxRate(_maxRate);
+
+    assertEq(saving.storedAssets(), storedAtPause, "no paused yield minted into storedAssets");
+    assertEq(IERC20(address(tokenP)).balanceOf(address(saving)), balAtPause, "no tokenP minted while paused");
   }
 
   function test_unpause_dropsPausedWindowYield() public {
