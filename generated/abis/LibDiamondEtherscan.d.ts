@@ -1,0 +1,16 @@
+export type Abi_LibDiamondEtherscan = [
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  }
+];
+export declare const Abi_LibDiamondEtherscan: Abi_LibDiamondEtherscan;
