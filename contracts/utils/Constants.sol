@@ -60,6 +60,7 @@ uint8 constant ENTERED = 2;
 // Role IDs for the AccessManager
 uint64 constant GOVERNOR_ROLE = 10;
 uint64 constant GUARDIAN_ROLE = 20;
+uint64 constant KEEPER_ROLE = 30;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                COMMON ADDRESSES                                                 

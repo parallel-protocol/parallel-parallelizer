@@ -127,6 +127,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
     vm.startPrank(governor);
     accessManager.setTargetFunctionRole(address(parallelizer), getParallelizerGovernorSelectorAccess(), GOVERNOR_ROLE);
     accessManager.setTargetFunctionRole(address(parallelizer), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE);
+    accessManager.setTargetFunctionRole(address(parallelizer), getParallelizerKeeperSelectorAccess(), KEEPER_ROLE);
     vm.stopPrank();
   }
 

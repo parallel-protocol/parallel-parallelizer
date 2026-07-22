@@ -57,6 +57,9 @@ contract SurplusInvariants is Fixture {
     accessManager.setTargetFunctionRole(
       address(parallelizerSplit), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE
     );
+    accessManager.setTargetFunctionRole(
+      address(parallelizerSplit), getParallelizerKeeperSelectorAccess(), KEEPER_ROLE
+    );
     vm.stopPrank();
 
     {
@@ -127,6 +130,7 @@ contract SurplusInvariants is Fixture {
     vm.startPrank(governor);
     accessManager.grantRole(GOVERNOR_ROLE, _governanceHandler.actors(0), 0);
     accessManager.grantRole(GUARDIAN_ROLE, _governanceHandler.actors(0), 0);
+    accessManager.grantRole(KEEPER_ROLE, _governanceHandler.actors(0), 0);
     vm.stopPrank();
 
     for (uint256 i; i < _NUM_TRADER; i++) {

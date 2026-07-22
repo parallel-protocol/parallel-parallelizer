@@ -36,8 +36,10 @@ abstract contract ConfigAccessManager is Helper {
     vm.startPrank(_initialAdmin);
     accessManager.grantRole(GOVERNOR_ROLE, _governor, 0);
     accessManager.grantRole(GUARDIAN_ROLE, _guardian, 0);
+    accessManager.grantRole(KEEPER_ROLE, _governor, 0);
     accessManager.grantRole(GOVERNOR_ROLE, _governorAndGuardian, 0);
     accessManager.grantRole(GUARDIAN_ROLE, _governorAndGuardian, 0);
+    accessManager.grantRole(KEEPER_ROLE, _governorAndGuardian, 0);
     vm.stopPrank();
   }
 
@@ -96,7 +98,7 @@ abstract contract ConfigAccessManager is Helper {
   }
 
   function getParallelizerGovernorSelectorAccess() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](16);
+    bytes4[] memory selectors = new bytes4[](14);
     selectors[0] = SettersGovernor.recoverERC20.selector;
     selectors[1] = SettersGovernor.setAccessManager.selector;
     selectors[2] = SettersGovernor.setCollateralManager.selector;
@@ -111,8 +113,13 @@ abstract contract ConfigAccessManager is Helper {
     selectors[11] = SettersGovernor.updatePayees.selector;
     selectors[12] = SettersGovernor.updateSlippageTolerance.selector;
     selectors[13] = SettersGovernor.updateSurplusBufferRatio.selector;
-    selectors[14] = Surplus.release.selector;
-    selectors[15] = Surplus.processSurplus.selector;
+    return selectors;
+  }
+
+  function getParallelizerKeeperSelectorAccess() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](2);
+    selectors[0] = Surplus.processSurplus.selector;
+    selectors[1] = Surplus.release.selector;
     return selectors;
   }
 }

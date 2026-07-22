@@ -5,6 +5,7 @@ import "./Base.s.sol";
 
 import { ISettersGuardian, ISettersGovernor } from "contracts/interfaces/ISetters.sol";
 import { IDiamondEtherscan } from "contracts/interfaces/IDiamondEtherscan.sol";
+import { ISurplus } from "contracts/interfaces/ISurplus.sol";
 
 contract SetParallelizerRoles is BaseScript {
   address parallelizer = 0x1250304F66404cd153fA39388DDCDAec7E0f1707;
@@ -20,7 +21,7 @@ contract SetParallelizerRoles is BaseScript {
     guardianSelectors[6] = IDiamondEtherscan.setDummyImplementation.selector;
     accessManager.setTargetFunctionRole(parallelizer, guardianSelectors, Roles.GUARDIAN_ROLE);
 
-    bytes4[] memory governorSelectors = new bytes4[](11);
+    bytes4[] memory governorSelectors = new bytes4[](14);
     governorSelectors[0] = ISettersGovernor.recoverERC20.selector;
     governorSelectors[1] = ISettersGovernor.setAccessManager.selector;
     governorSelectors[2] = ISettersGovernor.setCollateralManager.selector;
@@ -32,7 +33,15 @@ contract SetParallelizerRoles is BaseScript {
     governorSelectors[8] = ISettersGovernor.setOracle.selector;
     governorSelectors[9] = ISettersGovernor.updateOracle.selector;
     governorSelectors[10] = ISettersGovernor.setWhitelistStatus.selector;
+    governorSelectors[11] = ISettersGovernor.updatePayees.selector;
+    governorSelectors[12] = ISettersGovernor.updateSlippageTolerance.selector;
+    governorSelectors[13] = ISettersGovernor.updateSurplusBufferRatio.selector;
     accessManager.setTargetFunctionRole(parallelizer, governorSelectors, Roles.GOVERNOR_ROLE);
+
+    bytes4[] memory keeperSelectors = new bytes4[](2);
+    keeperSelectors[0] = ISurplus.processSurplus.selector;
+    keeperSelectors[1] = ISurplus.release.selector;
+    accessManager.setTargetFunctionRole(parallelizer, keeperSelectors, Roles.KEEPER_ROLE);
 
     accessManager.grantRole(Roles.USDp_MINTER_ROLE, address(parallelizer), 0);
   }
