@@ -1,7 +1,7 @@
 // ------------------------------------------------------------------------------------------------
 // Typed Config
 // ------------------------------------------------------------------------------------------------
-import { UserConfig } from "rocketh";
+import type { UserConfig } from "rocketh/types";
 
 export const config = {
   networks: {},
@@ -16,12 +16,8 @@ export const config = {
 // ------------------------------------------------------------------------------------------------
 // Imports and Re-exports
 // ------------------------------------------------------------------------------------------------
-// We regroup all what is needed for the deploy scripts
-// so that they just need to import this file
-// we add here the extension we need, so that they are available in the deploy scripts
-// extensions are simply function that accept as their first argument the Environment
-// by passing them to the setup function (see below) you get to access them trhough the environment object with type-safety
-// we add here the module we need, so that they are available in the deploy scripts
+// Extensions are functions that accept the Environment as their first argument. Passing them to
+// setupDeployScripts makes them available on the environment object with type-safety in the scripts.
 import * as deployExtension from "@rocketh/deploy"; // this one provide a deploy function
 import * as readExecuteExtension from "@rocketh/read-execute"; // this one provide read,execute functions
 import * as deployProxyExtension from "@rocketh/proxy"; // this one provide a deployViaProxy function that let you declaratively deploy proxy based contracts
@@ -34,16 +30,13 @@ const extensions = {
 };
 // ------------------------------------------------------------------------------------------------
 // we re-export the artifacts, so they are easily available from the alias
-import artifacts from "./generated/artifacts";
+// hardhat-deploy 2 writes one module per contract under generated/artifacts/, re-exported by its index
+import * as artifacts from "./generated/artifacts/index.js";
 export { artifacts };
 // ------------------------------------------------------------------------------------------------
-// we create the rocketh function we need by passing the extensions
-import { setup } from "rocketh";
-const { deployScript, loadAndExecuteDeployments } = setup<
-  typeof extensions,
-  typeof config.accounts,
-  typeof config.data
->(extensions);
+// rocketh 0.19: build the typed deployScript helper from the extensions
+import { setupDeployScripts } from "rocketh";
+const { deployScript } = setupDeployScripts<typeof extensions, typeof config.accounts, typeof config.data>(extensions);
 
 // ------------------------------------------------------------------------------------------------
 // we do the same for hardhat-deploy
@@ -51,4 +44,4 @@ import { setupHardhatDeploy } from "hardhat-deploy/helpers";
 const { loadEnvironmentFromHardhat } = setupHardhatDeploy(extensions);
 // ------------------------------------------------------------------------------------------------
 // finally we export them
-export { loadAndExecuteDeployments, deployScript, loadEnvironmentFromHardhat };
+export { deployScript, loadEnvironmentFromHardhat };
