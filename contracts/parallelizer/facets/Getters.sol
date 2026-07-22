@@ -236,6 +236,11 @@ contract Getters is IGetters {
   }
 
   /// @inheritdoc IGetters
+  function getSurplusBufferRatio() external view returns (uint64) {
+    return s.transmuterStorage().surplusBufferRatio;
+  }
+
+  /// @inheritdoc IGetters
   function getLastReleasedAt() external view returns (uint256) {
     return s.transmuterStorage().lastReleasedAt;
   }

@@ -142,6 +142,10 @@ interface IGetters {
   /// @dev Maximum slippage tolerance is 1e9 (100%)
   function getSlippageTolerance(address collateral) external view returns (uint256);
 
+  /// @notice Returns the minimum collateral ratio that must hold after surplus processing
+  /// @dev Expressed in base 1e9, and always >= 1e9
+  function getSurplusBufferRatio() external view returns (uint64);
+
   /// @notice Computes the surplus of a collateral.
   /// @param collateral The collateral address to compute the surplus of.
   /// @return collateralSurplus The collateral surplus amount.

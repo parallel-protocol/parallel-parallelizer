@@ -1681,6 +1681,37 @@ contract Test_Setters_UpdateSlippageTolerance is Fixture {
   }
 }
 
+contract Test_Setters_UpdateSurplusBufferRatio is Fixture {
+  event SurplusBufferRatioUpdated(uint64 surplusBufferRatio);
+
+  function test_UpdateSurplusBufferRatio_RevertWhen_BelowBase() public {
+    hoax(governor);
+    vm.expectRevert(Errors.InvalidParam.selector);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9) - 1);
+  }
+
+  function test_UpdateSurplusBufferRatio_Success() public {
+    uint64 surplusBufferRatio = uint64(1.005e9);
+    vm.expectEmit(address(parallelizer));
+    emit SurplusBufferRatioUpdated(surplusBufferRatio);
+    hoax(governor);
+    parallelizer.updateSurplusBufferRatio(surplusBufferRatio);
+    assertEq(parallelizer.getSurplusBufferRatio(), surplusBufferRatio);
+  }
+
+  function test_UpdateSurplusBufferRatio_SuccessAtBase() public {
+    hoax(governor);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+    assertEq(parallelizer.getSurplusBufferRatio(), uint64(BASE_9));
+  }
+
+  function test_UpdateSurplusBufferRatio_RevertWhen_NotAuthorized() public {
+    vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, alice));
+    hoax(alice);
+    parallelizer.updateSurplusBufferRatio(uint64(BASE_9));
+  }
+}
+
 contract Test_Setters_SetOracle is Fixture {
   event OracleSet(address indexed collateral, bytes oracleConfig);
 
