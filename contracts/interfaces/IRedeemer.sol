@@ -34,6 +34,22 @@ interface IRedeemer {
     external
     returns (address[] memory tokens, uint256[] memory amounts);
 
+  /// @notice Same as `redeemWithForfeit` but using a single EIP-3009 authorization for the tokenP
+  /// transfer.
+  /// @dev The signed EIP-3009 nonce MUST equal `LibAuthorization.computeRedeemNonce(...)` so that
+  /// mutating `receiver`, `amount`, `deadline`, `minAmountOuts` or `forfeitTokens` invalidates the
+  /// signature. `authData.nonce` carries the caller-chosen `userSalt`.
+  function redeemWithAuthorization(
+    uint256 amount,
+    address receiver,
+    uint256 deadline,
+    uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
+    bytes memory authData
+  )
+    external
+    returns (address[] memory tokens, uint256[] memory amounts);
+
   /// @notice Simulate the exact output that a redemption of `amount` of stablecoins would give at a given block
   /// @return tokens List of tokens that would be given
   /// @return amounts Amount that would be obtained for each token in the `tokens` array

@@ -19,7 +19,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is an authorized fork of Angle's `LibSetters` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibSetters.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibSetters.sol
 library LibSetters {
   using SafeCast for uint256;
 
@@ -41,7 +41,7 @@ library LibSetters {
   event SurplusBufferRatioUpdated(uint64 surplusBufferRatio);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ONLY GOVERNOR ACTIONS                                              
+    ONLY GOVERNOR ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @notice Internal version of `setAccessManager`
@@ -114,6 +114,9 @@ library LibSetters {
     if (increase) {
       collatInfo.normalizedStables = collatInfo.normalizedStables + uint216(normalizedAmount);
       ts.normalizedStables = ts.normalizedStables + normalizedAmount;
+      if (uint256(collatInfo.normalizedStables) * uint256(ts.normalizer) / BASE_27 > collatInfo.stablecoinCap) {
+        revert AboveCap();
+      }
     } else {
       collatInfo.normalizedStables = collatInfo.normalizedStables - uint216(normalizedAmount);
       ts.normalizedStables = ts.normalizedStables - normalizedAmount;
@@ -149,6 +152,10 @@ library LibSetters {
   function setOracle(address collateral, bytes memory oracleConfig) internal {
     Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
     if (collatInfo.decimals == 0) revert NotCollateral();
+    (,,,, bytes memory hyperparameters) =
+      abi.decode(oracleConfig, (OracleReadType, OracleReadType, bytes, bytes, bytes));
+    (uint128 userDeviation, uint128 burnRatioDeviation) = abi.decode(hyperparameters, (uint128, uint128));
+    if (userDeviation > burnRatioDeviation) revert InvalidParams();
     // Checks oracle validity
     LibOracle.readMint(oracleConfig);
     collatInfo.oracleConfig = oracleConfig;
@@ -157,6 +164,7 @@ library LibSetters {
 
   /// @notice Internal version of `setWhitelistStatus`
   function setWhitelistStatus(address collateral, uint8 whitelistStatus, bytes memory whitelistData) internal {
+    if (whitelistStatus > 1) revert InvalidWhitelistStatus();
     Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
     if (collatInfo.decimals == 0) revert NotCollateral();
     if (whitelistStatus == 1) {
@@ -172,28 +180,48 @@ library LibSetters {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ONLY GUARDIAN ACTIONS                                              
+    ONLY GUARDIAN ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-  /// @notice Internal version of `togglePause`
-  function togglePause(address collateral, ActionType action) internal {
-    uint8 isLive;
+  /// @notice Internal version of `pause` — sets the action's live flag to `0`
+  /// @dev Reverts with `AlreadyPaused` if the action is already paused so a no-op governance
+  /// call cannot pass silently
+  function pause(address collateral, ActionType action) internal {
+    _setPauseState(collateral, action, 0);
+  }
+
+  /// @notice Internal version of `unpause` — sets the action's live flag to `1`
+  /// @dev Reverts with `NotPaused` if the action is already unpaused so a no-op governance
+  /// call cannot pass silently
+  function unpause(address collateral, ActionType action) internal {
+    _setPauseState(collateral, action, 1);
+  }
+
+  /// @dev Shared accessor for `pause` and `unpause`. `targetIsLive` is `0` to pause and `1`
+  /// to unpause. Reverts on no-op transitions.
+  function _setPauseState(address collateral, ActionType action, uint8 targetIsLive) private {
     if (action == ActionType.Mint || action == ActionType.Burn) {
       Collateral storage collatInfo = s.transmuterStorage().collaterals[collateral];
       if (collatInfo.decimals == 0) revert NotCollateral();
+      uint8 currentIsLive = action == ActionType.Mint ? collatInfo.isMintLive : collatInfo.isBurnLive;
+      if (currentIsLive == targetIsLive) {
+        if (targetIsLive == 0) revert AlreadyPaused();
+        revert NotPaused();
+      }
       if (action == ActionType.Mint) {
-        isLive = 1 - collatInfo.isMintLive;
-        collatInfo.isMintLive = isLive;
+        collatInfo.isMintLive = targetIsLive;
       } else {
-        isLive = 1 - collatInfo.isBurnLive;
-        collatInfo.isBurnLive = isLive;
+        collatInfo.isBurnLive = targetIsLive;
       }
     } else {
       ParallelizerStorage storage ts = s.transmuterStorage();
-      isLive = 1 - ts.isRedemptionLive;
-      ts.isRedemptionLive = isLive;
+      if (ts.isRedemptionLive == targetIsLive) {
+        if (targetIsLive == 0) revert AlreadyPaused();
+        revert NotPaused();
+      }
+      ts.isRedemptionLive = targetIsLive;
     }
-    emit PauseToggled(collateral, uint256(action), isLive == 0);
+    emit PauseToggled(collateral, uint256(action), targetIsLive == 0);
   }
 
   /// @notice Internal version of `setFees`
@@ -251,12 +279,13 @@ library LibSetters {
     }
 
     // Zero out stale shares for old payees
-    for (uint256 i = 0; i < ts.payees.length; ++i) {
+    uint256 i = 0;
+    for (; i < ts.payees.length; ++i) {
       ts.shares[ts.payees[i]] = 0;
     }
     delete ts.payees;
     uint256 _totalShares = 0;
-    uint256 i = 0;
+    i = 0;
     for (; i < _payees.length; ++i) {
       for (uint256 j = 0; j < i; ++j) {
         if (_payees[j] == _payees[i]) revert AlreadyAdded();
@@ -298,10 +327,9 @@ library LibSetters {
       // the first segment [BASE_9, x_{n-1}[
       // Redemption inflexion points should be in [0,BASE_9]
       (action == ActionType.Mint && (xFee[n - 1] >= BASE_9 || xFee[0] != 0 || yFee[n - 1] > int256(BASE_12)))
-        || (
-          action == ActionType.Burn
-            && (xFee[0] != BASE_9 || yFee[n - 1] > int256(BASE_9) || (n > 1 && (yFee[0] != yFee[1])))
-        ) || (action == ActionType.Redeem && (xFee[n - 1] > BASE_9 || yFee[n - 1] < 0 || yFee[n - 1] > int256(BASE_9)))
+        || (action == ActionType.Burn
+          && (xFee[0] != BASE_9 || yFee[n - 1] > int256(BASE_9) || (n > 1 && (yFee[0] != yFee[1]))))
+        || (action == ActionType.Redeem && (xFee[n - 1] > BASE_9 || yFee[n - 1] < 0 || yFee[n - 1] > int256(BASE_9)))
     ) {
       revert InvalidParams();
     }

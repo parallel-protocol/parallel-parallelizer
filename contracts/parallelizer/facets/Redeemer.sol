@@ -8,8 +8,10 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { IRedeemer } from "contracts/interfaces/IRedeemer.sol";
+import { IEIP3009 } from "contracts/interfaces/external/IEIP3009.sol";
 
 import { AccessManagedModifiers } from "./AccessManagedModifiers.sol";
+import { LibAuthorization } from "../libraries/LibAuthorization.sol";
 import { LibDiamond } from "../libraries/LibDiamond.sol";
 import { LibHelpers } from "../libraries/LibHelpers.sol";
 import { LibGetters } from "../libraries/LibGetters.sol";
@@ -25,7 +27,7 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This contract is an authorized fork of Angle's `Redeemer` contract
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/facets/Redeemer.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/facets/Redeemer.sol
 contract Redeemer is IRedeemer, AccessManagedModifiers {
   using SafeERC20 for IERC20;
   using Math for uint256;
@@ -42,7 +44,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   event NormalizerUpdated(uint256 newNormalizerValue);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    EXTERNAL ACTIONS                                                 
+    EXTERNAL ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc IRedeemer
@@ -69,7 +71,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, receiver, deadline, minAmountOuts, new address[](0));
+    return _redeem(amount, receiver, deadline, minAmountOuts, new address[](0), "");
   }
 
   /// @inheritdoc IRedeemer
@@ -85,7 +87,22 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens);
+    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens, "");
+  }
+
+  /// @inheritdoc IRedeemer
+  function redeemWithAuthorization(
+    uint256 amount,
+    address receiver,
+    uint256 deadline,
+    uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
+    bytes memory authData
+  )
+    external
+    returns (address[] memory tokens, uint256[] memory amounts)
+  {
+    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens, authData);
   }
 
   /// @inheritdoc IRedeemer
@@ -108,8 +125,21 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INTERNAL HELPERS                                                 
+    INTERNAL HELPERS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+  /// @notice Working set passed by reference between `_redeem` and its loop helper, so the call
+  /// site stays under the EVM stack-depth limit when compiling without via-IR.
+  struct RedemptionExecution {
+    uint256 amount;
+    address from;
+    address to;
+    address[] tokens;
+    uint256[] amounts;
+    uint256[] subCollateralsTracker;
+    uint256[] minAmountOuts;
+    address[] forfeitTokens;
+  }
 
   /// @notice Internal function of the `redeem` function in the `Redeemer` contract
   function _redeem(
@@ -117,64 +147,140 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     address to,
     uint256 deadline,
     uint256[] memory minAmountOuts,
-    address[] memory forfeitTokens
+    address[] memory forfeitTokens,
+    bytes memory authData
   )
     internal
     nonReentrant
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    ParallelizerStorage storage ts = s.transmuterStorage();
-
-    if (ts.isRedemptionLive == 0) revert Paused();
+    if (s.transmuterStorage().isRedemptionLive == 0) revert Paused();
     if (block.timestamp > deadline) revert TooLate();
 
-    uint256[] memory subCollateralsTracker;
-    (tokens, amounts, subCollateralsTracker) = _quoteRedemptionCurve(amount);
-    // Check that the provided slippage tokens length is identical to the redeem one
-    uint256 amountsLength = amounts.length;
-    // If a collateral is added and another one is removed after a redeem transaction is sent, the tokens
-    // corresponding to the `minAmountOuts` given may not correspond to the actual collateral `tokens` of
-    // the protocol
-    if (amountsLength != minAmountOuts.length) revert InvalidLengths();
-    // Updating the normalizer enables to simultaneously and proportionally reduce the amount
-    // of stablecoins issued from each collateral without having to loop through each of them
+    RedemptionExecution memory redemption;
+    redemption.amount = amount;
+    redemption.to = to;
+    redemption.minAmountOuts = minAmountOuts;
+    redemption.forfeitTokens = forfeitTokens;
+
+    (redemption.tokens, redemption.amounts, redemption.subCollateralsTracker) = _quoteRedemptionCurve(amount);
+    if (redemption.amounts.length != minAmountOuts.length) revert InvalidLengths();
     _updateNormalizer(amount, false);
 
-    ITokenP(ts.tokenP).burnSelf(amount, msg.sender);
+    redemption.from = _consumeAuthAndBurn(amount, to, deadline, minAmountOuts, forfeitTokens, authData);
 
+    _distributeRedemption(redemption);
+    emit Redeemed(
+      redemption.amount,
+      redemption.tokens,
+      redemption.amounts,
+      redemption.forfeitTokens,
+      redemption.from,
+      redemption.to
+    );
+    return (redemption.tokens, redemption.amounts);
+  }
+
+  /// @notice Releases each non-forfeited collateral output to `redemption.to`. Extracted from `_redeem`
+  /// so the parent function stays within the EVM stack-depth limit.
+  function _distributeRedemption(RedemptionExecution memory redemption) internal {
+    ParallelizerStorage storage ts = s.transmuterStorage();
     address[] memory collateralListMem = ts.collateralList;
     uint256 indexCollateral;
+    uint256 amountsLength = redemption.amounts.length;
     for (uint256 i; i < amountsLength; ++i) {
-      if (amounts[i] < minAmountOuts[i]) revert TooSmallAmountOut();
+      if (redemption.amounts[i] < redemption.minAmountOuts[i]) revert TooSmallAmountOut();
       // If a token is in the `forfeitTokens` list, then it is not sent as part of the redemption process
-      if (amounts[i] > 0 && LibHelpers.checkList(tokens[i], forfeitTokens) < 0) {
+      if (redemption.amounts[i] > 0 && LibHelpers.checkList(redemption.tokens[i], redemption.forfeitTokens) < 0) {
         Collateral storage collatInfo = ts.collaterals[collateralListMem[indexCollateral]];
-        if (collatInfo.onlyWhitelisted > 0 && !LibWhitelist.checkWhitelist(collatInfo.whitelistData, to)) {
+        if (collatInfo.onlyWhitelisted > 0 && !LibWhitelist.checkWhitelist(collatInfo.whitelistData, redemption.to)) {
           revert NotWhitelisted();
         }
         if (collatInfo.isManaged > 0) {
-          LibManager.release(tokens[i], to, amounts[i], collatInfo.managerData.config);
+          LibManager.release(
+            redemption.tokens[i], redemption.to, redemption.amounts[i], collatInfo.managerData.config
+          );
         } else {
-          IERC20(tokens[i]).safeTransfer(to, amounts[i]);
+          IERC20(redemption.tokens[i]).safeTransfer(redemption.to, redemption.amounts[i]);
         }
       }
-      if (subCollateralsTracker[indexCollateral] - 1 <= i) ++indexCollateral;
+      if (redemption.subCollateralsTracker[indexCollateral] - 1 <= i) ++indexCollateral;
     }
-    emit Redeemed(amount, tokens, amounts, forfeitTokens, msg.sender, to);
+  }
+
+  /// @notice Pulls the redeem amount from the signer (auth flow) or burns directly from
+  /// `msg.sender`, and returns the address to attribute the `Redeemed` event to.
+  function _consumeAuthAndBurn(
+    uint256 amount,
+    address to,
+    uint256 deadline,
+    uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
+    bytes memory authData
+  )
+    internal
+    returns (address from)
+  {
+    ITokenP tokenP = s.transmuterStorage().tokenP;
+    if (authData.length > 0) {
+      from = _executeAuthorization(amount, to, deadline, minAmountOuts, forfeitTokens, authData);
+      tokenP.burnSelf(amount, address(this));
+    } else {
+      from = msg.sender;
+      tokenP.burnSelf(amount, msg.sender);
+    }
+  }
+
+  /// @notice Pulls the redeem amount from the signer via EIP-3009 `receiveWithAuthorization`,
+  /// using a derived nonce that binds the full redemption intent.
+  /// @return from The authorizer address (`params.from`), to attribute the redeem event to
+  function _executeAuthorization(
+    uint256 amount,
+    address receiver,
+    uint256 deadline,
+    uint256[] memory minAmountOuts,
+    address[] memory forfeitTokens,
+    bytes memory authData
+  )
+    internal
+    returns (address from)
+  {
+    AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
+    if (params.value != amount) revert InvalidSwap();
+    bytes32 derivedNonce = LibAuthorization.computeRedeemNonce(
+      params.from, amount, receiver, deadline, minAmountOuts, forfeitTokens, params.nonce
+    );
+    IEIP3009(address(s.transmuterStorage().tokenP)).receiveWithAuthorization(
+      params.from,
+      address(this),
+      params.value,
+      params.validAfter,
+      params.validBefore,
+      derivedNonce,
+      params.signature
+    );
+    return params.from;
   }
 
   /// @dev This function reverts if `stablecoinsIssued==0`, which is expected behavior as there is nothing to redeem
   /// anyway in this case, or if the `amountBurnt` is greater than `stablecoinsIssued`
+  /// @dev Invariant: `penaltyFactor` is evaluated once at the entry-time `collatRatio` and applied uniformly to the
+  /// full `amountBurnt`. The curve is not path-integrated, so a single redemption that traverses into a lower-penalty
+  /// segment still pays the entry-time rate on every unit burned. Splitting the same redemption into smaller calls
+  /// can yield a strictly better blended rate when the path crosses an ascending segment of the curve. This is a
+  /// deliberate design choice consistent with penalizing early redemptions during under-collateralization; the gap
+  /// between single-call and path-integrated pricing scales with the ascending-segment slope and should be
+  /// considered when calibrating `xRedemptionCurve`/`yRedemptionCurve`.
   function _quoteRedemptionCurve(uint256 amountBurnt)
     internal
     view
     returns (address[] memory tokens, uint256[] memory balances, uint256[] memory subCollateralsTracker)
   {
-    ParallelizerStorage storage ts = s.transmuterStorage();
     uint64 collatRatio;
     uint256 stablecoinsIssued;
     (collatRatio, stablecoinsIssued, tokens, balances, subCollateralsTracker) = LibGetters.getCollateralRatio();
-    if (amountBurnt > stablecoinsIssued) revert TooBigAmountIn();
+    if (amountBurnt >= stablecoinsIssued) revert CannotBurnAllStableIssued();
+    ParallelizerStorage storage ts = s.transmuterStorage();
     int64[] memory yRedemptionCurveMem = ts.yRedemptionCurve;
     uint64 penaltyFactor;
     // If the protocol is under-collateralized, a penalty factor is applied to the returned amount of each asset
@@ -223,9 +329,9 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
       // We ensure to preserve the invariant `sum(collateralNewNormalizedStables) = normalizedStables`
       uint128 newNormalizedStables;
       for (uint256 i; i < collateralListLength; ++i) {
-        uint128 newCollateralNormalizedStable = (
-          (uint256(ts.collaterals[collateralListMem[i]].normalizedStables) * newNormalizerValue) / BASE_27
-        ).toUint128();
+        uint128 newCollateralNormalizedStable = ((uint256(ts.collaterals[collateralListMem[i]].normalizedStables)
+              * newNormalizerValue) / BASE_27)
+        .toUint128();
         newNormalizedStables += newCollateralNormalizedStable;
         ts.collaterals[collateralListMem[i]].normalizedStables = uint216(newCollateralNormalizedStable);
       }
@@ -233,6 +339,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
       newNormalizerValue = BASE_27;
     }
     ts.normalizer = newNormalizerValue.toUint128();
+    if (!increase && ts.normalizedStables == 0) revert CannotBurnAllStableIssued();
     emit NormalizerUpdated(newNormalizerValue);
   }
 }

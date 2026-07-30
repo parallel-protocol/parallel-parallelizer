@@ -59,7 +59,7 @@ contract SwapTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                        REVERTS                                                     
+                                                        REVERTS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function test_RevertWhen_InvalidTokens(
@@ -144,8 +144,8 @@ contract SwapTest is Fixture, FunctionUtils {
     _updateOracles(latestOracleValue);
 
     vm.startPrank(guardian);
-    parallelizer.togglePause(_collaterals[fromToken], Storage.ActionType.Mint);
-    parallelizer.togglePause(_collaterals[fromToken], Storage.ActionType.Burn);
+    parallelizer.pause(_collaterals[fromToken], Storage.ActionType.Mint);
+    parallelizer.pause(_collaterals[fromToken], Storage.ActionType.Burn);
     vm.stopPrank();
 
     vm.startPrank(alice);
@@ -173,8 +173,8 @@ contract SwapTest is Fixture, FunctionUtils {
     _updateOracles(latestOracleValue);
 
     vm.startPrank(guardian);
-    parallelizer.togglePause(_collaterals[fromToken], Storage.ActionType.Mint);
-    parallelizer.togglePause(_collaterals[fromToken], Storage.ActionType.Burn);
+    parallelizer.pause(_collaterals[fromToken], Storage.ActionType.Mint);
+    parallelizer.pause(_collaterals[fromToken], Storage.ActionType.Burn);
     vm.stopPrank();
 
     vm.startPrank(alice);
@@ -223,10 +223,17 @@ contract SwapTest is Fixture, FunctionUtils {
       );
     }
     if (stableAmount > 0) {
-      vm.expectRevert(Errors.TooSmallAmountOut.selector);
-      parallelizer.swapExactInput(
-        amountIn, stableAmount + 1, _collaterals[fromTokenMint], address(tokenP), alice, block.timestamp * 2
-      );
+      // With Ceil rounding in quoteOut, amountIn may be rounded up enough that
+      // quoteIn(amountIn) >= stableAmount + 1, so the slippage check wouldn't trigger.
+      // Only expect TooSmallAmountOut when the reflexive quote confirms slippage.
+      uint256 reflexiveMintOut =
+        amountIn > 0 ? parallelizer.quoteIn(amountIn, _collaterals[fromTokenMint], address(tokenP)) : 0;
+      if (reflexiveMintOut < stableAmount + 1) {
+        vm.expectRevert(Errors.TooSmallAmountOut.selector);
+        parallelizer.swapExactInput(
+          amountIn, stableAmount + 1, _collaterals[fromTokenMint], address(tokenP), alice, block.timestamp * 2
+        );
+      }
     }
     vm.stopPrank();
 
@@ -304,7 +311,7 @@ contract SwapTest is Fixture, FunctionUtils {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                         UTILS                                                      
+                                                         UTILS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _loadReserves(
@@ -324,8 +331,9 @@ contract SwapTest is Fixture, FunctionUtils {
       deal(_collaterals[i], owner, initialAmounts[i]);
       IERC20(_collaterals[i]).approve(address(parallelizer), initialAmounts[i]);
 
-      collateralMintedStables[i] =
-        parallelizer.swapExactInput(initialAmounts[i], 0, _collaterals[i], address(tokenP), owner, block.timestamp * 2);
+      collateralMintedStables[i] = parallelizer.swapExactInput(
+        initialAmounts[i], 0, _collaterals[i], address(tokenP), owner, block.timestamp * 2
+      );
       mintedStables += collateralMintedStables[i];
     }
 
@@ -347,15 +355,19 @@ contract SwapTest is Fixture, FunctionUtils {
     uint128[] memory burnFirewall = new uint128[](3);
     for (uint256 i; i < _collaterals.length; i++) {
       userFirewall[i] = uint128(bound(userAndBurnFirewall[i], 0, BASE_18));
-      burnFirewall[i] = uint128(bound(userAndBurnFirewall[i + 3], 0, BASE_18));
+      burnFirewall[i] = uint128(bound(userAndBurnFirewall[i + 3], userFirewall[i], BASE_18));
       userAndBurnFirewall[i] = userFirewall[i];
       userAndBurnFirewall[i + 3] = burnFirewall[i];
     }
 
     vm.startPrank(governor);
     for (uint256 i; i < _collaterals.length; i++) {
-      (Storage.OracleReadType readType, Storage.OracleReadType targetType, bytes memory data, bytes memory targetData,)
-      = parallelizer.getOracle(address(_collaterals[i]));
+      (
+        Storage.OracleReadType readType,
+        Storage.OracleReadType targetType,
+        bytes memory data,
+        bytes memory targetData,
+      ) = parallelizer.getOracle(address(_collaterals[i]));
       parallelizer.setOracle(
         _collaterals[i],
         abi.encode(

@@ -9,13 +9,27 @@ import "../Storage.sol";
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is an authorized fork of Angle's `LibHelpers` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibHelpers.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibHelpers.sol
 library LibHelpers {
   /// @notice Rebases the units of `amount` from `fromDecimals` to `toDecimals`
-  function convertDecimalTo(uint256 amount, uint8 fromDecimals, uint8 toDecimals) internal pure returns (uint256) {
-    if (fromDecimals > toDecimals) return amount / 10 ** (fromDecimals - toDecimals);
-    else if (fromDecimals < toDecimals) return amount * 10 ** (toDecimals - fromDecimals);
-    else return amount;
+  function convertDecimalTo(
+    uint256 amount,
+    uint8 fromDecimals,
+    uint8 toDecimals,
+    Math.Rounding rounding
+  )
+    internal
+    pure
+    returns (uint256)
+  {
+    if (fromDecimals > toDecimals) {
+      uint256 divisor = 10 ** (fromDecimals - toDecimals);
+      return Math.mulDiv(amount, 1, divisor, rounding);
+    } else if (fromDecimals < toDecimals) {
+      return amount * 10 ** (toDecimals - fromDecimals);
+    } else {
+      return amount;
+    }
   }
 
   /// @notice Checks whether a `token` is in a list `tokens` and returns the index of the token in the list
@@ -83,6 +97,6 @@ library LibHelpers {
     else if (indexLowerBound == xArray.length - 1) return yArray[xArray.length - 1];
     return yArray[indexLowerBound]
       + ((yArray[indexLowerBound + 1] - yArray[indexLowerBound]) * int64(x - xArray[indexLowerBound]))
-        / int64(xArray[indexLowerBound + 1] - xArray[indexLowerBound]);
+      / int64(xArray[indexLowerBound + 1] - xArray[indexLowerBound]);
   }
 }

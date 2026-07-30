@@ -55,6 +55,9 @@ contract BasicInvariants is Fixture {
     accessManager.setTargetFunctionRole(
       address(parallelizerSplit), getParallelizerGuardianSelectorAccess(), GUARDIAN_ROLE
     );
+    accessManager.setTargetFunctionRole(
+      address(parallelizerSplit), getParallelizerKeeperSelectorAccess(), KEEPER_ROLE
+    );
     vm.stopPrank();
 
     {

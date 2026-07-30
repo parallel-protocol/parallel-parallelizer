@@ -38,6 +38,8 @@ uint256 constant BASE_36 = 1e36;
 uint256 constant MAX_BURN_FEE = 999_000_000;
 uint256 constant MAX_MINT_FEE = BASE_12 - 1;
 uint256 constant MAX_PAYEES = 10;
+uint256 constant SECONDS_PER_YEAR = 365 days;
+uint256 constant MAX_STORED_ASSETS_INIT_STALENESS = 30 minutes;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                      REENTRANT                                                      
@@ -58,6 +60,7 @@ uint8 constant ENTERED = 2;
 // Role IDs for the AccessManager
 uint64 constant GOVERNOR_ROLE = 10;
 uint64 constant GUARDIAN_ROLE = 20;
+uint64 constant KEEPER_ROLE = 30;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                COMMON ADDRESSES                                                 

@@ -176,7 +176,7 @@ contract Permit2Test is Fixture, FunctionUtils {
   function test_SwapExactOutputWithPermit() public {
     uint256 amountOut = BASE_18;
     uint256 amountInMax = (3 * BASE_6) / 2;
-    uint256 amountIn = (3 * BASE_6) / 2 - 489_899;
+    uint256 amountIn = (3 * BASE_6) / 2 - 489_898;
     uint256 nonce = 0;
     uint256 deadline = block.timestamp + 1 hours;
 
@@ -249,7 +249,7 @@ contract Permit2Test is Fixture, FunctionUtils {
     // Test
     uint256 amountOut = BASE_18;
     uint256 amountInMax = (3 * BASE_6) / 2;
-    uint256 amountIn = (3 * BASE_6) / 2 - 489_899;
+    uint256 amountIn = (3 * BASE_6) / 2 - 489_898;
     uint256 nonce = 0;
     uint256 deadline = block.timestamp + 1 hours;
 

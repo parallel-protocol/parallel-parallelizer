@@ -8,7 +8,7 @@ import { DiamondStorage, ImplementationStorage, ParallelizerStorage } from "../S
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev This library is an authorized fork of Angle's `LibStorage` library
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/parallelizer/libraries/LibStorage.sol
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibStorage.sol
 library LibStorage {
   /// @notice Returns the storage struct stored at the `DIAMOND_STORAGE_POSITION` slot
   /// @dev This struct handles the logic of the different facets used in the diamond proxy

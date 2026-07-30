@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "contracts/interfaces/IManager.sol";
 
@@ -86,7 +87,7 @@ contract MockManager is IManager {
       balances[i] = subCollaterals[i].balanceOf(address(this));
       if (i > 0) {
         totalValue += LibOracle.readChainlinkFeed(
-          LibHelpers.convertDecimalTo(balances[i], tokenDecimals[i], tokenDecimals[0]),
+          LibHelpers.convertDecimalTo(balances[i], tokenDecimals[i], tokenDecimals[0], Math.Rounding.Floor),
           oracles[i - 1],
           oracleIsMultiplied[i - 1],
           chainlinkDecimals[i - 1],

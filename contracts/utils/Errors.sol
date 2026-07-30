@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
+error AboveCap();
 error AccessManagedUnauthorized(address caller);
 error AlreadyAdded();
 error ArrayLengthMismatch();
+error AuthorizationTransferMismatch();
 error CannotAddFunctionToDiamondThatAlreadyExists(bytes4 _selector);
 error CannotAddSelectorsToZeroAddress(bytes4[] _selectors);
 error CannotRemoveFunctionThatDoesNotExist(bytes4 _selector);
@@ -14,6 +16,7 @@ error CannotReplaceFunctionWithTheSameFunctionFromTheSameFacet(bytes4 _selector)
 error CannotReplaceImmutableFunction(bytes4 _selector);
 error ContractHasNoCode();
 error CollateralBacked();
+error CannotBurnAllStableIssued();
 error FunctionNotFound(bytes4 _functionSelector);
 error IncorrectFacetCutAction(uint8 _action);
 error InitializationFunctionReverted(address _initializationContractAddress, bytes _calldata);
@@ -27,6 +30,7 @@ error InvalidRate();
 error InvalidSwap();
 error InvalidTokens();
 error InvalidAccessManager();
+error InvalidWhitelistStatus();
 error ManagerHasAssets();
 error NoSelectorsProvidedForFacetForCut(address _facetAddress);
 error NotAllowed();
@@ -38,7 +42,10 @@ error NotTrustedOrGuardian();
 error NotWhitelisted();
 error OdosSwapFailed();
 error OracleUpdateFailed();
+error SurplusBufferRatioNotSet();
 error Paused();
+error AlreadyPaused();
+error NotPaused();
 error ReentrantCall();
 error RemoveFacetAddressMustBeZeroAddress(address _facetAddress);
 error TooBigAmountIn();
@@ -51,3 +58,5 @@ error SwapError();
 error SlippageTooHigh();
 error InsufficientFunds();
 error Undercollateralized();
+error StaleAccrual();
+error NotInitialized();

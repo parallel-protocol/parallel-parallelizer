@@ -1,0 +1,1 @@
+export const Abi_LibWhitelist = /** @type {const} **/ ([]);
