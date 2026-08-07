@@ -3,7 +3,6 @@ pragma solidity 0.8.28;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { LibHelpers } from "./LibHelpers.sol";
 import { LibManager } from "./LibManager.sol";
@@ -20,7 +19,6 @@ import "../Storage.sol";
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibGetters.sol
 library LibGetters {
   using Math for uint256;
-  using SafeCast for uint256;
 
   /// @notice Internal version of the `getCollateralRatio` function with additional return values like `tokens` that
   /// is the list of tokens supported by the system, or `balances` which is the amount of each token in `tokens`
@@ -87,7 +85,9 @@ library LibGetters {
     // the `collatRatio`
     stablecoinsIssued = uint256(ts.normalizedStables).mulDiv(ts.normalizer, BASE_27, Math.Rounding.Ceil);
     if (stablecoinsIssued > 0) {
-      collatRatio = (totalCollateralization.mulDiv(BASE_9, stablecoinsIssued, Math.Rounding.Ceil)).toUint64();
+      uint256 ratio = totalCollateralization.mulDiv(BASE_9, stablecoinsIssued, Math.Rounding.Ceil);
+      // Saturate at uint64 max: extreme collateral vs tiny supply used to revert via SafeCast (documented known issue)
+      collatRatio = ratio > type(uint64).max ? type(uint64).max : uint64(ratio);
     } else {
       collatRatio = type(uint64).max;
     }
