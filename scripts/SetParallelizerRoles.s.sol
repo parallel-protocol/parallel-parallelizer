@@ -21,7 +21,7 @@ contract SetParallelizerRoles is BaseScript {
     guardianSelectors[6] = IDiamondEtherscan.setDummyImplementation.selector;
     accessManager.setTargetFunctionRole(parallelizer, guardianSelectors, Roles.GUARDIAN_ROLE);
 
-    bytes4[] memory governorSelectors = new bytes4[](14);
+    bytes4[] memory governorSelectors = new bytes4[](15);
     governorSelectors[0] = ISettersGovernor.recoverERC20.selector;
     governorSelectors[1] = ISettersGovernor.setAccessManager.selector;
     governorSelectors[2] = ISettersGovernor.setCollateralManager.selector;
@@ -36,6 +36,7 @@ contract SetParallelizerRoles is BaseScript {
     governorSelectors[11] = ISettersGovernor.updatePayees.selector;
     governorSelectors[12] = ISettersGovernor.updateSlippageTolerance.selector;
     governorSelectors[13] = ISettersGovernor.updateSurplusBufferRatio.selector;
+    governorSelectors[14] = ISettersGovernor.setSwapRouter.selector;
     accessManager.setTargetFunctionRole(parallelizer, governorSelectors, Roles.GOVERNOR_ROLE);
 
     bytes4[] memory keeperSelectors = new bytes4[](2);

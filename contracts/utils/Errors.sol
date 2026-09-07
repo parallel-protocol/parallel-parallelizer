@@ -40,7 +40,7 @@ error NotGuardian();
 error NotTrusted();
 error NotTrustedOrGuardian();
 error NotWhitelisted();
-error OdosSwapFailed();
+error RewardSwapFailed();
 error OracleUpdateFailed();
 error SurplusBufferRatioNotSet();
 error Paused();

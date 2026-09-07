@@ -99,7 +99,7 @@ abstract contract ConfigAccessManager is Helper {
   }
 
   function getParallelizerGovernorSelectorAccess() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](14);
+    bytes4[] memory selectors = new bytes4[](15);
     selectors[0] = SettersGovernor.recoverERC20.selector;
     selectors[1] = SettersGovernor.setAccessManager.selector;
     selectors[2] = SettersGovernor.setCollateralManager.selector;
@@ -114,6 +114,7 @@ abstract contract ConfigAccessManager is Helper {
     selectors[11] = SettersGovernor.updatePayees.selector;
     selectors[12] = SettersGovernor.updateSlippageTolerance.selector;
     selectors[13] = SettersGovernor.updateSurplusBufferRatio.selector;
+    selectors[14] = SettersGovernor.setSwapRouter.selector;
     return selectors;
   }
 

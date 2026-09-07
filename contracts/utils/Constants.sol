@@ -7,7 +7,7 @@ import { IStETH } from "contracts/interfaces/external/lido/IStETH.sol";
 import { IRETH } from "contracts/interfaces/external/rocketPool/IRETH.sol";
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                 STORAGE SLOTS                                                  
+                                                 STORAGE SLOTS
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
 /// @dev Storage position of `DiamondStorage` structure
@@ -23,7 +23,7 @@ bytes32 constant TRANSMUTER_STORAGE_POSITION = 0x4b2dd303f68b99d244b702089c802b6
 bytes32 constant IMPLEMENTATION_STORAGE_POSITION = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                     MATHS                                                      
+                                                     MATHS
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
 uint256 constant BASE_6 = 1e6;
@@ -44,7 +44,7 @@ uint256 constant MAX_STORED_ASSETS_INIT_STALENESS = 30 minutes;
 uint256 constant MAX_ORACLE_RATCHET_STEP = 5e16;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                     REENTRANT                                                      
+                                                     REENTRANT
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
 // The values being non-zero value makes deployment a bit more expensive,
@@ -56,7 +56,7 @@ uint8 constant NOT_ENTERED = 1;
 uint8 constant ENTERED = 2;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                     REENTRANT                                                      
+                                                     REENTRANT
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
 // Role IDs for the AccessManager
@@ -65,11 +65,10 @@ uint64 constant GUARDIAN_ROLE = 20;
 uint64 constant KEEPER_ROLE = 30;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                               COMMON ADDRESSES                                                 
+                                               COMMON ADDRESSES
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
 address constant PERMIT_2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
-address constant ODOS_ROUTER = 0xCf5540fFFCdC3d510B18bFcA6d2b9987b0772559;
 ICbETH constant CBETH = ICbETH(0xBe9895146f7AF43049ca1c1AE358B0541Ea49704);
 IRETH constant RETH = IRETH(0xae78736Cd615f374D3085123A210448E74Fc6393);
 IStETH constant STETH = IStETH(0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84);

@@ -503,9 +503,9 @@ export const Abi_GenericRebalancer = /** @type {const} **/ ([
         "type": "address"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "newMaxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "name": "setMaxSlippage",
@@ -590,9 +590,9 @@ export const Abi_GenericRebalancer = /** @type {const} **/ ([
         "type": "uint64"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "maxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "name": "setYieldBearingAssetData",
@@ -701,9 +701,9 @@ export const Abi_GenericRebalancer = /** @type {const} **/ ([
         "type": "uint64"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "maxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "stateMutability": "view",

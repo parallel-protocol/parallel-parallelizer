@@ -36,8 +36,15 @@ contract Layout {
   mapping(address => uint256) public isTrusted; // slot 7
   mapping(address => uint256) public isSellerTrusted; // slot 8
   mapping(WhitelistType => mapping(address => uint256)) public isWhitelistedForType; // slot 9
-  // uint256(DIAMOND_STORAGE_POSITION) - ParallelizerStorage offset (9) - uint256(TRANSMUTER_STORAGE_POSITION)
-  uint256[56_904_584_862_873_869_173_946_452_133_933_512_717_281_559_375_467_474_726_875_187_792_230_718_146_205]
+  mapping(address => uint256) public slippageTolerance; // slot 10
+  uint64 public surplusBufferRatio; // slot 11
+  uint256 public lastReleasedAt; // slot 12
+  uint256 public totalShares; // slot 13
+  address[] public payees; // slot 14
+  mapping(address => uint256) public shares; // slot 15
+  address public swapRouter; // slot 16
+  // uint256(DIAMOND_STORAGE_POSITION) - ParallelizerStorage offset (16) - uint256(TRANSMUTER_STORAGE_POSITION)
+  uint256[56_904_584_862_873_869_173_946_452_133_933_512_717_281_559_375_467_474_726_875_187_792_230_718_146_198]
     private __gap3;
   bytes4[] public selectors; // slot 1
   mapping(bytes4 => FacetInfo) public selectorInfo; // slot 2

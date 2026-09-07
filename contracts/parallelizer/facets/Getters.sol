@@ -236,6 +236,11 @@ contract Getters is IGetters {
   }
 
   /// @inheritdoc IGetters
+  function getSwapRouter() external view returns (address) {
+    return s.transmuterStorage().swapRouter;
+  }
+
+  /// @inheritdoc IGetters
   function getSurplusBufferRatio() external view returns (uint64) {
     return s.transmuterStorage().surplusBufferRatio;
   }

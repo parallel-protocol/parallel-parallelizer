@@ -683,6 +683,19 @@ export const Abi_IParallelizer = /** @type {const} **/ ([
   },
   {
     "inputs": [],
+    "name": "getSwapRouter",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getTotalIssued",
     "outputs": [
       {
@@ -1389,6 +1402,19 @@ export const Abi_IParallelizer = /** @type {const} **/ ([
       }
     ],
     "name": "setStablecoinCap",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setSwapRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

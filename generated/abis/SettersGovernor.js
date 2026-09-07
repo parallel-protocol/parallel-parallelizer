@@ -135,6 +135,11 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
   },
   {
     "inputs": [],
+    "name": "ZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ZeroAmount",
     "type": "error"
   },
@@ -434,6 +439,19 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
       {
         "indexed": true,
         "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "SwapRouterUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "sender",
         "type": "address"
       },
@@ -620,6 +638,19 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
       }
     ],
     "name": "setOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setSwapRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

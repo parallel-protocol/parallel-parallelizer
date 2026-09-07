@@ -39,6 +39,7 @@ library LibSetters {
   event PayeeAdded(address indexed payee, uint256 shares);
   event SlippageToleranceUpdated(address indexed collateral, uint256 slippageTolerance);
   event SurplusBufferRatioUpdated(uint64 surplusBufferRatio);
+  event SwapRouterUpdated(address indexed swapRouter);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ONLY GOVERNOR ACTIONS
@@ -301,6 +302,13 @@ library LibSetters {
     ParallelizerStorage storage ts = s.transmuterStorage();
     ts.slippageTolerance[collateral] = slippageTolerance;
     emit SlippageToleranceUpdated(collateral, slippageTolerance);
+  }
+
+  /// @notice Internal version of `setSwapRouter`
+  function setSwapRouter(address swapRouter) internal {
+    if (swapRouter == address(0)) revert ZeroAddress();
+    s.transmuterStorage().swapRouter = swapRouter;
+    emit SwapRouterUpdated(swapRouter);
   }
 
   /// @notice Internal version of `updateSurplusBufferRatio`
