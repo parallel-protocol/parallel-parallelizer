@@ -40,6 +40,8 @@ uint256 constant MAX_MINT_FEE = BASE_12 - 1;
 uint256 constant MAX_PAYEES = 10;
 uint256 constant SECONDS_PER_YEAR = 365 days;
 uint256 constant MAX_STORED_ASSETS_INIT_STALENESS = 30 minutes;
+/// @dev Largest relative increase a single `updateOracle` ratchet may apply to a MAX target price
+uint256 constant MAX_ORACLE_RATCHET_STEP = 5e16;
 
 /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                      REENTRANT                                                      

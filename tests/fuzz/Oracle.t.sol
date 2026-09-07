@@ -717,6 +717,30 @@ contract OracleTest is Fixture, FunctionUtils {
     parallelizer.updateOracle(collateral);
   }
 
+  function test_revertWhen_updateOracle_AboveRatchetStep() public {
+    vm.prank(governor);
+    parallelizer.toggleTrusted(alice, Storage.TrustedType.Seller);
+
+    address collateral = _collaterals[0];
+    (Storage.OracleReadType readType,, bytes memory data,,) = parallelizer.getOracle(collateral);
+    (uint256 oracleValue,,,,) = parallelizer.getOracleValues(collateral);
+
+    vm.prank(governor);
+    parallelizer.setOracle(
+      collateral,
+      abi.encode(readType, Storage.OracleReadType.MAX, data, abi.encode(oracleValue), abi.encode(uint128(0), uint128(0)))
+    );
+
+    (, int256 currentValue,,,) = _oracles[0].latestRoundData();
+    // One wei above the largest increase a single ratchet may apply
+    uint256 aboveCap = (uint256(currentValue) * (BASE_18 + MAX_ORACLE_RATCHET_STEP)) / BASE_18 + 1;
+    MockChainlinkOracle(address(_oracles[0])).setLatestAnswer(int256(aboveCap));
+
+    vm.prank(alice);
+    vm.expectRevert(Errors.OracleUpdateFailed.selector);
+    parallelizer.updateOracle(collateral);
+  }
+
   function testFuzz_updateOracle_Success(uint256 updateOracleValue, uint32 heartbeat) public {
     vm.prank(governor);
     parallelizer.toggleTrusted(alice, Storage.TrustedType.Seller);
@@ -743,8 +767,14 @@ contract OracleTest is Fixture, FunctionUtils {
     uint256 newOracleValue;
     {
       (, int256 oracleValueTmp,,,) = _oracles[indexCollat].latestRoundData();
-      updateOracleValue = bound(updateOracleValue, uint256(oracleValueTmp) + 1, _maxOracleValue);
-      if (updateOracleValue > _maxOracleValue) return;
+      uint256 currentValue = uint256(oracleValueTmp);
+      // A single ratchet cannot lift the target by more than `MAX_ORACLE_RATCHET_STEP`
+      uint256 upperBound = (currentValue * (BASE_18 + MAX_ORACLE_RATCHET_STEP)) / BASE_18;
+      if (upperBound > _maxOracleValue) upperBound = _maxOracleValue;
+      uint256 lowerBound = currentValue + 1;
+      if (lowerBound < _minOracleValue * 10) lowerBound = _minOracleValue * 10;
+      if (lowerBound > upperBound) return;
+      updateOracleValue = bound(updateOracleValue, lowerBound, upperBound);
 
       uint256[3] memory latestOracleValue = [updateOracleValue, BASE_8, BASE_8];
       latestOracleValue = _updateOracleValues(latestOracleValue);
