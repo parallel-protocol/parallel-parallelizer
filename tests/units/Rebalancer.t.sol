@@ -259,7 +259,7 @@ contract Test_Rebalancer_FlashLoanFee is Fixture {
 
   /// @dev A lender charging a fee must not lock the rebalancer out of its only rebalance path
   function test_Harvest_SucceedsWithANonZeroFee() public {
-    lender.setFeeRate(5e5);
+    lender.setFeeRateBps(5);
 
     _harvest();
 
@@ -275,7 +275,7 @@ contract Test_Rebalancer_FlashLoanFee is Fixture {
 
     vm.revertToState(snapshot);
 
-    lender.setFeeRate(5e5);
+    lender.setFeeRateBps(5);
     _harvest();
     uint256 budgetWithFee = rebalancer.budget(alice);
 
@@ -290,10 +290,15 @@ contract Test_Rebalancer_FlashLoanFee is Fixture {
 
   /// @dev A fee the caller cannot cover fails the rebalance rather than dipping into other budgets
   function test_RevertWhen_FeeExceedsTheCallerBudget() public {
-    lender.setFeeRate(1e15);
+    // The ceiling FlashParallelToken allows governance to set
+    lender.setFeeRateBps(1e4);
+    uint256 drained = rebalancer.budget(alice) - 1 ether;
+    vm.prank(alice);
+    rebalancer.removeBudget(drained, alice);
 
+    // A route that clears `minAmountOut` but leaves nothing spare to absorb the fee
     bytes memory swapData =
-      abi.encodeWithSelector(MockRouter.swap.selector, 1 ether, address(eurY), 5000 * BASE_6, address(eurA));
+      abi.encodeWithSelector(MockRouter.swap.selector, 1 ether, address(eurY), 500 * BASE_6, address(eurA));
     vm.prank(alice);
     vm.expectRevert(stdError.arithmeticError);
     rebalancer.harvest(address(eurY), 1e7, abi.encode(SwapType.SWAP, swapData));

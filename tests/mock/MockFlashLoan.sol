@@ -11,10 +11,12 @@ import { MockTokenPermit } from "./MockTokenPermit.sol";
 contract MockFlashLoan {
   bytes32 internal constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
 
-  uint256 public feeRate;
+  /// @dev Basis points, as FlashParallelToken stores it
+  uint16 public feeRateBps;
 
-  function setFeeRate(uint256 newFeeRate) external {
-    feeRate = newFeeRate;
+  function setFeeRateBps(uint16 newFeeRateBps) external {
+    require(newFeeRateBps <= 1e4, "fee rate above 100%");
+    feeRateBps = newFeeRateBps;
   }
 
   function maxFlashLoan(address) external pure returns (uint256) {
@@ -22,7 +24,7 @@ contract MockFlashLoan {
   }
 
   function flashFee(address, uint256 amount) public view returns (uint256) {
-    return (amount * feeRate) / 1e9;
+    return (amount * feeRateBps) / 1e4;
   }
 
   function flashLoan(
