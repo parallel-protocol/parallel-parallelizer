@@ -163,14 +163,12 @@ contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapp
     // Swap to tokenOut
     amountOut = _swapToTokenOut(typeAction, tokenIn, tokenOut, amountOut, swapType, callData);
 
-    // A partial fill would leave both the unspent input and its router allowance on this contract
-    if (IERC20(tokenIn).balanceOf(address(this)) > tokenInBalanceBefore) {
-      revert RouterDidNotConsumeAllTokens();
-    }
-
     _adjustAllowance(tokenOut, address(parallelizer), amountOut);
     uint256 amountStableOut =
       parallelizer.swapExactInput(amountOut, minAmountOut, tokenOut, address(tokenP), address(this), block.timestamp);
+
+    amountStableOut += _recoverResidualInput(tokenIn, tokenInBalanceBefore);
+
     if (amount > amountStableOut) {
       budget[sender] -= amount - amountStableOut; // Will revert if not enough funds
     } else if (amountStableOut > amount) {
@@ -228,6 +226,24 @@ contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapp
     );
   }
 
+  /**
+   * @dev Returns any input the route did not consume to the Parallelizer
+   * @param tokenIn address of the token offered to the route
+   * @param balanceBefore balance of `tokenIn` held before the operation
+   * @return the tokenP obtained from the remainder, zero when the route consumed everything
+   *
+   * Router calldata is built off chain while the input is sized on chain, so a route can consume
+   * less than was offered. Returning the remainder keeps it inside the Parallelizer's accounting
+   * instead of stranding it here, and it settles with the rest of the operation.
+   */
+  function _recoverResidualInput(address tokenIn, uint256 balanceBefore) internal returns (uint256) {
+    uint256 balanceAfter = IERC20(tokenIn).balanceOf(address(this));
+    if (balanceAfter <= balanceBefore) return 0;
+    uint256 residual = balanceAfter - balanceBefore;
+    _adjustAllowance(tokenIn, address(parallelizer), residual);
+    return parallelizer.swapExactInput(residual, 0, tokenIn, address(tokenP), address(this), block.timestamp);
+  }
+
   function _swapToTokenOut(
     uint256 typeAction,
     address tokenIn,
@@ -271,6 +287,8 @@ contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapp
     uint256[] memory amounts = new uint256[](1);
     amounts[0] = amount;
     _swap(tokens, callDatas, amounts);
+    // A route that consumed less than offered would otherwise leave the difference approved
+    IERC20(tokenIn).forceApprove(tokenTransferAddress, 0);
 
     return IERC20(tokenOut).balanceOf(address(this)) - balance;
   }
