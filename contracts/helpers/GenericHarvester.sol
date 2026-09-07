@@ -25,7 +25,7 @@ enum SwapType {
 /// @title GenericHarvester
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev Generic contract for anyone to permissionlessly adjust the reserves of Angle Parallelizer
+/// @dev Generic contract for trusted callers to adjust the reserves of Angle Parallelizer
 /// @dev This contract is an authorized fork of Angle's GenericHarvester contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/GenericHarvester.sol
 contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper {
@@ -98,7 +98,9 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
   /// `yieldBearingAsset` to the target exposure
   /// @dev scale is a number between 0 and 1e9 that represents the proportion of the tokenP to harvest,
   /// it is used to lower the amount of the asset to harvest for example to have a lower slippage
-  function harvest(address yieldBearingAsset, uint256 scale, bytes calldata extraData) public virtual {
+  /// @dev Restricted to trusted callers: the flow forwards caller-supplied router calldata and refreshes the
+  /// collateral oracle, neither of which can be safely exposed to arbitrary callers
+  function harvest(address yieldBearingAsset, uint256 scale, bytes calldata extraData) public virtual onlyTrusted {
     if (scale > 1e9) revert InvalidParam();
     updateLimitExposuresYieldAsset(yieldBearingAsset);
     YieldBearingParams memory yieldBearingInfo = yieldBearingData[yieldBearingAsset];
