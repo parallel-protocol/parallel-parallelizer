@@ -1,4 +1,4 @@
-export const Abi_IHarvester = /** @type {const} **/ ([
+export type Abi_IRebalancer = [
   {
     "inputs": [
       {
@@ -96,4 +96,5 @@ export const Abi_IHarvester = /** @type {const} **/ ([
     "stateMutability": "nonpayable",
     "type": "function"
   }
-]);
+];
+export declare const Abi_IRebalancer: Abi_IRebalancer;

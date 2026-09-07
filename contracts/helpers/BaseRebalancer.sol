@@ -6,7 +6,7 @@ import { AccessManaged } from "../utils/AccessManaged.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
-import "contracts/interfaces/IHarvester.sol";
+import "contracts/interfaces/IRebalancer.sol";
 
 import "../utils/Errors.sol";
 
@@ -32,7 +32,7 @@ struct YieldBearingParams {
 /// @dev Abstract contract for a rebalancer that aims at rebalancing a Parallelizer
 /// @dev This contract is an authorized fork of Angle's BaseRebalancer contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseRebalancer.sol
-abstract contract BaseRebalancer is IHarvester, AccessManaged {
+abstract contract BaseRebalancer is IRebalancer, AccessManaged {
   using SafeERC20 for IERC20;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
