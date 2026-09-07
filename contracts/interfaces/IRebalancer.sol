@@ -14,13 +14,13 @@ interface IRebalancer {
     uint64 minExposureYieldAsset,
     uint64 maxExposureYieldAsset,
     uint64 overrideExposures,
-    uint96 maxSlippage
+    uint64 maxSlippage
   )
     external;
 
   function updateLimitExposuresYieldAsset(address yieldBearingAsset) external;
 
-  function setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) external;
+  function setMaxSlippage(address yieldBearingAsset, uint64 newMaxSlippage) external;
 
   function harvest(address yieldBearingAsset, uint256 scale, bytes calldata extraData) external;
 }

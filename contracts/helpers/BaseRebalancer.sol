@@ -22,8 +22,9 @@ struct YieldBearingParams {
   // Whether limit exposures should be overriden or read onchain through the Parallelizer
   // This value should be 1 to override exposures or 2 if these shouldn't be overriden
   uint64 overrideExposures;
-  // Maximum slippage when dealing with the Parallelizer
-  uint96 maxSlippage;
+  // Maximum slippage when dealing with the Parallelizer, bounded below 1e9 so uint64 leaves the
+  // struct packed in two slots
+  uint64 maxSlippage;
 }
 
 /// @title BaseRebalancer
@@ -115,7 +116,7 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
     uint64 minExposure,
     uint64 maxExposure,
     uint64 overrideExposures,
-    uint96 maxSlippage
+    uint64 maxSlippage
   )
     external
     restricted
@@ -140,7 +141,7 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
    * @notice Set the max allowed slippage
    * @param newMaxSlippage new max allowed slippage
    */
-  function setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) external restricted {
+  function setMaxSlippage(address yieldBearingAsset, uint64 newMaxSlippage) external restricted {
     _setMaxSlippage(yieldBearingAsset, newMaxSlippage);
   }
 
@@ -252,7 +253,7 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
     uint64 minExposure,
     uint64 maxExposure,
     uint64 overrideExposures,
-    uint96 maxSlippage
+    uint64 maxSlippage
   )
     internal
     virtual
@@ -301,7 +302,7 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
     else yieldBearingInfo.minExposure = xFeeBurn[length - 2];
   }
 
-  function _setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) internal virtual {
+  function _setMaxSlippage(address yieldBearingAsset, uint64 newMaxSlippage) internal virtual {
     if (newMaxSlippage >= 1e9) revert InvalidParam();
     yieldBearingData[yieldBearingAsset].maxSlippage = newMaxSlippage;
   }

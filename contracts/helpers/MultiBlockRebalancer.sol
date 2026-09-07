@@ -148,7 +148,7 @@ contract MultiBlockRebalancer is BaseRebalancer {
     address asset,
     address depositAddress,
     bool assetIn,
-    uint96 maxSlippage
+    uint64 maxSlippage
   )
     internal
     view

@@ -43,7 +43,7 @@ contract Test_Rebalancer_MaxSlippage is Fixture {
     vm.prank(guardian);
     rebalancer.setMaxSlippage(yieldBearingAsset, 1e7);
 
-    (,,,,, uint96 maxSlippage) = rebalancer.yieldBearingData(yieldBearingAsset);
+    (,,,,, uint64 maxSlippage) = rebalancer.yieldBearingData(yieldBearingAsset);
     assertEq(maxSlippage, 1e7);
   }
 
