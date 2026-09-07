@@ -121,6 +121,8 @@ contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapp
   }
 
   /// @inheritdoc IERC3156FlashBorrower
+  /// @dev A non-zero lender fee is charged to the budget of the address that called `harvest`, alongside any
+  /// shortfall between the principal and the tokenP the rebalance minted back
   function onFlashLoan(
     address initiator,
     address,
@@ -132,7 +134,7 @@ contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapp
     virtual
     returns (bytes32)
   {
-    if (msg.sender != address(flashloan) || initiator != address(this) || fee != 0) revert NotTrusted();
+    if (msg.sender != address(flashloan) || initiator != address(this)) revert NotTrusted();
     address sender;
     uint256 typeAction;
     uint256 minAmountOut;
@@ -159,6 +161,8 @@ contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapp
 
     uint256 amountOut =
       parallelizer.swapExactInput(amount, 0, address(tokenP), tokenIn, address(this), block.timestamp);
+    // The principal is spent, what the lender will pull back is the principal plus its fee
+    amount += fee;
 
     // Swap to tokenOut
     amountOut = _swapToTokenOut(typeAction, tokenIn, tokenOut, amountOut, swapType, callData);
