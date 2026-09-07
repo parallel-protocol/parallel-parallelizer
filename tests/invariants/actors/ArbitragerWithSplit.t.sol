@@ -3,7 +3,12 @@ pragma solidity 0.8.28;
 
 import "contracts/utils/Constants.sol";
 import {
-  AggregatorV3Interface, BaseActor, IERC20, IERC20Metadata, IParallelizer, TestStorage
+  AggregatorV3Interface,
+  BaseActor,
+  IERC20,
+  IERC20Metadata,
+  IParallelizer,
+  TestStorage
 } from "./BaseActor.t.sol";
 import { QuoteType } from "contracts/parallelizer/Storage.sol";
 import { console } from "@forge-std/console.sol";
@@ -260,8 +265,9 @@ contract ArbitragerWithSplit is BaseActor {
         // don't care about slippage
         uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
         address[] memory redeemTokens;
+        bytes32 tokensHash = _redemptionTokensHash(_parallelizer, amount);
         (redeemTokens, redeemAmounts) = _parallelizer.redeemWithForfeit(
-          amount, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens
+          amount, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens, tokensHash
         );
       }
 
@@ -298,12 +304,14 @@ contract ArbitragerWithSplit is BaseActor {
         address[] memory redeemTokens;
 
         uint256 amountSplit = (amount * splitProportion) / BASE_9;
+        bytes32 tokensHash = _redemptionTokensHash(_parallelizerSplit, amountSplit);
         (redeemTokens, redeemAmountsSplit1) = _parallelizerSplit.redeemWithForfeit(
-          amountSplit, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens
+          amountSplit, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens, tokensHash
         );
         amountSplit = amount - amountSplit;
+        tokensHash = _redemptionTokensHash(_parallelizerSplit, amountSplit);
         (, redeemAmountsSplit2) = _parallelizerSplit.redeemWithForfeit(
-          amountSplit, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens
+          amountSplit, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens, tokensHash
         );
       }
 

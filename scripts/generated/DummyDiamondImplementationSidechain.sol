@@ -234,7 +234,8 @@ contract DummyDiamondImplementation {
     uint256 amount,
     address receiver,
     uint256 deadline,
-    uint256[] memory minAmountOuts
+    uint256[] memory minAmountOuts,
+    bytes32 expectedTokensHash
   )
     external
     returns (address[] memory tokens, uint256[] memory amounts)
@@ -245,7 +246,8 @@ contract DummyDiamondImplementation {
     address receiver,
     uint256 deadline,
     uint256[] memory minAmountOuts,
-    address[] memory forfeitTokens
+    address[] memory forfeitTokens,
+    bytes32 expectedTokensHash
   )
     external
     returns (address[] memory tokens, uint256[] memory amounts)

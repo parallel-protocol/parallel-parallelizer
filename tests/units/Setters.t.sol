@@ -80,10 +80,12 @@ contract Test_Setters_Pause is Fixture {
     assert(parallelizer.isPaused(address(eurA), ActionType.Redeem));
 
     vm.expectRevert(Errors.Paused.selector);
-    parallelizer.redeem(1 ether, alice, block.timestamp + 10, new uint256[](3));
+    parallelizer.redeem(1 ether, alice, block.timestamp + 10, new uint256[](3), bytes32(0));
 
     vm.expectRevert(Errors.Paused.selector);
-    parallelizer.redeemWithForfeit(1 ether, alice, block.timestamp + 10, new uint256[](3), new address[](0));
+    parallelizer.redeemWithForfeit(
+      1 ether, alice, block.timestamp + 10, new uint256[](3), new address[](0), bytes32(0)
+    );
   }
 }
 

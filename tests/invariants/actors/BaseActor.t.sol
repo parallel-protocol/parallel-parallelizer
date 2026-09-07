@@ -79,4 +79,11 @@ contract BaseActor is Test {
     _maxTokenAmount.push(_maxAmountWithoutDecimals * 10 ** IERC20Metadata(_collaterals[1]).decimals());
     _maxTokenAmount.push(_maxAmountWithoutDecimals * 10 ** IERC20Metadata(_collaterals[2]).decimals());
   }
+
+  /// @dev The output list a redemption of `amount` would produce right now, hashed as the redeem
+  /// entry points expect it
+  function _redemptionTokensHash(IParallelizer target, uint256 amount) internal view returns (bytes32) {
+    (address[] memory tokens,) = target.quoteRedemptionCurve(amount);
+    return keccak256(abi.encodePacked(tokens));
+  }
 }

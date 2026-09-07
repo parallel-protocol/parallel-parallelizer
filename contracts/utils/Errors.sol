@@ -51,6 +51,7 @@ error RemoveFacetAddressMustBeZeroAddress(address _facetAddress);
 error TooBigAmountIn();
 error TooLate();
 error TooSmallAmountOut();
+error UnexpectedRedemptionTokens();
 error ZeroAddress();
 error ZeroAmount();
 error ZeroSurplusAmount();
