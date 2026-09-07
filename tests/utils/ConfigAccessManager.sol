@@ -7,9 +7,9 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts/proxy/utils/UUPSUpgrade
 import { Savings } from "contracts/savings/Savings.sol";
 import { SavingsNameable } from "contracts/savings/nameable/SavingsNameable.sol";
 import { BaseSavings } from "contracts/savings/BaseSavings.sol";
-import { BaseHarvester } from "contracts/helpers/BaseHarvester.sol";
-import { MultiBlockHarvester } from "contracts/helpers/MultiBlockHarvester.sol";
-import { GenericHarvester } from "contracts/helpers/GenericHarvester.sol";
+import { BaseRebalancer } from "contracts/helpers/BaseRebalancer.sol";
+import { MultiBlockRebalancer } from "contracts/helpers/MultiBlockRebalancer.sol";
+import { GenericRebalancer } from "contracts/helpers/GenericRebalancer.sol";
 import { SettersGuardian } from "contracts/parallelizer/facets/SettersGuardian.sol";
 import { SettersGovernor } from "contracts/parallelizer/facets/SettersGovernor.sol";
 import { DiamondEtherscan } from "contracts/parallelizer/facets/DiamondEtherscan.sol";
@@ -62,26 +62,26 @@ abstract contract ConfigAccessManager is Helper {
     return selectors;
   }
 
-  function getGuardianBaseHarvesterSelectorAccess() internal pure returns (bytes4[] memory) {
+  function getGuardianBaseRebalancerSelectorAccess() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](5);
-    selectors[0] = BaseHarvester.setYieldBearingAssetData.selector;
-    selectors[1] = BaseHarvester.setMaxSlippage.selector;
-    selectors[2] = BaseHarvester.toggleTrusted.selector;
-    selectors[3] = BaseHarvester.recoverERC20.selector;
-    selectors[4] = BaseHarvester.setTargetExposure.selector;
+    selectors[0] = BaseRebalancer.setYieldBearingAssetData.selector;
+    selectors[1] = BaseRebalancer.setMaxSlippage.selector;
+    selectors[2] = BaseRebalancer.toggleTrusted.selector;
+    selectors[3] = BaseRebalancer.recoverERC20.selector;
+    selectors[4] = BaseRebalancer.setTargetExposure.selector;
     return selectors;
   }
 
-  function getGovernorMultiBlockHarvesterSelectorAccess() internal pure returns (bytes4[] memory) {
+  function getGovernorMultiBlockRebalancerSelectorAccess() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = MultiBlockHarvester.setYieldBearingToDepositAddress.selector;
+    selectors[0] = MultiBlockRebalancer.setYieldBearingToDepositAddress.selector;
     return selectors;
   }
 
-  function getGovernorGenericHarvesterSelectorAccess() internal pure returns (bytes4[] memory) {
+  function getGovernorGenericRebalancerSelectorAccess() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = GenericHarvester.setTokenTransferAddress.selector;
-    selectors[1] = GenericHarvester.setSwapRouter.selector;
+    selectors[0] = GenericRebalancer.setTokenTransferAddress.selector;
+    selectors[1] = GenericRebalancer.setSwapRouter.selector;
     return selectors;
   }
 

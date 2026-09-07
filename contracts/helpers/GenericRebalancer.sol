@@ -15,20 +15,20 @@ import { IERC4626 } from "contracts/interfaces/external/IERC4626.sol";
 
 import "../utils/Errors.sol";
 
-import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
+import { BaseRebalancer, YieldBearingParams } from "./BaseRebalancer.sol";
 
 enum SwapType {
   VAULT,
   SWAP
 }
 
-/// @title GenericHarvester
+/// @title GenericRebalancer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Generic contract for trusted callers to adjust the reserves of Angle Parallelizer
-/// @dev This contract is an authorized fork of Angle's GenericHarvester contract:
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/GenericHarvester.sol
-contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper {
+/// @dev This contract is an authorized fork of Angle's GenericRebalancer contract:
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/GenericRebalancer.sol
+contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapper {
   using SafeCast for uint256;
   using SafeERC20 for IERC20;
 
@@ -52,7 +52,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     IERC3156FlashLender definitiveFlashloan
   )
     RouterSwapper(initialSwapRouter, initialTokenTransferAddress)
-    BaseHarvester(initialAuthority, definitivetokenP, definitiveParallelizer)
+    BaseRebalancer(initialAuthority, definitivetokenP, definitiveParallelizer)
   {
     if (address(definitiveFlashloan) == address(0)) revert ZeroAddress();
     flashloan = definitiveFlashloan;

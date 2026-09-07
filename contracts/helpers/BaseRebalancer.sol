@@ -26,13 +26,13 @@ struct YieldBearingParams {
   uint96 maxSlippage;
 }
 
-/// @title BaseHarvester
+/// @title BaseRebalancer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev Abstract contract for a harvester that aims at rebalancing a Parallelizer
-/// @dev This contract is an authorized fork of Angle's BaseHarvester contract:
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseHarvester.sol
-abstract contract BaseHarvester is IHarvester, AccessManaged {
+/// @dev Abstract contract for a rebalancer that aims at rebalancing a Parallelizer
+/// @dev This contract is an authorized fork of Angle's BaseRebalancer contract:
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseRebalancer.sol
+abstract contract BaseRebalancer is IHarvester, AccessManaged {
   using SafeERC20 for IERC20;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

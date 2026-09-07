@@ -99,7 +99,7 @@
       "symbol": "sUSDp"
     }
   },
-  "genericHarvester": {
+  "genericRebalancer": {
     "usdp": {
       "swapRouter": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
       "tokenTransferAddress": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",

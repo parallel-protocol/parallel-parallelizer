@@ -1,4 +1,4 @@
-export type Abi_BaseHarvester = [
+export const Abi_BaseRebalancer = /** @type {const} **/ ([
   {
     "inputs": [
       {
@@ -202,25 +202,6 @@ export type Abi_BaseHarvester = [
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "maxTokenSlippage",
-    "outputs": [
-      {
-        "internalType": "uint96",
-        "name": "",
-        "type": "uint96"
       }
     ],
     "stateMutability": "view",
@@ -437,5 +418,4 @@ export type Abi_BaseHarvester = [
     "stateMutability": "view",
     "type": "function"
   }
-];
-export declare const Abi_BaseHarvester: Abi_BaseHarvester;
+]);

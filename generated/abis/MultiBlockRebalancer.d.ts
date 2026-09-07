@@ -1,14 +1,9 @@
-export const Abi_GenericHarvester = /** @type {const} **/ ([
+export type Abi_MultiBlockRebalancer = [
   {
     "inputs": [
       {
         "internalType": "address",
-        "name": "initialTokenTransferAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "initialSwapRouter",
+        "name": "initialAuthority",
         "type": "address"
       },
       {
@@ -19,16 +14,6 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
       {
         "internalType": "contract IParallelizer",
         "name": "definitiveParallelizer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "initialAuthority",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IERC3156FlashLender",
-        "name": "definitiveFlashloan",
         "type": "address"
       }
     ],
@@ -101,12 +86,7 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
   },
   {
     "inputs": [],
-    "name": "SwapError",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ZeroAddress",
+    "name": "SlippageTooHigh",
     "type": "error"
   },
   {
@@ -158,32 +138,6 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
       {
         "indexed": false,
         "internalType": "address",
-        "name": "newSwapRouter",
-        "type": "address"
-      }
-    ],
-    "name": "SwapRouterUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "newTokenTransferAddress",
-        "type": "address"
-      }
-    ],
-    "name": "TokenTransferAddressUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
         "name": "trusted",
         "type": "address"
       },
@@ -199,62 +153,12 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
   },
   {
     "inputs": [],
-    "name": "CALLBACK_SUCCESS",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "receiver",
-        "type": "address"
-      }
-    ],
-    "name": "addBudget",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "authority",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "budget",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -285,16 +189,21 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "flashloan",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "contract IERC3156FlashLender",
-        "name": "",
+        "internalType": "address",
+        "name": "yieldBearingAsset",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "balance",
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "name": "finalizeRebalance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -311,7 +220,7 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
       },
       {
         "internalType": "bytes",
-        "name": "extraData",
+        "name": "",
         "type": "bytes"
       }
     ],
@@ -353,64 +262,6 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "maxTokenSlippage",
-    "outputs": [
-      {
-        "internalType": "uint96",
-        "name": "",
-        "type": "uint96"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "initiator",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "fee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
-    ],
-    "name": "onFlashLoan",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "parallelizer",
     "outputs": [
@@ -442,24 +293,6 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
       }
     ],
     "name": "recoverERC20",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "receiver",
-        "type": "address"
-      }
-    ],
-    "name": "removeBudget",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -499,19 +332,6 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
     "inputs": [
       {
         "internalType": "address",
-        "name": "newSwapRouter",
-        "type": "address"
-      }
-    ],
-    "name": "setSwapRouter",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "yieldBearingAsset",
         "type": "address"
       },
@@ -522,19 +342,6 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
       }
     ],
     "name": "setTargetExposure",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newTokenTransferAddress",
-        "type": "address"
-      }
-    ],
-    "name": "setTokenTransferAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -583,16 +390,21 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "swapRouter",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "yieldBearingAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "newDepositAddress",
         "type": "address"
       }
     ],
-    "stateMutability": "view",
+    "name": "setYieldBearingToDepositAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -614,19 +426,6 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
     "outputs": [
       {
         "internalType": "contract ITokenP",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tokenTransferAddress",
-    "outputs": [
-      {
-        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -690,5 +489,25 @@ export const Abi_GenericHarvester = /** @type {const} **/ ([
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "yieldBearingToDepositAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
-]);
+];
+export declare const Abi_MultiBlockRebalancer: Abi_MultiBlockRebalancer;

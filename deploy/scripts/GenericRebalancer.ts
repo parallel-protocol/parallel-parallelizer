@@ -4,7 +4,7 @@ import { deployScript, artifacts } from "@rocketh";
 import { checkAddressValid, parseToConfigData } from "../utils";
 import { readFileSync } from "fs";
 
-const contractName = "GenericHarvester";
+const contractName = "GenericRebalancer";
 
 const token = "USDp";
 
@@ -28,26 +28,26 @@ export default deployScript(
       "Invalid tokenP address",
     );
 
-    const genericHarvesterConfig = config.genericHarvester[token.toLowerCase() as keyof typeof config.genericHarvester];
-    const swapRouter = checkAddressValid(genericHarvesterConfig.swapRouter, "Invalid swapRouter address");
+    const genericRebalancerConfig = config.genericRebalancer[token.toLowerCase() as keyof typeof config.genericRebalancer];
+    const swapRouter = checkAddressValid(genericRebalancerConfig.swapRouter, "Invalid swapRouter address");
     const tokenTransferAddress = checkAddressValid(
-      genericHarvesterConfig.tokenTransferAddress,
+      genericRebalancerConfig.tokenTransferAddress,
       "Invalid tokenTransferAddress address",
     );
 
-    const flashloan = checkAddressValid(genericHarvesterConfig.flashloan, "Invalid flashloan address");
+    const flashloan = checkAddressValid(genericRebalancerConfig.flashloan, "Invalid flashloan address");
     const parallelizer = get(`Parallelizer_${token}`);
     if (!parallelizer) {
       throw new Error(`Parallelizer_${token} not found`);
     }
 
-    const genericHarvester = await deploy(`${contractName}_${token}`, {
+    const genericRebalancer = await deploy(`${contractName}_${token}`, {
       account: deployer,
-      artifact: artifacts.GenericHarvester,
+      artifact: artifacts.GenericRebalancer,
       args: [tokenTransferAddress, swapRouter, tokenP, parallelizer.address, accessManager, flashloan],
     });
 
-    console.log(`Deployed ${contractName}_${token}, network: ${chainName}, address: ${genericHarvester.address}`);
+    console.log(`Deployed ${contractName}_${token}, network: ${chainName}, address: ${genericRebalancer.address}`);
   },
   {
     tags: [contractName],

@@ -1,4 +1,4 @@
-export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
+export const Abi_MultiBlockRebalancer = /** @type {const} **/ ([
   {
     "inputs": [
       {
@@ -256,25 +256,6 @@ export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "maxTokenSlippage",
-    "outputs": [
-      {
-        "internalType": "uint96",
-        "name": "",
-        "type": "uint96"
       }
     ],
     "stateMutability": "view",
