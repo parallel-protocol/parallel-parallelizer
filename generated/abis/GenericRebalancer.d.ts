@@ -89,11 +89,6 @@ export type Abi_GenericRebalancer = [
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "RouterDidNotConsumeAllTokens",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -118,6 +113,25 @@ export type Abi_GenericRebalancer = [
     "inputs": [],
     "name": "ZeroAmount",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "AllowanceReset",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -446,6 +460,24 @@ export type Abi_GenericRebalancer = [
       }
     ],
     "name": "removeBudget",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "resetAllowance",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

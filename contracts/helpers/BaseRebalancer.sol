@@ -78,6 +78,7 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
 
   event Recovered(address token, uint256 amount, address to);
   event TrustedToggled(address trusted, bool status);
+  event AllowanceReset(address indexed token, address indexed spender);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                        CONSTRUCTOR
@@ -163,6 +164,19 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
     IERC20(tokenAddress).safeTransfer(to, amountToRecover);
   }
 
+  /**
+   * @notice Set an allowance this contract granted back to zero
+   * @param token address of the token
+   * @param spender address losing the allowance
+   * @dev Rebalancing grants unlimited allowances that are never reduced. Rotating a yield bearing
+   * asset's configuration revokes the approvals it created, but this covers a spender that became
+   * untrusted for any other reason.
+   */
+  function resetAllowance(address token, address spender) external restricted {
+    IERC20(token).forceApprove(spender, 0);
+    emit AllowanceReset(token, spender);
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                         TRUSTED FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -244,6 +258,13 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
     virtual
   {
     YieldBearingParams storage yieldBearingInfo = yieldBearingData[yieldBearingAsset];
+    address previousAsset = yieldBearingInfo.asset;
+    // Allowances are granted without expiry, so the outgoing asset would keep the yield bearing
+    // vault authorised over any of it later held here
+    if (previousAsset != address(0) && previousAsset != asset) {
+      IERC20(previousAsset).forceApprove(yieldBearingAsset, 0);
+      emit AllowanceReset(previousAsset, yieldBearingAsset);
+    }
     yieldBearingInfo.asset = asset;
     if (targetExposure >= 1e9) revert InvalidParam();
     if (maxSlippage >= 1e9) revert InvalidParam();

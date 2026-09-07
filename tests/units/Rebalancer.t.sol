@@ -127,3 +127,78 @@ contract Test_Rebalancer_ResidualInput is Fixture {
     assertGt(rebalancer.budget(alice), budgetBefore, "settlement surplus not credited");
   }
 }
+
+
+contract Test_Rebalancer_Allowances is Fixture {
+  MultiBlockRebalancer internal rebalancer;
+
+  function setUp() public override {
+    super.setUp();
+
+    rebalancer = new MultiBlockRebalancer(address(accessManager), tokenP, parallelizer);
+
+    vm.startPrank(governor);
+    accessManager.setTargetFunctionRole(
+      address(rebalancer), getGuardianBaseRebalancerSelectorAccess(), GUARDIAN_ROLE
+    );
+    accessManager.setTargetFunctionRole(
+      address(rebalancer), getGovernorMultiBlockRebalancerSelectorAccess(), GOVERNOR_ROLE
+    );
+    accessManager.grantRole(GUARDIAN_ROLE, guardian, 0);
+    vm.stopPrank();
+
+    vm.prank(guardian);
+    rebalancer.setYieldBearingAssetData(address(eurY), address(eurA), 5e8, 1e8, 9e8, 1, 5e7);
+  }
+
+  /// @dev Stands in for the unlimited allowance a previous rebalance would have granted
+  function _seedAllowance(address token, address spender) internal {
+    vm.prank(address(rebalancer));
+    IERC20(token).approve(spender, type(uint256).max);
+    assertEq(IERC20(token).allowance(address(rebalancer), spender), type(uint256).max);
+  }
+
+  function test_RotatingTheAsset_RevokesTheOutgoingAllowance() public {
+    _seedAllowance(address(eurA), address(eurY));
+
+    vm.prank(guardian);
+    rebalancer.setYieldBearingAssetData(address(eurY), address(eurB), 5e8, 1e8, 9e8, 1, 5e7);
+
+    assertEq(IERC20(address(eurA)).allowance(address(rebalancer), address(eurY)), 0);
+  }
+
+  function test_RotatingTheAsset_KeepsTheAllowanceWhenAssetIsUnchanged() public {
+    _seedAllowance(address(eurA), address(eurY));
+
+    vm.prank(guardian);
+    rebalancer.setYieldBearingAssetData(address(eurY), address(eurA), 4e8, 1e8, 9e8, 1, 5e7);
+
+    assertEq(IERC20(address(eurA)).allowance(address(rebalancer), address(eurY)), type(uint256).max);
+  }
+
+  function test_RotatingTheDepositAddress_RevokesTheOutgoingAllowance() public {
+    vm.prank(governor);
+    rebalancer.setYieldBearingToDepositAddress(address(eurY), bob);
+    _seedAllowance(address(eurA), bob);
+
+    vm.prank(governor);
+    rebalancer.setYieldBearingToDepositAddress(address(eurY), charlie);
+
+    assertEq(IERC20(address(eurA)).allowance(address(rebalancer), bob), 0);
+  }
+
+  function test_ResetAllowance() public {
+    _seedAllowance(address(eurA), bob);
+
+    vm.prank(guardian);
+    rebalancer.resetAllowance(address(eurA), bob);
+
+    assertEq(IERC20(address(eurA)).allowance(address(rebalancer), bob), 0);
+  }
+
+  function test_RevertWhen_ResetAllowanceNotGuardian() public {
+    vm.prank(alice);
+    vm.expectRevert(abi.encodeWithSelector(Errors.AccessManagedUnauthorized.selector, alice));
+    rebalancer.resetAllowance(address(eurA), bob);
+  }
+}

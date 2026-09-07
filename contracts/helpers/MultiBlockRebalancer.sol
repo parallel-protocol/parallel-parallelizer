@@ -52,6 +52,13 @@ contract MultiBlockRebalancer is BaseRebalancer {
    * @param newDepositAddress address to deposit to receive yieldBearingAsset
    */
   function setYieldBearingToDepositAddress(address yieldBearingAsset, address newDepositAddress) external restricted {
+    address previousDepositAddress = yieldBearingToDepositAddress[yieldBearingAsset];
+    address asset = yieldBearingData[yieldBearingAsset].asset;
+    // The outgoing deposit address would otherwise keep its allowance over the underlying asset
+    if (previousDepositAddress != address(0) && previousDepositAddress != newDepositAddress && asset != address(0)) {
+      IERC20(asset).forceApprove(previousDepositAddress, 0);
+      emit AllowanceReset(asset, previousDepositAddress);
+    }
     yieldBearingToDepositAddress[yieldBearingAsset] = newDepositAddress;
   }
 

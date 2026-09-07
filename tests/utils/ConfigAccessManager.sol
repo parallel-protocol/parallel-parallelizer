@@ -63,12 +63,13 @@ abstract contract ConfigAccessManager is Helper {
   }
 
   function getGuardianBaseRebalancerSelectorAccess() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](5);
+    bytes4[] memory selectors = new bytes4[](6);
     selectors[0] = BaseRebalancer.setYieldBearingAssetData.selector;
     selectors[1] = BaseRebalancer.setMaxSlippage.selector;
     selectors[2] = BaseRebalancer.toggleTrusted.selector;
     selectors[3] = BaseRebalancer.recoverERC20.selector;
     selectors[4] = BaseRebalancer.setTargetExposure.selector;
+    selectors[5] = BaseRebalancer.resetAllowance.selector;
     return selectors;
   }
 
