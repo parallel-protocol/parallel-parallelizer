@@ -67,8 +67,6 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   IParallelizer public immutable parallelizer;
   /// @notice TokenP handled by the `parallelizer` of interest
   ITokenP public immutable tokenP;
-  /// @notice Max slippage when dealing with the Parallelizer
-  mapping(address => uint96) public maxTokenSlippage;
   /// @notice Data associated to a yield bearing asset
   mapping(address => YieldBearingParams) public yieldBearingData;
   /// @notice trusted addresses that can update target exposure and do others non critical operations
@@ -283,8 +281,8 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   }
 
   function _setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) internal virtual {
-    if (newMaxSlippage > 1e9) revert InvalidParam();
-    maxTokenSlippage[yieldBearingAsset] = newMaxSlippage;
+    if (newMaxSlippage >= 1e9) revert InvalidParam();
+    yieldBearingData[yieldBearingAsset].maxSlippage = newMaxSlippage;
   }
 
   function _scaleAmountBasedOnDecimals(
