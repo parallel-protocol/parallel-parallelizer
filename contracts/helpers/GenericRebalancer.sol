@@ -26,8 +26,8 @@ enum SwapType {
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Generic contract for trusted callers to adjust the reserves of Angle Parallelizer
-/// @dev This contract is an authorized fork of Angle's GenericRebalancer contract:
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/GenericRebalancer.sol
+/// @dev This contract is an authorized fork of Angle's GenericHarvester contract, substantially modified:
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/GenericHarvester.sol
 contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapper {
   using SafeCast for uint256;
   using SafeERC20 for IERC20;

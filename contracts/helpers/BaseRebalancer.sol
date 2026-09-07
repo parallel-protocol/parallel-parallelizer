@@ -30,8 +30,8 @@ struct YieldBearingParams {
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Abstract contract for a rebalancer that aims at rebalancing a Parallelizer
-/// @dev This contract is an authorized fork of Angle's BaseRebalancer contract:
-/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseRebalancer.sol
+/// @dev This contract is an authorized fork of Angle's BaseHarvester contract, substantially modified:
+/// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseHarvester.sol
 abstract contract BaseRebalancer is IRebalancer, AccessManaged {
   using SafeERC20 for IERC20;
 
