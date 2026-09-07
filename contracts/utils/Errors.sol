@@ -55,6 +55,7 @@ error ZeroAddress();
 error ZeroAmount();
 error ZeroSurplusAmount();
 error SwapError();
+error RouterDidNotConsumeAllTokens();
 error SlippageTooHigh();
 error InsufficientFunds();
 error Undercollateralized();
