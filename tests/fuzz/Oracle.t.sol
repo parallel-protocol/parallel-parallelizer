@@ -726,9 +726,10 @@ contract OracleTest is Fixture, FunctionUtils {
     (uint256 oracleValue,,,,) = parallelizer.getOracleValues(collateral);
 
     vm.prank(governor);
+    bytes memory hyperparameters = abi.encode(uint128(0), uint128(0));
     parallelizer.setOracle(
       collateral,
-      abi.encode(readType, Storage.OracleReadType.MAX, data, abi.encode(oracleValue), abi.encode(uint128(0), uint128(0)))
+      abi.encode(readType, Storage.OracleReadType.MAX, data, abi.encode(oracleValue), hyperparameters)
     );
 
     (, int256 currentValue,,,) = _oracles[0].latestRoundData();
