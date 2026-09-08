@@ -382,6 +382,10 @@ library LibSetters {
   /// @param _shares The number of shares assigned to the fee receiver.
   function _addPayee(address _payee, uint256 _shares) internal returns (uint256) {
     if (_shares == 0) revert ZeroAmount();
+    // The Parallelizer holds the income being distributed, so a share allocated to itself is handed
+    // back to `release` as fresh income on the next call. `address(0)` stays valid: `LibSurplus`
+    // treats it as the sentinel for burning that share.
+    if (_payee == address(this)) revert InvalidPayee();
     ParallelizerStorage storage ts = s.transmuterStorage();
 
     ts.payees.push(_payee);

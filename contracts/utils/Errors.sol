@@ -26,6 +26,7 @@ error InvalidNegativeFees();
 error InvalidOracleType();
 error InvalidParam();
 error InvalidParams();
+error InvalidPayee();
 error InvalidRate();
 error InvalidSwap();
 error InvalidTokens();
