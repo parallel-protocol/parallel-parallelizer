@@ -20,8 +20,8 @@
             "circuitChainIsMultiplied": [1],
             "chainlinkDecimals": [8],
             "hyperparameters": {
-              "userDeviation": 500000000000000,
-              "burnRatioDeviation": 0
+              "userDeviation": 0,
+              "burnRatioDeviation": 500000000000000
             }
           },
           "xMintFee": [0],
@@ -57,8 +57,8 @@
             "circuitChainIsMultiplied": [1],
             "chainlinkDecimals": [8],
             "hyperparameters": {
-              "userDeviation": 500000000000000,
-              "burnRatioDeviation": 0
+              "userDeviation": 0,
+              "burnRatioDeviation": 500000000000000
             }
           },
           "xMintFee": [0],
