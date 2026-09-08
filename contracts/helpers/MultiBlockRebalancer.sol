@@ -5,7 +5,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
+import { BaseRebalancer, YieldBearingParams } from "./BaseRebalancer.sol";
 import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
 import { IPool } from "contracts/interfaces/IPool.sol";
@@ -13,13 +13,13 @@ import { IPool } from "contracts/interfaces/IPool.sol";
 import "../utils/Errors.sol";
 import "../utils/Constants.sol";
 
-/// @title MultiBlockHarvester
+/// @title MultiBlockRebalancer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
 /// @dev Contract to harvest yield from multiple yield bearing assets in multiple blocks transactions
 /// @dev This contract is an authorized fork of Angle's MultiBlockHarvester contract:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/MultiBlockHarvester.sol
-contract MultiBlockHarvester is BaseHarvester {
+contract MultiBlockRebalancer is BaseRebalancer {
   using SafeERC20 for IERC20;
   using Math for uint256;
 
@@ -39,7 +39,7 @@ contract MultiBlockHarvester is BaseHarvester {
     ITokenP definitivetokenP,
     IParallelizer definitiveParallelizer
   )
-    BaseHarvester(initialAuthority, definitivetokenP, definitiveParallelizer)
+    BaseRebalancer(initialAuthority, definitivetokenP, definitiveParallelizer)
   { }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,6 +52,13 @@ contract MultiBlockHarvester is BaseHarvester {
    * @param newDepositAddress address to deposit to receive yieldBearingAsset
    */
   function setYieldBearingToDepositAddress(address yieldBearingAsset, address newDepositAddress) external restricted {
+    address previousDepositAddress = yieldBearingToDepositAddress[yieldBearingAsset];
+    address asset = yieldBearingData[yieldBearingAsset].asset;
+    // The outgoing deposit address would otherwise keep its allowance over the underlying asset
+    if (previousDepositAddress != address(0) && previousDepositAddress != newDepositAddress && asset != address(0)) {
+      IERC20(asset).forceApprove(previousDepositAddress, 0);
+      emit AllowanceReset(asset, previousDepositAddress);
+    }
     yieldBearingToDepositAddress[yieldBearingAsset] = newDepositAddress;
   }
 
@@ -141,7 +148,7 @@ contract MultiBlockHarvester is BaseHarvester {
     address asset,
     address depositAddress,
     bool assetIn,
-    uint96 maxSlippage
+    uint64 maxSlippage
   )
     internal
     view

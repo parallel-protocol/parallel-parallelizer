@@ -174,6 +174,19 @@ export type Abi_ISettersGovernor = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setSwapRouter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "collateral",
         "type": "address"
       },

@@ -73,7 +73,7 @@ Some changed has been made to the original Angle's Transmuter:
 | Swapper Facet         | [0x506Ba37aa8e265bE445913B9c4080852277f3c5a](https:///etherscan.io/address/0x506Ba37aa8e265bE445913B9c4080852277f3c5a) |
 | Parallelizer USDp     | [0x6efeDDF9269c3683Ba516cb0e2124FE335F262a2](https:///etherscan.io/address/0x6efeDDF9269c3683Ba516cb0e2124FE335F262a2) |
 | sUSDp (Savings)       | [0x0d45b129dc868963025Db79A9074EA9c9e32Cae4](https:///etherscan.io/address/0x0d45b129dc868963025Db79A9074EA9c9e32Cae4) |
-| GenericHarvester USDp | [0x36DA06796fD9d22BCD6287b66A87FfdadB12636C](https:///etherscan.io/address/0x36DA06796fD9d22BCD6287b66A87FfdadB12636C) |
+| GenericRebalancer USDp | [0x36DA06796fD9d22BCD6287b66A87FfdadB12636C](https:///etherscan.io/address/0x36DA06796fD9d22BCD6287b66A87FfdadB12636C) |
 
 ### Base
 
@@ -89,7 +89,7 @@ Some changed has been made to the original Angle's Transmuter:
 | Swapper Facet         | [0xfB2D070270e9FfC2dB107D0162b47c2Ed291E3F7](https:///basescan.org/address/0xfB2D070270e9FfC2dB107D0162b47c2Ed291E3F7) |
 | Parallelizer USDp     | [0xC3BEF21Ea7dEB5C34CF33E918c8e28972C8048eD](https:///basescan.org/address/0xC3BEF21Ea7dEB5C34CF33E918c8e28972C8048eD) |
 | sUSDp (Savings)       | [0x472eD57b376fE400259FB28e5C46eB53f0E3e7E7](https:///basescan.org/address/0x472eD57b376fE400259FB28e5C46eB53f0E3e7E7) |
-| GenericHarvester USDp | [0xCa43eCFCDFBA1fED003649e946Ae6091646B410a](https:///basescan.org/address/0xCa43eCFCDFBA1fED003649e946Ae6091646B410a) |
+| GenericRebalancer USDp | [0xCa43eCFCDFBA1fED003649e946Ae6091646B410a](https:///basescan.org/address/0xCa43eCFCDFBA1fED003649e946Ae6091646B410a) |
 
 ### Sonic
 
@@ -105,7 +105,7 @@ Some changed has been made to the original Angle's Transmuter:
 | Swapper Facet         | [0xA65821FfE86E6Eb613DAa1F70AF350C5A21759dF](https:///sonicscan.org/address/0xA65821FfE86E6Eb613DAa1F70AF350C5A21759dF) |
 | Parallelizer USDp     | [0xBEFBAe2330186F031b469e26283aCc66bb5F8826](https:///sonicscan.org/address/0xBEFBAe2330186F031b469e26283aCc66bb5F8826) |
 | sUSDp (Savings)       | [0xe8a3DA6f5ed1cf04c58ac7f6A7383641e877517b](https:///sonicscan.org/address/0xe8a3DA6f5ed1cf04c58ac7f6A7383641e877517b) |
-| GenericHarvester USDp | [0x120805265fA944834DC6e930De2995768806a9d2](https:///sonicscan.org/address/0x120805265fA944834DC6e930De2995768806a9d2) |
+| GenericRebalancer USDp | [0x120805265fA944834DC6e930De2995768806a9d2](https:///sonicscan.org/address/0x120805265fA944834DC6e930De2995768806a9d2) |
 
 #### HyperEVM
 
@@ -121,7 +121,7 @@ Some changed has been made to the original Angle's Transmuter:
 | Swapper Facet         | [0x1b2741dB9F46a0411852e4cC28dDC476851b5179](https:///www.hyperscan.com/address/0x1b2741dB9F46a0411852e4cC28dDC476851b5179) |
 | Parallelizer USDp     | [0x1250304F66404cd153fA39388DDCDAec7E0f1707](https:///www.hyperscan.com/address/0x1250304F66404cd153fA39388DDCDAec7E0f1707) |
 | sUSDp (Savings)       | [0x9B3a8f7CEC208e247d97dEE13313690977e24459](https:///www.hyperscan.com/address/0x9B3a8f7CEC208e247d97dEE13313690977e24459) |
-| GenericHarvester USDp | [0x57770C1721Eb35509f38210A935c8b1911db7E0e](https:///www.hyperscan.com/address/0x57770C1721Eb35509f38210A935c8b1911db7E0e) |
+| GenericRebalancer USDp | [0x57770C1721Eb35509f38210A935c8b1911db7E0e](https:///www.hyperscan.com/address/0x57770C1721Eb35509f38210A935c8b1911db7E0e) |
 
 #### Avalanche
 
@@ -137,7 +137,7 @@ Some changed has been made to the original Angle's Transmuter:
 | Swapper Facet         | [0x57265a3D7db8f4a4a155eadF6c7326926caC1490](https:///www.snowscan.xyz/address/0x57265a3D7db8f4a4a155eadF6c7326926caC1490) |
 | Parallelizer USDp     | [0x41d58951cbd12D4Ef49b0437897677bbF5547C80](https:///www.snowscan.xyz/address/0x41d58951cbd12D4Ef49b0437897677bbF5547C80) |
 | sUSDp (Savings)       | [0x9d92c21205383651610f90722131655a5b8ed3e0](https:///www.snowscan.xyz/address/0x9d92c21205383651610f90722131655a5b8ed3e0) |
-| GenericHarvester USDp | [0x0d45b129dc868963025db79a9074ea9c9e32cae4](https:///www.snowscan.xyz/address/0x0d45b129dc868963025db79a9074ea9c9e32cae4) |
+| GenericRebalancer USDp | [0x0d45b129dc868963025db79a9074ea9c9e32cae4](https:///www.snowscan.xyz/address/0x0d45b129dc868963025db79a9074ea9c9e32cae4) |
 
 ### Testnet
 

@@ -683,6 +683,19 @@ export type Abi_IParallelizer = [
   },
   {
     "inputs": [],
+    "name": "getSwapRouter",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getTotalIssued",
     "outputs": [
       {
@@ -1064,6 +1077,11 @@ export type Abi_IParallelizer = [
         "internalType": "uint256[]",
         "name": "minAmountOuts",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedTokensHash",
+        "type": "bytes32"
       }
     ],
     "name": "redeem",
@@ -1108,6 +1126,11 @@ export type Abi_IParallelizer = [
         "internalType": "address[]",
         "name": "forfeitTokens",
         "type": "address[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedTokensHash",
+        "type": "bytes32"
       },
       {
         "internalType": "bytes",
@@ -1157,6 +1180,11 @@ export type Abi_IParallelizer = [
         "internalType": "address[]",
         "name": "forfeitTokens",
         "type": "address[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedTokensHash",
+        "type": "bytes32"
       }
     ],
     "name": "redeemWithForfeit",
@@ -1374,6 +1402,19 @@ export type Abi_IParallelizer = [
       }
     ],
     "name": "setStablecoinCap",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setSwapRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

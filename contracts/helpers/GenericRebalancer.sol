@@ -15,20 +15,20 @@ import { IERC4626 } from "contracts/interfaces/external/IERC4626.sol";
 
 import "../utils/Errors.sol";
 
-import { BaseHarvester, YieldBearingParams } from "./BaseHarvester.sol";
+import { BaseRebalancer, YieldBearingParams } from "./BaseRebalancer.sol";
 
 enum SwapType {
   VAULT,
   SWAP
 }
 
-/// @title GenericHarvester
+/// @title GenericRebalancer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev Generic contract for anyone to permissionlessly adjust the reserves of Angle Parallelizer
-/// @dev This contract is an authorized fork of Angle's GenericHarvester contract:
+/// @dev Generic contract for trusted callers to adjust the reserves of Angle Parallelizer
+/// @dev This contract is an authorized fork of Angle's GenericHarvester contract, substantially modified:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/GenericHarvester.sol
-contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper {
+contract GenericRebalancer is BaseRebalancer, IERC3156FlashBorrower, RouterSwapper {
   using SafeCast for uint256;
   using SafeERC20 for IERC20;
 
@@ -52,7 +52,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     IERC3156FlashLender definitiveFlashloan
   )
     RouterSwapper(initialSwapRouter, initialTokenTransferAddress)
-    BaseHarvester(initialAuthority, definitivetokenP, definitiveParallelizer)
+    BaseRebalancer(initialAuthority, definitivetokenP, definitiveParallelizer)
   {
     if (address(definitiveFlashloan) == address(0)) revert ZeroAddress();
     flashloan = definitiveFlashloan;
@@ -98,7 +98,9 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
   /// `yieldBearingAsset` to the target exposure
   /// @dev scale is a number between 0 and 1e9 that represents the proportion of the tokenP to harvest,
   /// it is used to lower the amount of the asset to harvest for example to have a lower slippage
-  function harvest(address yieldBearingAsset, uint256 scale, bytes calldata extraData) public virtual {
+  /// @dev Restricted to trusted callers: the flow forwards caller-supplied router calldata and refreshes the
+  /// collateral oracle, neither of which can be safely exposed to arbitrary callers
+  function harvest(address yieldBearingAsset, uint256 scale, bytes calldata extraData) public virtual onlyTrusted {
     if (scale > 1e9) revert InvalidParam();
     updateLimitExposuresYieldAsset(yieldBearingAsset);
     YieldBearingParams memory yieldBearingInfo = yieldBearingData[yieldBearingAsset];
@@ -119,6 +121,8 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
   }
 
   /// @inheritdoc IERC3156FlashBorrower
+  /// @dev A non-zero lender fee is charged to the budget of the address that called `harvest`, alongside any
+  /// shortfall between the principal and the tokenP the rebalance minted back
   function onFlashLoan(
     address initiator,
     address,
@@ -130,7 +134,7 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     virtual
     returns (bytes32)
   {
-    if (msg.sender != address(flashloan) || initiator != address(this) || fee != 0) revert NotTrusted();
+    if (msg.sender != address(flashloan) || initiator != address(this)) revert NotTrusted();
     address sender;
     uint256 typeAction;
     uint256 minAmountOut;
@@ -153,17 +157,26 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
         tokenOut = asset;
       }
     }
+    uint256 tokenInBalanceBefore = IERC20(tokenIn).balanceOf(address(this));
+
     uint256 amountOut =
       parallelizer.swapExactInput(amount, 0, address(tokenP), tokenIn, address(this), block.timestamp);
+    // The principal is spent, what the lender will pull back is the principal plus its fee
+    amount += fee;
 
-    // Swap to tokenIn
+    // Swap to tokenOut
     amountOut = _swapToTokenOut(typeAction, tokenIn, tokenOut, amountOut, swapType, callData);
 
     _adjustAllowance(tokenOut, address(parallelizer), amountOut);
     uint256 amountStableOut =
       parallelizer.swapExactInput(amountOut, minAmountOut, tokenOut, address(tokenP), address(this), block.timestamp);
+
+    amountStableOut += _recoverResidualInput(tokenIn, tokenInBalanceBefore);
+
     if (amount > amountStableOut) {
       budget[sender] -= amount - amountStableOut; // Will revert if not enough funds
+    } else if (amountStableOut > amount) {
+      budget[sender] += amountStableOut - amount;
     }
     return CALLBACK_SUCCESS;
   }
@@ -217,6 +230,24 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     );
   }
 
+  /**
+   * @dev Returns any input the route did not consume to the Parallelizer
+   * @param tokenIn address of the token offered to the route
+   * @param balanceBefore balance of `tokenIn` held before the operation
+   * @return the tokenP obtained from the remainder, zero when the route consumed everything
+   *
+   * Router calldata is built off chain while the input is sized on chain, so a route can consume
+   * less than was offered. Returning the remainder keeps it inside the Parallelizer's accounting
+   * instead of stranding it here, and it settles with the rest of the operation.
+   */
+  function _recoverResidualInput(address tokenIn, uint256 balanceBefore) internal returns (uint256) {
+    uint256 balanceAfter = IERC20(tokenIn).balanceOf(address(this));
+    if (balanceAfter <= balanceBefore) return 0;
+    uint256 residual = balanceAfter - balanceBefore;
+    _adjustAllowance(tokenIn, address(parallelizer), residual);
+    return parallelizer.swapExactInput(residual, 0, tokenIn, address(tokenP), address(this), block.timestamp);
+  }
+
   function _swapToTokenOut(
     uint256 typeAction,
     address tokenIn,
@@ -260,6 +291,8 @@ contract GenericHarvester is BaseHarvester, IERC3156FlashBorrower, RouterSwapper
     uint256[] memory amounts = new uint256[](1);
     amounts[0] = amount;
     _swap(tokens, callDatas, amounts);
+    // A route that consumed less than offered would otherwise leave the difference approved
+    IERC20(tokenIn).forceApprove(tokenTransferAddress, 0);
 
     return IERC20(tokenOut).balanceOf(address(this)) - balance;
   }

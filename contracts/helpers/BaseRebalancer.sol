@@ -6,7 +6,7 @@ import { AccessManaged } from "../utils/AccessManaged.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IParallelizer } from "contracts/interfaces/IParallelizer.sol";
 import { ITokenP } from "contracts/interfaces/ITokenP.sol";
-import "contracts/interfaces/IHarvester.sol";
+import "contracts/interfaces/IRebalancer.sol";
 
 import "../utils/Errors.sol";
 
@@ -22,17 +22,18 @@ struct YieldBearingParams {
   // Whether limit exposures should be overriden or read onchain through the Parallelizer
   // This value should be 1 to override exposures or 2 if these shouldn't be overriden
   uint64 overrideExposures;
-  // Maximum slippage when dealing with the Parallelizer
-  uint96 maxSlippage;
+  // Maximum slippage when dealing with the Parallelizer, bounded below 1e9 so uint64 leaves the
+  // struct packed in two slots
+  uint64 maxSlippage;
 }
 
-/// @title BaseHarvester
+/// @title BaseRebalancer
 /// @author Cooper Labs
 /// @custom:contact security@cooperlabs.xyz
-/// @dev Abstract contract for a harvester that aims at rebalancing a Parallelizer
-/// @dev This contract is an authorized fork of Angle's BaseHarvester contract:
+/// @dev Abstract contract for a rebalancer that aims at rebalancing a Parallelizer
+/// @dev This contract is an authorized fork of Angle's BaseHarvester contract, substantially modified:
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/helpers/BaseHarvester.sol
-abstract contract BaseHarvester is IHarvester, AccessManaged {
+abstract contract BaseRebalancer is IRebalancer, AccessManaged {
   using SafeERC20 for IERC20;
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,8 +68,6 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   IParallelizer public immutable parallelizer;
   /// @notice TokenP handled by the `parallelizer` of interest
   ITokenP public immutable tokenP;
-  /// @notice Max slippage when dealing with the Parallelizer
-  mapping(address => uint96) public maxTokenSlippage;
   /// @notice Data associated to a yield bearing asset
   mapping(address => YieldBearingParams) public yieldBearingData;
   /// @notice trusted addresses that can update target exposure and do others non critical operations
@@ -80,6 +79,7 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
 
   event Recovered(address token, uint256 amount, address to);
   event TrustedToggled(address trusted, bool status);
+  event AllowanceReset(address indexed token, address indexed spender);
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                        CONSTRUCTOR
@@ -116,7 +116,7 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     uint64 minExposure,
     uint64 maxExposure,
     uint64 overrideExposures,
-    uint96 maxSlippage
+    uint64 maxSlippage
   )
     external
     restricted
@@ -141,7 +141,7 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
    * @notice Set the max allowed slippage
    * @param newMaxSlippage new max allowed slippage
    */
-  function setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) external restricted {
+  function setMaxSlippage(address yieldBearingAsset, uint64 newMaxSlippage) external restricted {
     _setMaxSlippage(yieldBearingAsset, newMaxSlippage);
   }
 
@@ -163,6 +163,19 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
   function recoverERC20(address tokenAddress, uint256 amountToRecover, address to) external restricted {
     emit Recovered(tokenAddress, amountToRecover, to);
     IERC20(tokenAddress).safeTransfer(to, amountToRecover);
+  }
+
+  /**
+   * @notice Set an allowance this contract granted back to zero
+   * @param token address of the token
+   * @param spender address losing the allowance
+   * @dev Rebalancing grants unlimited allowances that are never reduced. Rotating a yield bearing
+   * asset's configuration revokes the approvals it created, but this covers a spender that became
+   * untrusted for any other reason.
+   */
+  function resetAllowance(address token, address spender) external restricted {
+    IERC20(token).forceApprove(spender, 0);
+    emit AllowanceReset(token, spender);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,12 +253,19 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     uint64 minExposure,
     uint64 maxExposure,
     uint64 overrideExposures,
-    uint96 maxSlippage
+    uint64 maxSlippage
   )
     internal
     virtual
   {
     YieldBearingParams storage yieldBearingInfo = yieldBearingData[yieldBearingAsset];
+    address previousAsset = yieldBearingInfo.asset;
+    // Allowances are granted without expiry, so the outgoing asset would keep the yield bearing
+    // vault authorised over any of it later held here
+    if (previousAsset != address(0) && previousAsset != asset) {
+      IERC20(previousAsset).forceApprove(yieldBearingAsset, 0);
+      emit AllowanceReset(previousAsset, yieldBearingAsset);
+    }
     yieldBearingInfo.asset = asset;
     if (targetExposure >= 1e9) revert InvalidParam();
     if (maxSlippage >= 1e9) revert InvalidParam();
@@ -282,9 +302,9 @@ abstract contract BaseHarvester is IHarvester, AccessManaged {
     else yieldBearingInfo.minExposure = xFeeBurn[length - 2];
   }
 
-  function _setMaxSlippage(address yieldBearingAsset, uint96 newMaxSlippage) internal virtual {
-    if (newMaxSlippage > 1e9) revert InvalidParam();
-    maxTokenSlippage[yieldBearingAsset] = newMaxSlippage;
+  function _setMaxSlippage(address yieldBearingAsset, uint64 newMaxSlippage) internal virtual {
+    if (newMaxSlippage >= 1e9) revert InvalidParam();
+    yieldBearingData[yieldBearingAsset].maxSlippage = newMaxSlippage;
   }
 
   function _scaleAmountBasedOnDecimals(

@@ -17,6 +17,9 @@ import "../Storage.sol";
 /// @dev This library is an authorized fork of Angle's `LibOracle` library
 /// https://github.com/AngleProtocol/angle-transmuter/blob/main/contracts/transmuter/libraries/LibOracle.sol
 library LibOracle {
+  /// @notice Emitted when a MAX target price is ratcheted up by `updateOracle`
+  event OracleTargetUpdated(address indexed collateral, uint256 previousTarget, uint256 newTarget);
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ACTIONS SPECIFIC ORACLES
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -254,17 +257,13 @@ library LibOracle {
     uint256 oracleValue = read(oracleType, BASE_18, oracleData);
 
     uint256 maxValue = abi.decode(targetData, (uint256));
-    if (oracleValue > maxValue) {
-      ts.collaterals[collateral].oracleConfig = abi.encode(
-        oracleType,
-        targetType,
-        oracleData,
-        // There are no checks whether the value increased or not
-        abi.encode(oracleValue),
-        hyperparameters
-      );
-    } else {
+    // The ratchet is one-way and only governance can lower the target again through `setOracle`, so a single
+    // update is bounded: a transient upward print cannot be locked in beyond `MAX_ORACLE_RATCHET_STEP`
+    if (oracleValue <= maxValue || oracleValue * BASE_18 > maxValue * (BASE_18 + MAX_ORACLE_RATCHET_STEP)) {
       revert OracleUpdateFailed();
     }
+    ts.collaterals[collateral].oracleConfig =
+      abi.encode(oracleType, targetType, oracleData, abi.encode(oracleValue), hyperparameters);
+    emit OracleTargetUpdated(collateral, maxValue, oracleValue);
   }
 }

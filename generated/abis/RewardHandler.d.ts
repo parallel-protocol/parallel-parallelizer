@@ -16,12 +16,12 @@ export type Abi_RewardHandler = [
   },
   {
     "inputs": [],
-    "name": "OdosSwapFailed",
+    "name": "ReentrantCall",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ReentrantCall",
+    "name": "RewardSwapFailed",
     "type": "error"
   },
   {
@@ -38,6 +38,11 @@ export type Abi_RewardHandler = [
   {
     "inputs": [],
     "name": "TooSmallAmountOut",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAddress",
     "type": "error"
   },
   {
