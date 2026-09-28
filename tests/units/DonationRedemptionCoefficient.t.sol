@@ -230,10 +230,8 @@ contract Test_DonationRedemptionCoefficient is Fixture {
     }
   }
 
-  /// @dev Bailsec's residual case needs the system to be undercollateralised. Once the ratio reaches
-  /// 100% the curve sits at its cap, the donation buys no coefficient lift, and the attacker is left
-  /// paying the spread on the collateral they donated. The defence is the 100% kink rather than the
-  /// slope: widening the ramp barely moves the break-even, which sits just under 100% either way
+  /// @dev At or above 100% the curve sits at its cap, so the donation buys no coefficient lift and the
+  /// attacker is left paying the spread. The cap is what closes this, not the slope of the ramp
   function test_Overcollateralized_RemovesTheDonationProfit() public {
     uint256 donation = 2000e12;
 
@@ -255,9 +253,8 @@ contract Test_DonationRedemptionCoefficient is Fixture {
     assertLt(over, int256(0), "an overcollateralised system must not pay the donation attack");
   }
 
-  /// @dev `processSurplus` drives the ratio down to `surplusBufferRatio`, 100.5% on mainnet, so the
-  /// margin over the profitable region is under a point rather than the headroom a fresh reading
-  /// suggests. This pins where the donation attack turns positive from that steady state
+  /// @dev `processSurplus` drives the ratio down to `surplusBufferRatio`, so the margin over the
+  /// profitable region is under a point rather than whatever a spot reading suggests
   function test_SurplusBufferSteadyState_LeavesAThinMargin() public {
     uint256 donation = 2000e12;
 
@@ -279,6 +276,32 @@ contract Test_DonationRedemptionCoefficient is Fixture {
     _log(belowBuffer);
 
     assertLt(atBuffer, int256(0), "the attack must not pay at the surplus buffer");
+  }
+
+  /// @dev The ratio sawtooths between the buffer and whatever yield adds before the next run, so the
+  /// trough is the block the run lands in
+  function test_MonthlySawtooth_TroughIsTheExposedPoint() public {
+    uint256 donation = 2000e12;
+
+    uint256 snap = vm.snapshotState();
+    _setRampedCurve(600_000_000);
+    _setRatioTo(1_005_000_000);
+    int256 trough = _attackerNetAtShare(90, donation);
+    vm.revertToState(snap);
+
+    snap = vm.snapshotState();
+    _setRampedCurve(600_000_000);
+    _setRatioTo(1_011_000_000);
+    int256 lateCycle = _attackerNetAtShare(90, donation);
+    vm.revertToState(snap);
+
+    console.log("trough, just after processSurplus:");
+    _log(trough);
+    console.log("late in the cycle, after a month of yield:");
+    _log(lateCycle);
+
+    assertLt(trough, int256(0), "the trough must still not pay the attack");
+    assertLt(lateCycle, int256(0), "later in the cycle must not pay either");
   }
 
   function _log(int256 net) internal pure {

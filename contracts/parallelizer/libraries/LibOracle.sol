@@ -241,9 +241,8 @@ library LibOracle {
     return abi.decode(oracleConfig, (OracleReadType, OracleReadType, bytes, bytes, bytes));
   }
 
-  /// @notice Seeds the MAX target with the current spot, for a collateral that has never been ratcheted
-  /// @dev `updateOracle` bounds every step to `MAX_ORACLE_RATCHET_STEP` against the stored target, so a target
-  /// left at 0 can never be raised. Deployment goes through here once, then the ratchet takes over
+  /// @notice Seeds the MAX target with the current spot at deployment
+  /// @dev `updateOracle` bounds each step against the stored target, so a target left at 0 can never be raised
   function initializeOracleTarget(address collateral) internal {
     ParallelizerStorage storage ts = s.transmuterStorage();
     if (ts.collaterals[collateral].decimals == 0) revert NotCollateral();
@@ -257,7 +256,7 @@ library LibOracle {
     ) = _parseOracleConfig(ts.collaterals[collateral].oracleConfig);
 
     if (targetType != OracleReadType.MAX) revert OracleUpdateFailed();
-    // Only an unset target may be seeded, so this cannot be used to sidestep the ratchet later on
+    // Only an unset target may be seeded, so this cannot sidestep the ratchet later on
     if (abi.decode(targetData, (uint256)) != 0) revert OracleUpdateFailed();
 
     uint256 oracleValue = read(oracleType, BASE_18, oracleData);

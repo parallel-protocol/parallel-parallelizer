@@ -63,7 +63,6 @@ contract MultiBlockRebalancer is BaseRebalancer {
   }
 
   /// @inheritdoc BaseRebalancer
-  /// @dev The deposit path approves `asset -> depositAddress`, so rotating the asset has to clear that too
   function _revokeAssetAllowances(address yieldBearingAsset, address previousAsset) internal override {
     address depositAddress = yieldBearingToDepositAddress[yieldBearingAsset];
     if (depositAddress != address(0)) {

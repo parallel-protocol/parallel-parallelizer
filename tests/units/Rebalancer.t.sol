@@ -180,7 +180,6 @@ contract Test_Rebalancer_Allowances is Fixture {
   function test_RotatingTheAsset_RevokesTheDepositAddressAllowance() public {
     vm.prank(governor);
     rebalancer.setYieldBearingToDepositAddress(address(eurY), bob);
-    // The deposit path approves the underlying to the deposit address, not to the yield bearing asset
     _seedAllowance(address(eurA), bob);
 
     vm.prank(guardian);

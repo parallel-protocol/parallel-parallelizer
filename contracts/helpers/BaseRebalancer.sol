@@ -283,9 +283,7 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
     }
   }
 
-  /// @notice Revokes the allowances a derived rebalancer granted over an asset being rotated out
-  /// @dev `_setYieldBearingAssetData` only clears the `asset -> yieldBearingAsset` approval the vault path uses.
-  /// A rebalancer that approves a different spender overrides this to clear its own relationship
+  /// @notice Lets a rebalancer revoke the allowances it granted over an asset being rotated out
   function _revokeAssetAllowances(address yieldBearingAsset, address previousAsset) internal virtual { }
 
   function _updateLimitExposuresYieldAsset(
