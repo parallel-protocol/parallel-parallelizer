@@ -232,7 +232,8 @@ contract Test_DonationRedemptionCoefficient is Fixture {
 
   /// @dev Bailsec's residual case needs the system to be undercollateralised. Once the ratio reaches
   /// 100% the curve sits at its cap, the donation buys no coefficient lift, and the attacker is left
-  /// paying the spread on the collateral they donated
+  /// paying the spread on the collateral they donated. The defence is the 100% kink rather than the
+  /// slope: widening the ramp barely moves the break-even, which sits just under 100% either way
   function test_Overcollateralized_RemovesTheDonationProfit() public {
     uint256 donation = 2000e12;
 
@@ -252,6 +253,32 @@ contract Test_DonationRedemptionCoefficient is Fixture {
     console.log("overcollateralised:");
     _log(over);
     assertLt(over, int256(0), "an overcollateralised system must not pay the donation attack");
+  }
+
+  /// @dev `processSurplus` drives the ratio down to `surplusBufferRatio`, 100.5% on mainnet, so the
+  /// margin over the profitable region is under a point rather than the headroom a fresh reading
+  /// suggests. This pins where the donation attack turns positive from that steady state
+  function test_SurplusBufferSteadyState_LeavesAThinMargin() public {
+    uint256 donation = 2000e12;
+
+    uint256 snap = vm.snapshotState();
+    _setRampedCurve(600_000_000);
+    _setRatioTo(1_005_000_000);
+    int256 atBuffer = _attackerNetAtShare(90, donation);
+    vm.revertToState(snap);
+
+    snap = vm.snapshotState();
+    _setRampedCurve(600_000_000);
+    _setRatioTo(995_000_000);
+    int256 belowBuffer = _attackerNetAtShare(90, donation);
+    vm.revertToState(snap);
+
+    console.log("at the 100.5% surplus buffer:");
+    _log(atBuffer);
+    console.log("one point below it:");
+    _log(belowBuffer);
+
+    assertLt(atBuffer, int256(0), "the attack must not pay at the surplus buffer");
   }
 
   function _log(int256 net) internal pure {
