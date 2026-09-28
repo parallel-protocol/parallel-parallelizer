@@ -72,7 +72,12 @@ contract Test_Rebalancer_ResidualInput is Fixture {
     router = new MockRouter();
     lender = new MockFlashLoan();
     rebalancer = new GenericRebalancer(
-      address(router), address(router), tokenP, parallelizer, address(accessManager), IERC3156FlashLender(address(lender))
+      address(router),
+      address(router),
+      tokenP,
+      parallelizer,
+      address(accessManager),
+      IERC3156FlashLender(address(lender))
     );
 
     vm.startPrank(governor);
@@ -227,7 +232,12 @@ contract Test_Rebalancer_FlashLoanFee is Fixture {
     router = new MockRouter();
     lender = new MockFlashLoan();
     rebalancer = new GenericRebalancer(
-      address(router), address(router), tokenP, parallelizer, address(accessManager), IERC3156FlashLender(address(lender))
+      address(router),
+      address(router),
+      tokenP,
+      parallelizer,
+      address(accessManager),
+      IERC3156FlashLender(address(lender))
     );
 
     vm.startPrank(governor);
