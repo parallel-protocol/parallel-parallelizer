@@ -230,6 +230,30 @@ contract Test_DonationRedemptionCoefficient is Fixture {
     }
   }
 
+  /// @dev Bailsec's residual case needs the system to be undercollateralised. Once the ratio reaches
+  /// 100% the curve sits at its cap, the donation buys no coefficient lift, and the attacker is left
+  /// paying the spread on the collateral they donated
+  function test_Overcollateralized_RemovesTheDonationProfit() public {
+    uint256 donation = 2000e12;
+
+    uint256 snap = vm.snapshotState();
+    _setRampedCurve(600_000_000);
+    int256 under = _attackerNetAtShare(90, donation);
+    vm.revertToState(snap);
+
+    snap = vm.snapshotState();
+    _setRampedCurve(600_000_000);
+    _setRatioTo(1_050_000_000);
+    int256 over = _attackerNetAtShare(90, donation);
+    vm.revertToState(snap);
+
+    console.log("undercollateralised:");
+    _log(under);
+    console.log("overcollateralised:");
+    _log(over);
+    assertLt(over, int256(0), "an overcollateralised system must not pay the donation attack");
+  }
+
   function _log(int256 net) internal pure {
     if (net > 0) console.log("    attacker GAINS", uint256(net));
     else console.log("    attacker LOSES", uint256(-net));

@@ -265,6 +265,7 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
     if (previousAsset != address(0) && previousAsset != asset) {
       IERC20(previousAsset).forceApprove(yieldBearingAsset, 0);
       emit AllowanceReset(previousAsset, yieldBearingAsset);
+      _revokeAssetAllowances(yieldBearingAsset, previousAsset);
     }
     yieldBearingInfo.asset = asset;
     if (targetExposure >= 1e9) revert InvalidParam();
@@ -281,6 +282,11 @@ abstract contract BaseRebalancer is IRebalancer, AccessManaged {
       _updateLimitExposuresYieldAsset(asset, yieldBearingInfo);
     }
   }
+
+  /// @notice Revokes the allowances a derived rebalancer granted over an asset being rotated out
+  /// @dev `_setYieldBearingAssetData` only clears the `asset -> yieldBearingAsset` approval the vault path uses.
+  /// A rebalancer that approves a different spender overrides this to clear its own relationship
+  function _revokeAssetAllowances(address yieldBearingAsset, address previousAsset) internal virtual { }
 
   function _updateLimitExposuresYieldAsset(
     address asset,

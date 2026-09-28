@@ -177,6 +177,18 @@ contract Test_Rebalancer_Allowances is Fixture {
     assertEq(IERC20(address(eurA)).allowance(address(rebalancer), address(eurY)), type(uint256).max);
   }
 
+  function test_RotatingTheAsset_RevokesTheDepositAddressAllowance() public {
+    vm.prank(governor);
+    rebalancer.setYieldBearingToDepositAddress(address(eurY), bob);
+    // The deposit path approves the underlying to the deposit address, not to the yield bearing asset
+    _seedAllowance(address(eurA), bob);
+
+    vm.prank(guardian);
+    rebalancer.setYieldBearingAssetData(address(eurY), address(eurB), 5e8, 1e8, 9e8, 1, 5e7);
+
+    assertEq(IERC20(address(eurA)).allowance(address(rebalancer), bob), 0);
+  }
+
   function test_RotatingTheDepositAddress_RevokesTheOutgoingAllowance() public {
     vm.prank(governor);
     rebalancer.setYieldBearingToDepositAddress(address(eurY), bob);

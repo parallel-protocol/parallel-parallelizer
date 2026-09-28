@@ -62,6 +62,16 @@ contract MultiBlockRebalancer is BaseRebalancer {
     yieldBearingToDepositAddress[yieldBearingAsset] = newDepositAddress;
   }
 
+  /// @inheritdoc BaseRebalancer
+  /// @dev The deposit path approves `asset -> depositAddress`, so rotating the asset has to clear that too
+  function _revokeAssetAllowances(address yieldBearingAsset, address previousAsset) internal override {
+    address depositAddress = yieldBearingToDepositAddress[yieldBearingAsset];
+    if (depositAddress != address(0)) {
+      IERC20(previousAsset).forceApprove(depositAddress, 0);
+      emit AllowanceReset(previousAsset, depositAddress);
+    }
+  }
+
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                         TRUSTED FUNCTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
