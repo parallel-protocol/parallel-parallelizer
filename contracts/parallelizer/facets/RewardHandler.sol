@@ -30,7 +30,7 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
   /// @dev It is impossible to sell a token that is a collateral through this function
   /// @dev Trusted sellers and governance only may call this function
   /// @dev Only governance can set which tokens can be swapped through this function by passing a prior approval
-  /// transaction to Odos router for the token to be swapped
+  /// transaction to the configured `swapRouter` for the token to be swapped
   function sellRewards(uint256 minAmountOut, bytes memory payload) external nonReentrant returns (uint256 amountOut) {
     ParallelizerStorage storage ts = s.transmuterStorage();
     if (!LibDiamond.checkCanCall(msg.sender, msg.data) && ts.isSellerTrusted[msg.sender] == 0) revert NotTrusted();
@@ -44,8 +44,10 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
       balances[i] = IERC20(list[i]).balanceOf(address(this));
     }
     uint256 tokenPBalance = IERC20(address(ts.tokenP)).balanceOf(address(this));
+    address swapRouter = ts.swapRouter;
+    if (swapRouter == address(0)) revert ZeroAddress();
     //solhint-disable-next-line
-    (bool success, bytes memory result) = ODOS_ROUTER.call(payload);
+    (bool success, bytes memory result) = swapRouter.call(payload);
     if (!success) _revertBytes(result);
     if (IERC20(address(ts.tokenP)).balanceOf(address(this)) < tokenPBalance) revert InvalidTokens();
     bool hasIncreased;
@@ -70,7 +72,7 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
     }
   }
 
-  /// @notice Processes odos revert messages
+  /// @notice Processes the router's revert messages
   function _revertBytes(bytes memory errMsg) private pure {
     if (errMsg.length > 0) {
       //solhint-disable-next-line
@@ -78,6 +80,6 @@ contract RewardHandler is IRewardHandler, AccessManagedModifiers {
         revert(add(32, errMsg), mload(errMsg))
       }
     }
-    revert OdosSwapFailed();
+    revert RewardSwapFailed();
   }
 }

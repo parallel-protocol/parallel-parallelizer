@@ -77,6 +77,11 @@ export const Abi_Redeemer = /** @type {const} **/ ([
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "UnexpectedRedemptionTokens",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -177,6 +182,11 @@ export const Abi_Redeemer = /** @type {const} **/ ([
         "internalType": "uint256[]",
         "name": "minAmountOuts",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedTokensHash",
+        "type": "bytes32"
       }
     ],
     "name": "redeem",
@@ -221,6 +231,11 @@ export const Abi_Redeemer = /** @type {const} **/ ([
         "internalType": "address[]",
         "name": "forfeitTokens",
         "type": "address[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedTokensHash",
+        "type": "bytes32"
       },
       {
         "internalType": "bytes",
@@ -270,6 +285,11 @@ export const Abi_Redeemer = /** @type {const} **/ ([
         "internalType": "address[]",
         "name": "forfeitTokens",
         "type": "address[]"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedTokensHash",
+        "type": "bytes32"
       }
     ],
     "name": "redeemWithForfeit",

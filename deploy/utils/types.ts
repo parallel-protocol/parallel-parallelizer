@@ -81,7 +81,7 @@ export type SavingsConfig = {
   symbol: string;
 };
 
-export type GenericHarvesterConfig = {
+export type GenericRebalancerConfig = {
   swapRouter: Address;
   tokenTransferAddress: Address;
   flashloan: Address;
@@ -101,7 +101,7 @@ export type ConfigData = {
   savings: {
     [tokenP: string]: SavingsConfig;
   };
-  genericHarvester: {
-    [tokenP: string]: GenericHarvesterConfig;
+  genericRebalancer: {
+    [tokenP: string]: GenericRebalancerConfig;
   };
 };

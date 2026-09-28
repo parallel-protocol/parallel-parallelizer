@@ -16,12 +16,12 @@ export const Abi_RewardHandler = /** @type {const} **/ ([
   },
   {
     "inputs": [],
-    "name": "OdosSwapFailed",
+    "name": "ReentrantCall",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ReentrantCall",
+    "name": "RewardSwapFailed",
     "type": "error"
   },
   {
@@ -38,6 +38,11 @@ export const Abi_RewardHandler = /** @type {const} **/ ([
   {
     "inputs": [],
     "name": "TooSmallAmountOut",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAddress",
     "type": "error"
   },
   {
