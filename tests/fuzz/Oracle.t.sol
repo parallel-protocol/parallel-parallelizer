@@ -742,6 +742,28 @@ contract OracleTest is Fixture, FunctionUtils {
     parallelizer.updateOracle(collateral);
   }
 
+  function test_updateOracle_CannotLiftATargetLeftAtZero() public {
+    vm.prank(governor);
+    parallelizer.toggleTrusted(alice, Storage.TrustedType.Seller);
+
+    address collateral = _collaterals[0];
+    (Storage.OracleReadType readType,, bytes memory data,,) = parallelizer.getOracle(collateral);
+
+    // A MAX target seeded with 0, which is what the deployment script encoded before the initializer seeded spot
+    vm.prank(governor);
+    parallelizer.setOracle(
+      collateral,
+      abi.encode(
+        readType, Storage.OracleReadType.MAX, data, abi.encode(uint256(0)), abi.encode(uint128(0), uint128(0))
+      )
+    );
+
+    // Every positive spot is above 0 by more than the ratchet step, so the target can never be raised
+    vm.prank(alice);
+    vm.expectRevert(Errors.OracleUpdateFailed.selector);
+    parallelizer.updateOracle(collateral);
+  }
+
   function testFuzz_updateOracle_Success(uint256 updateOracleValue, uint32 heartbeat) public {
     vm.prank(governor);
     parallelizer.toggleTrusted(alice, Storage.TrustedType.Seller);
