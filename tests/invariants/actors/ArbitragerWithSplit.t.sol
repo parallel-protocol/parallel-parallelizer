@@ -3,7 +3,12 @@ pragma solidity 0.8.28;
 
 import "contracts/utils/Constants.sol";
 import {
-  AggregatorV3Interface, BaseActor, IERC20, IERC20Metadata, IParallelizer, TestStorage
+  AggregatorV3Interface,
+  BaseActor,
+  IERC20,
+  IERC20Metadata,
+  IParallelizer,
+  TestStorage
 } from "./BaseActor.t.sol";
 import { QuoteType } from "contracts/parallelizer/Storage.sol";
 import { console } from "@forge-std/console.sol";
@@ -212,23 +217,23 @@ contract ArbitragerWithSplit is BaseActor {
     return (testS.amountIn, testS.amountOut);
   }
 
-  function redeem(
+  /// @dev Forfeit is exercised here, but applied identically and unsplit to both systems, so they
+  /// drift together and the path independence invariants stay meaningful. Splitting a forfeited
+  /// redemption is what breaks them: the forfeited tokens stay in the reserve while the others
+  /// shrink, so the composition drifts and each later redemption forfeits a larger share of value.
+  function redeemWithForfeit(
     bool[3] memory isForfeitTokens,
     uint256 amount,
-    uint256 splitProportion,
     uint256 actorIndex
   )
     public
     useActor(actorIndex)
-    countCall("redeem")
+    countCall("redeemForfeit")
   {
     uint256 balancetokenP = tokenP.balanceOf(_currentActor);
     amount = bound(amount, 0, balancetokenP / 2);
-    splitProportion = bound(splitProportion, 1, BASE_9);
     if (amount == 0) return;
 
-    // Build forfeitTokens from isForfeitTokens so the protocol skips them; the post-redeem
-    // assertions below assume forfeited tokens are not credited to the actor.
     address[] memory forfeitTokens;
     {
       uint256 count;
@@ -244,6 +249,70 @@ contract ArbitragerWithSplit is BaseActor {
         }
       }
     }
+    if (forfeitTokens.length == 0) return;
+
+    console.log("");
+    console.log("========= Redeem With Forfeit =========");
+
+    _redeemForfeitOn(_parallelizer, amount, isForfeitTokens, forfeitTokens);
+    _redeemForfeitOn(_parallelizerSplit, amount, isForfeitTokens, forfeitTokens);
+  }
+
+  /// @dev Extracted so the caller stays within the EVM stack-depth limit
+  function _redeemForfeitOn(
+    IParallelizer target,
+    uint256 amount,
+    bool[3] memory isForfeitTokens,
+    address[] memory forfeitTokens
+  )
+    internal
+  {
+    uint256[] memory balanceTokens = new uint256[](_collaterals.length);
+    for (uint256 i; i < balanceTokens.length; ++i) {
+      balanceTokens[i] = IERC20(_collaterals[i]).balanceOf(_currentActor);
+    }
+
+    (uint64 prevCollateralRatio,) = target.getCollateralRatio();
+    uint256[] memory redeemAmounts;
+    {
+      uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
+      bytes32 tokensHash = _redemptionTokensHash(target, amount);
+      (, redeemAmounts) = target.redeemWithForfeit(
+        amount, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens, tokensHash
+      );
+    }
+
+    // forfeiting leaves value behind, so the ratio can only improve
+    (uint64 collateralRatio,) = target.getCollateralRatio();
+    assertGe(collateralRatio, prevCollateralRatio);
+    for (uint256 i; i < balanceTokens.length; ++i) {
+      if (isForfeitTokens[i]) {
+        assertEq(IERC20(_collaterals[i]).balanceOf(_currentActor), balanceTokens[i]);
+      } else {
+        assertEq(IERC20(_collaterals[i]).balanceOf(_currentActor), balanceTokens[i] + redeemAmounts[i]);
+      }
+    }
+  }
+
+  /// @dev No forfeit here, unlike the non-split `Arbitrager`. Forfeited tokens stay in the reserve
+  /// while the others shrink, so the composition drifts and each later redemption forfeits a larger
+  /// share of value. That makes redemption genuinely path dependent: a single split moves the
+  /// collateral ratio by around 150 to 200 bps against 0 for a plain redemption, which is what the
+  /// path independence invariants measure. `Arbitrager` keeps the forfeit coverage for the other suites.
+  function redeem(
+    uint256 amount,
+    uint256 splitProportion,
+    uint256 actorIndex
+  )
+    public
+    useActor(actorIndex)
+    countCall("redeem")
+  {
+    uint256 balancetokenP = tokenP.balanceOf(_currentActor);
+    amount = bound(amount, 0, balancetokenP / 2);
+    splitProportion = bound(splitProportion, 1, BASE_9);
+    if (amount == 0) return;
+
     // Redeem on the true parallelizer
     {
       uint256[] memory balanceTokens = new uint256[](_collaterals.length);
@@ -259,10 +328,9 @@ contract ArbitragerWithSplit is BaseActor {
       {
         // don't care about slippage
         uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
-        address[] memory redeemTokens;
-        (redeemTokens, redeemAmounts) = _parallelizer.redeemWithForfeit(
-          amount, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens
-        );
+        bytes32 tokensHash = _redemptionTokensHash(_parallelizer, amount);
+        (, redeemAmounts) =
+          _parallelizer.redeem(amount, _currentActor, block.timestamp + 1 hours, minAmountOuts, tokensHash);
       }
 
       // if it is a burn it should always increase the collateral ratio
@@ -271,11 +339,7 @@ contract ArbitragerWithSplit is BaseActor {
       assertEq(tokenP.balanceOf(_currentActor), balancetokenP - amount);
       balancetokenP -= amount;
       for (uint256 i; i < balanceTokens.length; ++i) {
-        if (!isForfeitTokens[i]) {
-          assertEq(IERC20(_collaterals[i]).balanceOf(_currentActor), balanceTokens[i] + redeemAmounts[i]);
-        } else {
-          assertEq(IERC20(_collaterals[i]).balanceOf(_currentActor), balanceTokens[i]);
-        }
+        assertEq(IERC20(_collaterals[i]).balanceOf(_currentActor), balanceTokens[i] + redeemAmounts[i]);
       }
     }
 
@@ -295,15 +359,16 @@ contract ArbitragerWithSplit is BaseActor {
       {
         // don't care about slippage
         uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
-        address[] memory redeemTokens;
 
         uint256 amountSplit = (amount * splitProportion) / BASE_9;
-        (redeemTokens, redeemAmountsSplit1) = _parallelizerSplit.redeemWithForfeit(
-          amountSplit, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens
+        bytes32 tokensHash = _redemptionTokensHash(_parallelizerSplit, amountSplit);
+        (, redeemAmountsSplit1) = _parallelizerSplit.redeem(
+          amountSplit, _currentActor, block.timestamp + 1 hours, minAmountOuts, tokensHash
         );
         amountSplit = amount - amountSplit;
-        (, redeemAmountsSplit2) = _parallelizerSplit.redeemWithForfeit(
-          amountSplit, _currentActor, block.timestamp + 1 hours, minAmountOuts, forfeitTokens
+        tokensHash = _redemptionTokensHash(_parallelizerSplit, amountSplit);
+        (, redeemAmountsSplit2) = _parallelizerSplit.redeem(
+          amountSplit, _currentActor, block.timestamp + 1 hours, minAmountOuts, tokensHash
         );
       }
 
@@ -312,14 +377,10 @@ contract ArbitragerWithSplit is BaseActor {
       assertGe(collateralRatio, prevCollateralRatio);
       assertEq(tokenP.balanceOf(_currentActor), balancetokenP - amount);
       for (uint256 i; i < balanceTokens.length; ++i) {
-        if (!isForfeitTokens[i]) {
-          assertEq(
-            IERC20(_collaterals[i]).balanceOf(_currentActor),
-            balanceTokens[i] + redeemAmountsSplit1[i] + redeemAmountsSplit2[i]
-          );
-        } else {
-          assertEq(IERC20(_collaterals[i]).balanceOf(_currentActor), balanceTokens[i]);
-        }
+        assertEq(
+          IERC20(_collaterals[i]).balanceOf(_currentActor),
+          balanceTokens[i] + redeemAmountsSplit1[i] + redeemAmountsSplit2[i]
+        );
       }
     }
   }

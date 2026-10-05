@@ -135,6 +135,11 @@ export type Abi_SettersGovernor = [
   },
   {
     "inputs": [],
+    "name": "ZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ZeroAmount",
     "type": "error"
   },
@@ -289,6 +294,31 @@ export type Abi_SettersGovernor = [
       {
         "indexed": true,
         "internalType": "address",
+        "name": "collateral",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousTarget",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newTarget",
+        "type": "uint256"
+      }
+    ],
+    "name": "OracleTargetUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "previousOwner",
         "type": "address"
       },
@@ -401,6 +431,19 @@ export type Abi_SettersGovernor = [
       }
     ],
     "name": "SurplusBufferRatioUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "SwapRouterUpdated",
     "type": "event"
   },
   {
@@ -595,6 +638,19 @@ export type Abi_SettersGovernor = [
       }
     ],
     "name": "setOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setSwapRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

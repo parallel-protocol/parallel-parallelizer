@@ -132,4 +132,9 @@ contract SettersGovernor is AccessManagedModifiers, ISettersGovernor {
   function updateSurplusBufferRatio(uint64 _surplusBufferRatio) external restricted {
     LibSetters.updateSurplusBufferRatio(_surplusBufferRatio);
   }
+
+  /// @inheritdoc ISettersGovernor
+  function setSwapRouter(address swapRouter) external restricted {
+    LibSetters.setSwapRouter(swapRouter);
+  }
 }

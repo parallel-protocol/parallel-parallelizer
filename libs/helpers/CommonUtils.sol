@@ -209,10 +209,10 @@ contract CommonUtils is CommonBase, JsonReader {
       return "USD.Treasury";
     } else if (name == ContractType.FlashLoan) {
       return "FlashLoan";
-    } else if (name == ContractType.MultiBlockHarvester) {
-      return "USD.MultiBlockHarvester";
-    } else if (name == ContractType.GenericHarvester) {
-      return "USD.GenericHarvester";
+    } else if (name == ContractType.MultiBlockRebalancer) {
+      return "USD.MultiBlockRebalancer";
+    } else if (name == ContractType.GenericRebalancer) {
+      return "USD.GenericRebalancer";
     } else if (name == ContractType.Harvester) {
       return "USD.Harvester";
     } else if (name == ContractType.Rebalancer) {

@@ -72,6 +72,11 @@ interface ISettersGovernor {
   /// @dev The surplus buffer ratio is the minimum collateral ratio required after surplus processing
   /// @param _surplusBufferRatio The new surplus buffer ratio in BASE_9
   function updateSurplusBufferRatio(uint64 _surplusBufferRatio) external;
+
+  /// @notice Sets the aggregator or DEX the `RewardHandler` forwards its swap payload to
+  /// @dev The payload is executed with a raw call, so any router can be configured. It is chain
+  /// specific and must be set on every deployment before rewards can be sold
+  function setSwapRouter(address swapRouter) external;
 }
 
 /// @title ISettersGovernor

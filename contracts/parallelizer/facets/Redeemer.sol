@@ -66,12 +66,13 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     uint256 amount,
     address receiver,
     uint256 deadline,
-    uint256[] memory minAmountOuts
+    uint256[] memory minAmountOuts,
+    bytes32 expectedTokensHash
   )
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, receiver, deadline, minAmountOuts, new address[](0), "");
+    return _redeem(amount, receiver, deadline, minAmountOuts, new address[](0), expectedTokensHash, "");
   }
 
   /// @inheritdoc IRedeemer
@@ -82,12 +83,13 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     address receiver,
     uint256 deadline,
     uint256[] memory minAmountOuts,
-    address[] memory forfeitTokens
+    address[] memory forfeitTokens,
+    bytes32 expectedTokensHash
   )
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens, "");
+    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens, expectedTokensHash, "");
   }
 
   /// @inheritdoc IRedeemer
@@ -97,12 +99,13 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     uint256 deadline,
     uint256[] memory minAmountOuts,
     address[] memory forfeitTokens,
+    bytes32 expectedTokensHash,
     bytes memory authData
   )
     external
     returns (address[] memory tokens, uint256[] memory amounts)
   {
-    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens, authData);
+    return _redeem(amount, receiver, deadline, minAmountOuts, forfeitTokens, expectedTokensHash, authData);
   }
 
   /// @inheritdoc IRedeemer
@@ -148,6 +151,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     uint256 deadline,
     uint256[] memory minAmountOuts,
     address[] memory forfeitTokens,
+    bytes32 expectedTokensHash,
     bytes memory authData
   )
     internal
@@ -165,9 +169,13 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
 
     (redemption.tokens, redemption.amounts, redemption.subCollateralsTracker) = _quoteRedemptionCurve(amount);
     if (redemption.amounts.length != minAmountOuts.length) revert InvalidLengths();
+    // `minAmountOuts` is positional, so it only protects quantities. Binding the output list itself is what
+    // ties each minimum to the token it was quoted against, across a collateral rotation
+    if (keccak256(abi.encodePacked(redemption.tokens)) != expectedTokensHash) revert UnexpectedRedemptionTokens();
     _updateNormalizer(amount, false);
 
-    redemption.from = _consumeAuthAndBurn(amount, to, deadline, minAmountOuts, forfeitTokens, authData);
+    redemption.from =
+      _consumeAuthAndBurn(amount, to, deadline, minAmountOuts, forfeitTokens, expectedTokensHash, authData);
 
     _distributeRedemption(redemption);
     emit Redeemed(
@@ -197,9 +205,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
           revert NotWhitelisted();
         }
         if (collatInfo.isManaged > 0) {
-          LibManager.release(
-            redemption.tokens[i], redemption.to, redemption.amounts[i], collatInfo.managerData.config
-          );
+          LibManager.release(redemption.tokens[i], redemption.to, redemption.amounts[i], collatInfo.managerData.config);
         } else {
           IERC20(redemption.tokens[i]).safeTransfer(redemption.to, redemption.amounts[i]);
         }
@@ -216,6 +222,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     uint256 deadline,
     uint256[] memory minAmountOuts,
     address[] memory forfeitTokens,
+    bytes32 expectedTokensHash,
     bytes memory authData
   )
     internal
@@ -223,7 +230,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
   {
     ITokenP tokenP = s.transmuterStorage().tokenP;
     if (authData.length > 0) {
-      from = _executeAuthorization(amount, to, deadline, minAmountOuts, forfeitTokens, authData);
+      from = _executeAuthorization(amount, to, deadline, minAmountOuts, forfeitTokens, expectedTokensHash, authData);
       tokenP.burnSelf(amount, address(this));
     } else {
       from = msg.sender;
@@ -240,6 +247,7 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     uint256 deadline,
     uint256[] memory minAmountOuts,
     address[] memory forfeitTokens,
+    bytes32 expectedTokensHash,
     bytes memory authData
   )
     internal
@@ -248,17 +256,12 @@ contract Redeemer is IRedeemer, AccessManagedModifiers {
     AuthorizationParams memory params = abi.decode(authData, (AuthorizationParams));
     if (params.value != amount) revert InvalidSwap();
     bytes32 derivedNonce = LibAuthorization.computeRedeemNonce(
-      params.from, amount, receiver, deadline, minAmountOuts, forfeitTokens, params.nonce
+      params.from, amount, receiver, deadline, minAmountOuts, forfeitTokens, expectedTokensHash, params.nonce
     );
-    IEIP3009(address(s.transmuterStorage().tokenP)).receiveWithAuthorization(
-      params.from,
-      address(this),
-      params.value,
-      params.validAfter,
-      params.validBefore,
-      derivedNonce,
-      params.signature
-    );
+    IEIP3009(address(s.transmuterStorage().tokenP))
+      .receiveWithAuthorization(
+        params.from, address(this), params.value, params.validAfter, params.validBefore, derivedNonce, params.signature
+      );
     return params.from;
   }
 
