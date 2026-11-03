@@ -90,7 +90,8 @@
       "redemptionSetup": {
         "xRedeemFee": [0, 600000000, 1000000000],
         "yRedeemFee": [950000000, 950000000, 995000000]
-      }
+      },
+      "swapRouter": "0x0000000000000000000000000000000000000000"
     }
   },
   "savings": {
@@ -101,6 +102,7 @@
   },
   "genericRebalancer": {
     "usdp": {
+      "accessManager": "0xa66814ee197d8334274aaeeb4987c534789a8194",
       "swapRouter": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
       "tokenTransferAddress": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
       "flashloan": "0xC9B6279baa19dBB8bCc3250c89cAa093AaBA0bfc"
