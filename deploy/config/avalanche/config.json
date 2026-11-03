@@ -66,7 +66,11 @@
       "swapRouter": "0x88de50b233052e4fb783d4f6db78cc34fea3e9fc",
       "tokenTransferAddress": "0x88de50b233052e4fb783d4f6db78cc34fea3e9fc",
       "flashloan": "0x9e0DCF7a33bBde6689560C5c807dd2a3dF991277",
-      "keepers": ["0xc351c917a7f7b267e86a5f5368be40fd1788c32b", "0x82f603cd2c2166c9d94b3ca78a16a754f0a6657a", "0xdfe85Af4c337d69F658a33Bddd59AbB2e01990E8"],
+      "keepers": [
+        "0xc351c917a7f7b267e86a5f5368be40fd1788c32b",
+        "0x82f603cd2c2166c9d94b3ca78a16a754f0a6657a",
+        "0xdfe85Af4c337d69F658a33Bddd59AbB2e01990E8"
+      ],
       "yieldBearingAssets": [
         {
           "yieldBearingAsset": "0x9fD32FD5e32C6B95483d36C5E724C5C5250Ce010",
