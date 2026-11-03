@@ -57,6 +57,11 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
   },
   {
     "inputs": [],
+    "name": "InvalidPayee",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidRate",
     "type": "error"
   },
