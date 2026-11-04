@@ -24,6 +24,20 @@ contract Test_Layout is Fixture {
     layout = Layout(address(parallelizer));
   }
 
+  /// @dev Read before `_etch()` replaces the diamond's code, kept in storage so `test_Layout`
+  /// stays within the EVM stack-depth limit
+  uint64 internal _surplusBufferRatio;
+  uint256 internal _lastReleasedAt;
+  uint256 internal _totalShares;
+
+  /// @dev The tail of `ParallelizerStorage`, added after the initial layout was written down
+  function _assertStructTail() internal view {
+    assertEq(layout.surplusBufferRatio(), _surplusBufferRatio);
+    assertEq(layout.lastReleasedAt(), _lastReleasedAt);
+    assertEq(layout.totalShares(), _totalShares);
+    assertEq(layout.swapRouter(), address(bob));
+  }
+
   function test_Layout() public {
     address tokenP = address(parallelizer.tokenP());
     uint8 isRedemptionLive = parallelizer.isPaused(address(0), ActionType.Redeem) ? 0 : 1;
@@ -36,6 +50,11 @@ contract Test_Layout is Fixture {
     hoax(governor);
     parallelizer.toggleTrusted(alice, TrustedType.Seller);
     address accessManager = parallelizer.accessManager();
+    hoax(governor);
+    parallelizer.setSwapRouter(address(bob));
+    _surplusBufferRatio = parallelizer.getSurplusBufferRatio();
+    _lastReleasedAt = parallelizer.getLastReleasedAt();
+    _totalShares = parallelizer.getTotalShares();
     hoax(guardian);
     parallelizer.setDummyImplementation(address(alice));
     address implementation = parallelizer.implementation();
@@ -62,8 +81,7 @@ contract Test_Layout is Fixture {
       uint8 onlyWhitelisted,
       uint216 normalizedStables,
       bytes memory oracleConfig,
-      bytes memory whitelistData,
-      ,
+      bytes memory whitelistData,,
     ) = layout.collaterals(collateralList[0]);
 
     assertEq(isManaged, collateral.isManaged);
@@ -86,12 +104,14 @@ contract Test_Layout is Fixture {
       assertEq(layout.selectors(selectorPosition), selectors[i]);
     }
 
+    _assertStructTail();
+
     assertEq(layout.accessManager(), accessManager);
     assertEq(layout.implementation(), implementation);
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    INTERNAL                                                     
+    INTERNAL
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _etch() internal {

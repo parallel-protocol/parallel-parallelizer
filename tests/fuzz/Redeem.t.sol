@@ -34,6 +34,9 @@ struct AssertQuoteParams {
 }
 
 contract RedeemTest is Fixture, FunctionUtils {
+  /// @dev Kept in storage rather than a local: these fuzz tests already sit on the EVM stack limit
+  bytes32 internal tokensHash;
+
   using Math for uint256;
   using SafeERC20 for IERC20;
 
@@ -269,15 +272,19 @@ contract RedeemTest is Fixture, FunctionUtils {
     // --> redemption should be exactly in proportion of current balances
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
+    uint256[] memory quoteAmounts;
+    {
+      address[] memory quoteTokens;
+      if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
+      else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
+      (quoteTokens, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
+      tokensHash = keccak256(abi.encodePacked(quoteTokens));
+    }
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
     else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
-    if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
-    else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    // uint256[] memory forfeitTokens = new uint256[](0);
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     (address[] memory tokens, uint256[] memory amounts) =
-      parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+      parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, tokensHash);
     vm.stopPrank();
 
     if (mintedStables == 0 || mintedStables == amountBurnt) return;
@@ -328,7 +335,12 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 amountBurnt = tokenP.balanceOf(alice);
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
     else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
+    uint256[] memory quoteAmounts;
+    {
+      address[] memory quoteTokens;
+      (quoteTokens, quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
+      tokensHash = keccak256(abi.encodePacked(quoteTokens));
+    }
     if (mintedStables == 0) vm.expectRevert(stdError.divisionError);
     else if (mintedStables == amountBurnt) vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
     address[] memory tokens;
@@ -336,7 +348,7 @@ contract RedeemTest is Fixture, FunctionUtils {
     {
       // uint256[] memory forfeitTokens = new uint256[](0);
       uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
-      (tokens, amounts) = parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+      (tokens, amounts) = parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, tokensHash);
     }
     vm.stopPrank();
 
@@ -398,7 +410,9 @@ contract RedeemTest is Fixture, FunctionUtils {
       uint256[] memory amounts;
       {
         uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
-        (tokens, amounts) = parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+        (tokens, amounts) = parallelizer.redeem(
+          amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, _redemptionTokensHash(amountBurnt)
+        );
       }
       vm.stopPrank();
 
@@ -440,7 +454,9 @@ contract RedeemTest is Fixture, FunctionUtils {
 
       {
         uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
-        (tokens, amounts) = parallelizer.redeem(amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts);
+        (tokens, amounts) = parallelizer.redeem(
+          amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts, _redemptionTokensHash(amountBurntBob)
+        );
       }
       vm.stopPrank();
 
@@ -494,7 +510,7 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, bytes32(0));
   }
 
   function testFuzz_RevertWhen_BurningAllStableIssuedWithWhitelist(
@@ -513,10 +529,12 @@ contract RedeemTest is Fixture, FunctionUtils {
     }
 
     // Enable whitelist on the first collateral and whitelist alice
-    bytes memory emptyData;
-    bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
-    hoax(governor);
-    parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    {
+      bytes memory emptyData;
+      bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
+      hoax(governor);
+      parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    }
     hoax(guardian);
     parallelizer.toggleWhitelist(WhitelistType.BACKED, alice);
 
@@ -527,7 +545,7 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, bytes32(0));
   }
 
   function testFuzz_RedeemWithForfeit_RevertWhen_BurningAllStableIssued(
@@ -564,7 +582,9 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+    parallelizer.redeemWithForfeit(
+      amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens, bytes32(0)
+    );
   }
 
   function testFuzz_RedeemWithForfeit_RevertWhen_BurningAllStableIssuedWithWhitelist(
@@ -595,10 +615,12 @@ contract RedeemTest is Fixture, FunctionUtils {
     }
 
     // Enable whitelist on the first collateral and whitelist alice
-    bytes memory emptyData;
-    bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
-    hoax(governor);
-    parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    {
+      bytes memory emptyData;
+      bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
+      hoax(governor);
+      parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    }
     hoax(guardian);
     parallelizer.toggleWhitelist(WhitelistType.BACKED, alice);
 
@@ -609,7 +631,9 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+    parallelizer.redeemWithForfeit(
+      amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens, bytes32(0)
+    );
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -745,7 +769,9 @@ contract RedeemTest is Fixture, FunctionUtils {
       address[] memory tokens;
       {
         uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
-        (tokens, amounts) = parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+        (tokens, amounts) = parallelizer.redeem(
+          amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, _redemptionTokensHash(amountBurnt)
+        );
       }
       vm.stopPrank();
 
@@ -780,7 +806,9 @@ contract RedeemTest is Fixture, FunctionUtils {
       if (mintedStables == 0 || amountBurntBob >= mintedStables) return;
       {
         uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
-        (tokens, amounts) = parallelizer.redeem(amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts);
+        (tokens, amounts) = parallelizer.redeem(
+          amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts, _redemptionTokensHash(amountBurntBob)
+        );
       }
       vm.stopPrank();
 
@@ -871,7 +899,7 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, bytes32(0));
   }
 
   function testFuzz_RevertWhen_BurningAllStableIssuedWithManagerAndWhitelist(
@@ -920,10 +948,12 @@ contract RedeemTest is Fixture, FunctionUtils {
     _randomRedeemptionFees(xFeeRedeemUnbounded, yFeeRedeemUnbounded);
 
     // Enable whitelist on the first collateral and whitelist alice
-    bytes memory emptyData;
-    bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
-    hoax(governor);
-    parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    {
+      bytes memory emptyData;
+      bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
+      hoax(governor);
+      parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    }
     hoax(guardian);
     parallelizer.toggleWhitelist(WhitelistType.BACKED, alice);
 
@@ -934,7 +964,7 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, bytes32(0));
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -955,6 +985,7 @@ contract RedeemTest is Fixture, FunctionUtils {
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
     if (amountBurnt == mintedStables) return;
+    tokensHash = _redemptionTokensHash(amountBurnt);
     {
       uint256[] memory minAmountOuts;
       {
@@ -962,7 +993,7 @@ contract RedeemTest is Fixture, FunctionUtils {
         minAmountOuts = new uint256[](quoteAmounts.length - 1);
       }
       vm.expectRevert(Errors.InvalidLengths.selector);
-      parallelizer.redeem(amountBurnt, alice, block.timestamp * 2, minAmountOuts);
+      parallelizer.redeem(amountBurnt, alice, block.timestamp * 2, minAmountOuts, tokensHash);
     }
     {
       uint256[] memory minAmountOuts;
@@ -971,7 +1002,7 @@ contract RedeemTest is Fixture, FunctionUtils {
         minAmountOuts = new uint256[](quoteAmounts.length + 1);
       }
       vm.expectRevert(Errors.InvalidLengths.selector);
-      parallelizer.redeem(amountBurnt, alice, block.timestamp * 2, minAmountOuts);
+      parallelizer.redeem(amountBurnt, alice, block.timestamp * 2, minAmountOuts, tokensHash);
     }
     vm.stopPrank();
   }
@@ -1031,8 +1062,14 @@ contract RedeemTest is Fixture, FunctionUtils {
       address[] memory forfeitTokens = _getForfeitTokens(areForfeit);
       {
         uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
-        (tokens, amounts) =
-          parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+        (tokens, amounts) = parallelizer.redeemWithForfeit(
+          amountBurnt,
+          alice,
+          block.timestamp + 1 days,
+          minAmountOuts,
+          forfeitTokens,
+          _redemptionTokensHash(amountBurnt)
+        );
       }
       vm.stopPrank();
 
@@ -1066,7 +1103,9 @@ contract RedeemTest is Fixture, FunctionUtils {
       if (mintedStables == 0 || amountBurntBob >= mintedStables) return;
       {
         uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
-        (tokens, amounts) = parallelizer.redeem(amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts);
+        (tokens, amounts) = parallelizer.redeem(
+          amountBurntBob, bob, block.timestamp + 1 days, minAmountOuts, _redemptionTokensHash(amountBurntBob)
+        );
       }
       vm.stopPrank();
 
@@ -1149,7 +1188,9 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     vm.expectRevert(Errors.CannotBurnAllStableIssued.selector);
-    parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+    parallelizer.redeemWithForfeit(
+      amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens, bytes32(0)
+    );
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1163,10 +1204,12 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     _sweepBalances(alice, _collaterals);
 
-    bytes memory emptyData;
-    bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
-    hoax(governor);
-    parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    {
+      bytes memory emptyData;
+      bytes memory whitelistData = abi.encode(WhitelistType.BACKED, emptyData);
+      hoax(governor);
+      parallelizer.setWhitelistStatus(address(eurA), 1, whitelistData);
+    }
 
     vm.startPrank(alice);
     uint256 amountBurnt = tokenP.balanceOf(alice);
@@ -1174,10 +1217,11 @@ contract RedeemTest is Fixture, FunctionUtils {
     (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     // There should be a non zero amount of EURA to transfer
     if (quoteAmounts[0] == 0) return;
+    tokensHash = _redemptionTokensHash(amountBurnt);
     vm.expectRevert(Errors.NotWhitelisted.selector);
 
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
-    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+    parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, tokensHash);
     vm.stopPrank();
 
     hoax(guardian);
@@ -1185,10 +1229,10 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     vm.startPrank(alice);
     vm.expectRevert(Errors.NotWhitelisted.selector);
-    parallelizer.redeem(amountBurnt, bob, block.timestamp + 1 days, minAmountOuts);
+    parallelizer.redeem(amountBurnt, bob, block.timestamp + 1 days, minAmountOuts, tokensHash);
 
     (address[] memory tokens, uint256[] memory amounts) =
-      parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts);
+      parallelizer.redeem(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, tokensHash);
     vm.stopPrank();
 
     assertEq(amounts, quoteAmounts);
@@ -1228,30 +1272,38 @@ contract RedeemTest is Fixture, FunctionUtils {
     if (mintedStables == 0 || amountBurnt == 0 || amountBurnt == mintedStables) return;
     (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(amountBurnt);
     if (quoteAmounts[0] == 0 || quoteAmounts[1] == 0) return;
+    tokensHash = _redemptionTokensHash(amountBurnt);
     uint256[] memory minAmountOuts = new uint256[](_collaterals.length);
     {
       vm.startPrank(alice);
       address[] memory forfeitTokens = new address[](0);
       vm.expectRevert(Errors.NotWhitelisted.selector);
-      parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+      parallelizer.redeemWithForfeit(
+        amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens, tokensHash
+      );
 
       address[] memory forfeitTokens1 = new address[](1);
       forfeitTokens1[0] = address(eurA);
       vm.expectRevert(Errors.NotWhitelisted.selector);
-      parallelizer.redeemWithForfeit(amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+      parallelizer.redeemWithForfeit(
+        amountBurnt, alice, block.timestamp + 1 days, minAmountOuts, forfeitTokens, tokensHash
+      );
       vm.stopPrank();
       hoax(guardian);
       parallelizer.toggleWhitelist(WhitelistType.BACKED, alice);
       vm.startPrank(alice);
       vm.expectRevert(Errors.NotWhitelisted.selector);
-      parallelizer.redeemWithForfeit(amountBurnt, bob, block.timestamp + 1 days, minAmountOuts, forfeitTokens);
+      parallelizer.redeemWithForfeit(
+        amountBurnt, bob, block.timestamp + 1 days, minAmountOuts, forfeitTokens, tokensHash
+      );
     }
 
     address[] memory forfeitTokens2 = new address[](2);
     forfeitTokens2[0] = address(eurA);
     forfeitTokens2[1] = address(eurB);
-    (address[] memory tokens, uint256[] memory amounts) =
-      parallelizer.redeemWithForfeit(amountBurnt, bob, block.timestamp + 1 days, minAmountOuts, forfeitTokens2);
+    (address[] memory tokens, uint256[] memory amounts) = parallelizer.redeemWithForfeit(
+      amountBurnt, bob, block.timestamp + 1 days, minAmountOuts, forfeitTokens2, tokensHash
+    );
     vm.stopPrank();
 
     assertEq(amounts, quoteAmounts);
@@ -1811,8 +1863,9 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 stablecoinsIssued = parallelizer.getTotalIssued();
     if (stablecoinsIssued > 1) {
       uint256[] memory minOuts = new uint256[](3);
+      tokensHash = _redemptionTokensHash(stablecoinsIssued - 1);
       vm.expectRevert();
-      parallelizer.redeem(stablecoinsIssued - 1, attacker, block.timestamp * 2, minOuts);
+      parallelizer.redeem(stablecoinsIssued - 1, attacker, block.timestamp * 2, minOuts, tokensHash);
     }
     vm.stopPrank();
 
@@ -1825,7 +1878,9 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 mintB,
     uint256 mintY,
     uint256 redeemRatio
-  ) public {
+  )
+    public
+  {
     mintA = bound(mintA, 1e6, 1_000_000e6);
     mintB = bound(mintB, 1e12, 1_000_000e12);
     mintY = bound(mintY, 1e18, 1_000_000e18);
@@ -1843,8 +1898,9 @@ contract RedeemTest is Fixture, FunctionUtils {
     if (redeemAmount >= stablecoinsIssued) redeemAmount = stablecoinsIssued - 1;
 
     uint256[] memory minOuts = new uint256[](3);
+    tokensHash = _redemptionTokensHash(redeemAmount);
     vm.startPrank(alice);
-    parallelizer.redeem(redeemAmount, alice, block.timestamp * 2, minOuts);
+    parallelizer.redeem(redeemAmount, alice, block.timestamp * 2, minOuts, tokensHash);
     vm.stopPrank();
 
     assertGt(
@@ -1890,24 +1946,27 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 tokenPBal = tokenP.balanceOf(alice);
     uint256 redeemAmount = tokenPBal / 4;
 
-    vm.startPrank(guardian);
-    uint64[] memory xRedemption = new uint64[](1);
-    xRedemption[0] = uint64(0);
-    int64[] memory yRedemption = new int64[](1);
-    yRedemption[0] = int64(int256(BASE_9));
-    parallelizer.setRedemptionCurveParams(xRedemption, yRedemption);
-    vm.stopPrank();
+    {
+      vm.startPrank(guardian);
+      uint64[] memory xRedemption = new uint64[](1);
+      xRedemption[0] = uint64(0);
+      int64[] memory yRedemption = new int64[](1);
+      yRedemption[0] = int64(int256(BASE_9));
+      parallelizer.setRedemptionCurveParams(xRedemption, yRedemption);
+      vm.stopPrank();
+    }
 
     uint256 deadline = block.timestamp + 1 hours;
     uint256[] memory minOuts = new uint256[](3);
+    tokensHash = _redemptionTokensHash(redeemAmount);
     address[] memory forfeit = new address[](0);
     bytes memory authData =
-      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, bytes32("redeem1"));
+      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, bytes32("redeem1"));
 
     // bob relays alice's signed authorization
     vm.prank(bob);
     (address[] memory tokens, uint256[] memory amounts) =
-      parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, authData);
+      parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, authData);
 
     assertEq(tokens.length, 3);
     for (uint256 i; i < amounts.length; i++) {
@@ -1925,46 +1984,62 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256 redeemAmount = tokenP.balanceOf(alice) / 4;
 
-    vm.startPrank(guardian);
-    uint64[] memory xR = new uint64[](1);
-    xR[0] = uint64(0);
-    int64[] memory yR = new int64[](1);
-    yR[0] = int64(int256(BASE_9));
-    parallelizer.setRedemptionCurveParams(xR, yR);
-    vm.stopPrank();
+    {
+      vm.startPrank(guardian);
+      uint64[] memory xR = new uint64[](1);
+      xR[0] = uint64(0);
+      int64[] memory yR = new int64[](1);
+      yR[0] = int64(int256(BASE_9));
+      parallelizer.setRedemptionCurveParams(xR, yR);
+      vm.stopPrank();
+    }
 
     uint256 deadline = block.timestamp + 1 hours;
     uint256[] memory minOuts = new uint256[](3);
+    tokensHash = _redemptionTokensHash(redeemAmount);
     address[] memory forfeit = new address[](0);
-    bytes memory aliceAuth =
-      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, bytes32("redeem_frontrun"));
+    bytes memory aliceAuth = _buildRedeemAuth(
+      1, alice, redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, bytes32("redeem_frontrun")
+    );
 
     vm.prank(bob);
     vm.expectRevert(bytes("invalid signature"));
-    parallelizer.redeemWithAuthorization(redeemAmount, bob, deadline, minOuts, forfeit, aliceAuth);
+    parallelizer.redeemWithAuthorization(redeemAmount, bob, deadline, minOuts, forfeit, tokensHash, aliceAuth);
   }
 
   function test_RedeemWithAuthorization_RevertWhen_ValueMismatch() public {
     _mintExactInput(alice, address(eurA), 100 * BASE_6, 0);
     uint256 redeemAmount = tokenP.balanceOf(alice) / 4;
 
-    vm.startPrank(guardian);
-    uint64[] memory xR = new uint64[](1);
-    xR[0] = uint64(0);
-    int64[] memory yR = new int64[](1);
-    yR[0] = int64(int256(BASE_9));
-    parallelizer.setRedemptionCurveParams(xR, yR);
-    vm.stopPrank();
+    {
+      vm.startPrank(guardian);
+      uint64[] memory xR = new uint64[](1);
+      xR[0] = uint64(0);
+      int64[] memory yR = new int64[](1);
+      yR[0] = int64(int256(BASE_9));
+      parallelizer.setRedemptionCurveParams(xR, yR);
+      vm.stopPrank();
+    }
 
     uint256 deadline = block.timestamp + 1 hours;
     uint256[] memory minOuts = new uint256[](3);
+    tokensHash = _redemptionTokensHash(redeemAmount);
     address[] memory forfeit = new address[](0);
-    bytes memory authData =
-      _buildRedeemAuth(1, alice, redeemAmount / 2, alice, deadline, minOuts, forfeit, bytes32("bad_redeem"));
+    bytes memory authData = _buildRedeemAuth(
+      1,
+      alice,
+      redeemAmount / 2,
+      alice,
+      deadline,
+      minOuts,
+      forfeit,
+      _redemptionTokensHash(redeemAmount / 2),
+      bytes32("bad_redeem")
+    );
 
     vm.prank(bob);
     vm.expectRevert();
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, authData);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, authData);
   }
 
   function test_RedeemWithAuthorization_RevertWhen_ReusedNonce() public {
@@ -1975,27 +2050,32 @@ contract RedeemTest is Fixture, FunctionUtils {
     uint256 redeemAmount = tokenP.balanceOf(alice) / 8;
     bytes32 userSalt = bytes32("reuse_redeem");
 
-    vm.startPrank(guardian);
-    uint64[] memory xR = new uint64[](1);
-    xR[0] = uint64(0);
-    int64[] memory yR = new int64[](1);
-    yR[0] = int64(int256(BASE_9));
-    parallelizer.setRedemptionCurveParams(xR, yR);
-    vm.stopPrank();
+    {
+      vm.startPrank(guardian);
+      uint64[] memory xR = new uint64[](1);
+      xR[0] = uint64(0);
+      int64[] memory yR = new int64[](1);
+      yR[0] = int64(int256(BASE_9));
+      parallelizer.setRedemptionCurveParams(xR, yR);
+      vm.stopPrank();
+    }
 
     uint256 deadline = block.timestamp + 1 hours;
     uint256[] memory minOuts = new uint256[](3);
+    tokensHash = _redemptionTokensHash(redeemAmount);
     address[] memory forfeit = new address[](0);
-    bytes memory authData1 = _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, userSalt);
+    bytes memory authData1 =
+      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, userSalt);
 
     vm.prank(bob);
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, authData1);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, authData1);
 
-    bytes memory authData2 = _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, userSalt);
+    bytes memory authData2 =
+      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, userSalt);
 
     vm.prank(bob);
     vm.expectRevert();
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, authData2);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, authData2);
   }
 
   event Redeemed(
@@ -2014,27 +2094,30 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256 redeemAmount = tokenP.balanceOf(alice) / 4;
 
-    vm.startPrank(guardian);
-    uint64[] memory xR = new uint64[](1);
-    xR[0] = uint64(0);
-    int64[] memory yR = new int64[](1);
-    yR[0] = int64(int256(BASE_9));
-    parallelizer.setRedemptionCurveParams(xR, yR);
-    vm.stopPrank();
+    {
+      vm.startPrank(guardian);
+      uint64[] memory xR = new uint64[](1);
+      xR[0] = uint64(0);
+      int64[] memory yR = new int64[](1);
+      yR[0] = int64(int256(BASE_9));
+      parallelizer.setRedemptionCurveParams(xR, yR);
+      vm.stopPrank();
+    }
 
     uint256 deadline = block.timestamp + 1 hours;
     uint256[] memory minOuts = new uint256[](3);
+    tokensHash = _redemptionTokensHash(redeemAmount);
     address[] memory forfeit = new address[](1);
     forfeit[0] = address(eurA);
 
     bytes memory authData =
-      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, bytes32("forfeit_ok"));
+      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, bytes32("forfeit_ok"));
 
     uint256 eurABefore = IERC20(address(eurA)).balanceOf(alice);
     uint256 eurBBefore = IERC20(address(eurB)).balanceOf(alice);
 
     vm.prank(bob);
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, authData);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, authData);
 
     assertEq(IERC20(address(eurA)).balanceOf(alice), eurABefore, "forfeited token must not be transferred");
     assertGt(IERC20(address(eurB)).balanceOf(alice), eurBBefore, "non-forfeited token must be transferred");
@@ -2047,28 +2130,32 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256 redeemAmount = tokenP.balanceOf(alice) / 4;
 
-    vm.startPrank(guardian);
-    uint64[] memory xR = new uint64[](1);
-    xR[0] = uint64(0);
-    int64[] memory yR = new int64[](1);
-    yR[0] = int64(int256(BASE_9));
-    parallelizer.setRedemptionCurveParams(xR, yR);
-    vm.stopPrank();
+    {
+      vm.startPrank(guardian);
+      uint64[] memory xR = new uint64[](1);
+      xR[0] = uint64(0);
+      int64[] memory yR = new int64[](1);
+      yR[0] = int64(int256(BASE_9));
+      parallelizer.setRedemptionCurveParams(xR, yR);
+      vm.stopPrank();
+    }
 
     uint256 deadline = block.timestamp + 1 hours;
     uint256[] memory minOuts = new uint256[](3);
+    tokensHash = _redemptionTokensHash(redeemAmount);
 
     address[] memory signedForfeit = new address[](1);
     signedForfeit[0] = address(eurA);
-    bytes memory authData =
-      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, signedForfeit, bytes32("forfeit_bind"));
+    bytes memory authData = _buildRedeemAuth(
+      1, alice, redeemAmount, alice, deadline, minOuts, signedForfeit, tokensHash, bytes32("forfeit_bind")
+    );
 
     address[] memory tamperedForfeit = new address[](1);
     tamperedForfeit[0] = address(eurB);
 
     vm.prank(bob);
     vm.expectRevert(bytes("invalid signature"));
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, tamperedForfeit, authData);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, tamperedForfeit, tokensHash, authData);
   }
 
   function test_RedeemWithAuthorization_EmitsAuthorizerNotRelayer() public {
@@ -2078,24 +2165,28 @@ contract RedeemTest is Fixture, FunctionUtils {
 
     uint256 redeemAmount = tokenP.balanceOf(alice) / 4;
 
-    vm.startPrank(guardian);
-    uint64[] memory xR = new uint64[](1);
-    xR[0] = uint64(0);
-    int64[] memory yR = new int64[](1);
-    yR[0] = int64(int256(BASE_9));
-    parallelizer.setRedemptionCurveParams(xR, yR);
-    vm.stopPrank();
+    {
+      vm.startPrank(guardian);
+      uint64[] memory xR = new uint64[](1);
+      xR[0] = uint64(0);
+      int64[] memory yR = new int64[](1);
+      yR[0] = int64(int256(BASE_9));
+      parallelizer.setRedemptionCurveParams(xR, yR);
+      vm.stopPrank();
+    }
 
     uint256 deadline = block.timestamp + 1 hours;
     uint256[] memory minOuts = new uint256[](3);
+    tokensHash = _redemptionTokensHash(redeemAmount);
     address[] memory forfeit = new address[](0);
-    bytes memory authData =
-      _buildRedeemAuth(1, alice, redeemAmount, alice, deadline, minOuts, forfeit, bytes32("event_attr_redeem"));
+    bytes memory authData = _buildRedeemAuth(
+      1, alice, redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, bytes32("event_attr_redeem")
+    );
 
     vm.expectEmit(true, true, false, false, address(parallelizer));
     emit Redeemed(0, new address[](0), new uint256[](0), new address[](0), alice, alice);
 
     vm.prank(bob);
-    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, authData);
+    parallelizer.redeemWithAuthorization(redeemAmount, alice, deadline, minOuts, forfeit, tokensHash, authData);
   }
 }

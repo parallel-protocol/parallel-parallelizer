@@ -25,9 +25,9 @@ library LibAuthorization {
     0x41378613b6b468c26472b6d9a40faaeaf3c63b23ae57d1d7e3a7c3d2c356b1ed;
 
   // keccak256("RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,bytes32
-  // minAmountOutsHash,bytes32 forfeitTokensHash,bytes32 userSalt)")
+  // minAmountOutsHash,bytes32 forfeitTokensHash,bytes32 expectedTokensHash,bytes32 userSalt)")
   bytes32 internal constant REDEEM_WITH_AUTHORIZATION_TYPEHASH =
-    0xcff34e096e1842f6f6ae4c0d0c6eefd4855c8bdc5bc64155d7c14b2dbeee661a;
+    0xb6577f08e668b53303325a19233e8315142d69bedb6d7e1d8d0e9af2473486d4;
 
   function computeSwapExactInputNonce(
     address from,
@@ -87,6 +87,8 @@ library LibAuthorization {
     );
   }
 
+  /// @param expectedTokensHash `keccak256(abi.encodePacked(tokens))` over the redemption output list the
+  /// authorizer was quoted, binding token identity and ordering rather than raw amounts alone
   function computeRedeemNonce(
     address from,
     uint256 amount,
@@ -94,6 +96,7 @@ library LibAuthorization {
     uint256 deadline,
     uint256[] memory minAmountOuts,
     address[] memory forfeitTokens,
+    bytes32 expectedTokensHash,
     bytes32 userSalt
   )
     internal
@@ -109,6 +112,7 @@ library LibAuthorization {
         deadline,
         keccak256(abi.encodePacked(minAmountOuts)),
         keccak256(abi.encodePacked(forfeitTokens)),
+        expectedTokensHash,
         userSalt
       )
     );

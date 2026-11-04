@@ -33,7 +33,7 @@ contract DiamondInitializer {
       LibSetters.unpause(collateral.token, ActionType.Mint);
       LibSetters.unpause(collateral.token, ActionType.Burn);
       LibSetters.setStablecoinCap(collateral.token, 100_000_000 ether);
-      if (collateral.targetMax) LibOracle.updateOracle(collateral.token);
+      if (collateral.targetMax) LibOracle.initializeOracleTarget(collateral.token);
     }
 
     // setRedemptionCurveParams

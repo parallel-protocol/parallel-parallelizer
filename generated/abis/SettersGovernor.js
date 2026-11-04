@@ -57,6 +57,11 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
   },
   {
     "inputs": [],
+    "name": "InvalidPayee",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidRate",
     "type": "error"
   },
@@ -131,6 +136,11 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
       }
     ],
     "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAddress",
     "type": "error"
   },
   {
@@ -289,6 +299,31 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
       {
         "indexed": true,
         "internalType": "address",
+        "name": "collateral",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "previousTarget",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newTarget",
+        "type": "uint256"
+      }
+    ],
+    "name": "OracleTargetUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "previousOwner",
         "type": "address"
       },
@@ -401,6 +436,19 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
       }
     ],
     "name": "SurplusBufferRatioUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "SwapRouterUpdated",
     "type": "event"
   },
   {
@@ -595,6 +643,19 @@ export const Abi_SettersGovernor = /** @type {const} **/ ([
       }
     ],
     "name": "setOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setSwapRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

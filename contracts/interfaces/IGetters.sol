@@ -144,6 +144,9 @@ interface IGetters {
 
   /// @notice Returns the minimum collateral ratio that must hold after surplus processing
   /// @dev Expressed in base 1e9, and always >= 1e9
+  /// @notice Returns the aggregator or DEX the `RewardHandler` forwards its swap payload to
+  function getSwapRouter() external view returns (address);
+
   function getSurplusBufferRatio() external view returns (uint64);
 
   /// @notice Computes the surplus of a collateral.

@@ -80,10 +80,12 @@ contract Test_Setters_Pause is Fixture {
     assert(parallelizer.isPaused(address(eurA), ActionType.Redeem));
 
     vm.expectRevert(Errors.Paused.selector);
-    parallelizer.redeem(1 ether, alice, block.timestamp + 10, new uint256[](3));
+    parallelizer.redeem(1 ether, alice, block.timestamp + 10, new uint256[](3), bytes32(0));
 
     vm.expectRevert(Errors.Paused.selector);
-    parallelizer.redeemWithForfeit(1 ether, alice, block.timestamp + 10, new uint256[](3), new address[](0));
+    parallelizer.redeemWithForfeit(
+      1 ether, alice, block.timestamp + 10, new uint256[](3), new address[](0), bytes32(0)
+    );
   }
 }
 
@@ -1524,6 +1526,32 @@ contract Test_Setters_UpdatePayees is Fixture {
     assertEq(parallelizer.getShares(address(alice)), 1 ether);
     assertEq(parallelizer.getShares(address(bob)), 2 ether);
     assertEq(parallelizer.getTotalShares(), 3 ether);
+  }
+
+  /// @dev Bailsec Core Issue_19: a share allocated to the Parallelizer is handed back to `release`
+  /// as fresh income on the next call, so it recursively redistributes itself
+  function test_RevertWhen_PayeeIsTheParallelizer() public {
+    address[] memory payees = new address[](1);
+    payees[0] = address(parallelizer);
+    uint256[] memory shares = new uint256[](1);
+    shares[0] = 1 ether;
+
+    hoax(governor);
+    vm.expectRevert(Errors.InvalidPayee.selector);
+    parallelizer.updatePayees(payees, shares, false);
+  }
+
+  /// @dev `address(0)` is the sentinel `LibSurplus` uses to burn a share, so it stays valid
+  function test_PayeeCanBeZeroAddress() public {
+    address[] memory payees = new address[](1);
+    payees[0] = address(0);
+    uint256[] memory shares = new uint256[](1);
+    shares[0] = 1 ether;
+
+    hoax(governor);
+    parallelizer.updatePayees(payees, shares, false);
+
+    assertEq(parallelizer.getShares(address(0)), 1 ether);
   }
 
   modifier initializePayees() {

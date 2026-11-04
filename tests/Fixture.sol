@@ -132,7 +132,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ASSERTIONS                                                    
+    ASSERTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   // Allow to have larger deviation for very small amounts
@@ -155,7 +155,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
   }
 
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ACTIONS                                                     
+    ACTIONS
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
   function _mintExactOutput(address owner, address tokenIn, uint256 amountStable, uint256 estimatedAmountIn) internal {
@@ -229,7 +229,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
 
   bytes32 internal constant PARALLELIZER_REDEEM_TYPEHASH = keccak256(
     "RedeemWithAuthorization(address from,uint256 amount,address receiver,uint256 deadline,"
-    "bytes32 minAmountOutsHash,bytes32 forfeitTokensHash,bytes32 userSalt)"
+    "bytes32 minAmountOutsHash,bytes32 forfeitTokensHash,bytes32 expectedTokensHash,bytes32 userSalt)"
   );
 
   function _buildSwapExactInputAuth(
@@ -249,15 +249,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
   {
     bytes32 derivedNonce = keccak256(
       abi.encode(
-        PARALLELIZER_SWAP_EXACT_INPUT_TYPEHASH,
-        from,
-        tokenIn,
-        tokenOut,
-        amountIn,
-        amountOutMin,
-        to,
-        deadline,
-        userSalt
+        PARALLELIZER_SWAP_EXACT_INPUT_TYPEHASH, from, tokenIn, tokenOut, amountIn, amountOutMin, to, deadline, userSalt
       )
     );
     return _signAndPackAuth(privateKey, tokenIn, from, amountIn, derivedNonce, userSalt);
@@ -302,6 +294,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
     uint256 deadline,
     uint256[] memory minAmountOuts,
     address[] memory forfeitTokens,
+    bytes32 expectedTokensHash,
     bytes32 userSalt
   )
     internal
@@ -317,10 +310,18 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
         deadline,
         keccak256(abi.encodePacked(minAmountOuts)),
         keccak256(abi.encodePacked(forfeitTokens)),
+        expectedTokensHash,
         userSalt
       )
     );
     return _signAndPackAuth(privateKey, address(tokenP), from, amount, derivedNonce, userSalt);
+  }
+
+  /// @dev The output list a redemption of `amount` would produce right now, hashed as the redeem
+  /// entry points expect it
+  function _redemptionTokensHash(uint256 amount) internal view returns (bytes32) {
+    (address[] memory tokens,) = parallelizer.quoteRedemptionCurve(amount);
+    return keccak256(abi.encodePacked(tokens));
   }
 
   /// @dev Signs an EIP-3009 `ReceiveWithAuthorization` with `nonce = signedNonce` and packs an
@@ -340,9 +341,7 @@ contract Fixture is Parallelizer, SavingsUtils, ConfigAccessManager {
   {
     uint256 validBefore = block.timestamp + 1 hours;
     bytes32 structHash = keccak256(
-      abi.encode(
-        RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, address(parallelizer), value, 0, validBefore, signedNonce
-      )
+      abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, address(parallelizer), value, 0, validBefore, signedNonce)
     );
     bytes32 digest = MessageHashUtils.toTypedDataHash(MockTokenPermit(token).DOMAIN_SEPARATOR(), structHash);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);

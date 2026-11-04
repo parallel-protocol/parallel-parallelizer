@@ -149,4 +149,6 @@ struct ParallelizerStorage {
   uint256 totalShares; // The total shares of the totalShares for all payees
   address[] payees; // The addresses of the payees
   mapping(address => uint256) shares; // The shares of the totalShares for each payee
+  // Aggregator or DEX the `RewardHandler` forwards its swap payload to
+  address swapRouter;
 }

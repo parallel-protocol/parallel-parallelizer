@@ -549,6 +549,19 @@ export const Abi_Getters = /** @type {const} **/ ([
   },
   {
     "inputs": [],
+    "name": "getSwapRouter",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getTotalIssued",
     "outputs": [
       {

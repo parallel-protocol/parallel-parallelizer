@@ -1,4 +1,4 @@
-export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
+export const Abi_MultiBlockRebalancer = /** @type {const} **/ ([
   {
     "inputs": [
       {
@@ -93,6 +93,25 @@ export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
     "inputs": [],
     "name": "ZeroAmount",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "AllowanceReset",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -262,25 +281,6 @@ export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "maxTokenSlippage",
-    "outputs": [
-      {
-        "internalType": "uint96",
-        "name": "",
-        "type": "uint96"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "parallelizer",
     "outputs": [
@@ -320,6 +320,24 @@ export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
     "inputs": [
       {
         "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "resetAllowance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "newAuthority",
         "type": "address"
       }
@@ -337,9 +355,9 @@ export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
         "type": "address"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "newMaxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "name": "setMaxSlippage",
@@ -398,9 +416,9 @@ export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
         "type": "uint64"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "maxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "name": "setYieldBearingAssetData",
@@ -501,9 +519,9 @@ export const Abi_MultiBlockHarvester = /** @type {const} **/ ([
         "type": "uint64"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "maxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "stateMutability": "view",

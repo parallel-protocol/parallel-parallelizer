@@ -295,6 +295,19 @@ export const Abi_LibSetters = /** @type {const} **/ ([
       {
         "indexed": true,
         "internalType": "address",
+        "name": "swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "SwapRouterUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "sender",
         "type": "address"
       },

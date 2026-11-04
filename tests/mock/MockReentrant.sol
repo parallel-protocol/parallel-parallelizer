@@ -19,10 +19,11 @@ contract ReentrantRedeemGetCollateralRatio {
   }
 
   function testERC777Reentrancy(uint256 redeemAmount) public {
-    uint256[] memory minAmountOuts;
-    (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(redeemAmount);
-    minAmountOuts = new uint256[](quoteAmounts.length);
-    parallelizer.redeem(redeemAmount, address(this), block.timestamp * 2, minAmountOuts);
+    (address[] memory quoteTokens, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(redeemAmount);
+    uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
+    parallelizer.redeem(
+      redeemAmount, address(this), block.timestamp * 2, minAmountOuts, keccak256(abi.encodePacked(quoteTokens))
+    );
   }
 
   function setInterfaceImplementer() public {
@@ -60,10 +61,11 @@ contract ReentrantRedeemSwap {
   }
 
   function testERC777Reentrancy(uint256 redeemAmount) public {
-    uint256[] memory minAmountOuts;
-    (, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(redeemAmount);
-    minAmountOuts = new uint256[](quoteAmounts.length);
-    parallelizer.redeem(redeemAmount, address(this), block.timestamp * 2, minAmountOuts);
+    (address[] memory quoteTokens, uint256[] memory quoteAmounts) = parallelizer.quoteRedemptionCurve(redeemAmount);
+    uint256[] memory minAmountOuts = new uint256[](quoteAmounts.length);
+    parallelizer.redeem(
+      redeemAmount, address(this), block.timestamp * 2, minAmountOuts, keccak256(abi.encodePacked(quoteTokens))
+    );
   }
 
   function setInterfaceImplementer() public {

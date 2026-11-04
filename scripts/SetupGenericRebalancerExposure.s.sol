@@ -3,15 +3,15 @@ pragma solidity 0.8.28;
 
 import "./Base.s.sol";
 
-import { GenericHarvester } from "contracts/helpers/GenericHarvester.sol";
-import { BaseHarvester } from "contracts/helpers/BaseHarvester.sol";
+import { GenericRebalancer } from "contracts/helpers/GenericRebalancer.sol";
+import { BaseRebalancer } from "contracts/helpers/BaseRebalancer.sol";
 
-contract SetupGenericHarvesterExposure is BaseScript {
-  BaseHarvester genericHarvester = BaseHarvester(0x57770C1721Eb35509f38210A935c8b1911db7E0e);
+contract SetupGenericRebalancerExposure is BaseScript {
+  BaseRebalancer genericRebalancer = BaseRebalancer(0x57770C1721Eb35509f38210A935c8b1911db7E0e);
 
   function run() public broadcast {
     accessManager.grantRole(Roles.GUARDIAN_ROLE, broadcaster, 0);
-    genericHarvester.setYieldBearingAssetData(
+    genericRebalancer.setYieldBearingAssetData(
       // yieldBearingAsset
       address(0x211Cc4DD073734dA055fbF44a2b4667d5E5fE5d2),
       // asset

@@ -1,4 +1,40 @@
-export const Abi_BaseHarvester = /** @type {const} **/ ([
+export type Abi_GenericRebalancer = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "initialTokenTransferAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "initialSwapRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "contract ITokenP",
+        "name": "definitivetokenP",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IParallelizer",
+        "name": "definitiveParallelizer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "initialAuthority",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IERC3156FlashLender",
+        "name": "definitiveFlashloan",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
   {
     "inputs": [
       {
@@ -44,6 +80,11 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
   },
   {
     "inputs": [],
+    "name": "NotTrusted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "NotTrustedOrGuardian",
     "type": "error"
   },
@@ -57,6 +98,40 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
     ],
     "name": "SafeERC20FailedOperation",
     "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SwapError",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAmount",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "AllowanceReset",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -102,6 +177,32 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
       {
         "indexed": false,
         "internalType": "address",
+        "name": "newSwapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "SwapRouterUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newTokenTransferAddress",
+        "type": "address"
+      }
+    ],
+    "name": "TokenTransferAddressUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
         "name": "trusted",
         "type": "address"
       },
@@ -117,12 +218,62 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
   },
   {
     "inputs": [],
+    "name": "CALLBACK_SUCCESS",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      }
+    ],
+    "name": "addBudget",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "authority",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "budget",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -147,6 +298,19 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "flashloan",
+    "outputs": [
+      {
+        "internalType": "contract IERC3156FlashLender",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -211,19 +375,39 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
     "inputs": [
       {
         "internalType": "address",
+        "name": "initiator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
       }
     ],
-    "name": "maxTokenSlippage",
+    "name": "onFlashLoan",
     "outputs": [
       {
-        "internalType": "uint96",
+        "internalType": "bytes32",
         "name": "",
-        "type": "uint96"
+        "type": "bytes32"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -265,6 +449,42 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      }
+    ],
+    "name": "removeBudget",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "resetAllowance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newAuthority",
         "type": "address"
@@ -283,12 +503,25 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
         "type": "address"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "newMaxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "name": "setMaxSlippage",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newSwapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setSwapRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -307,6 +540,19 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
       }
     ],
     "name": "setTargetExposure",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newTokenTransferAddress",
+        "type": "address"
+      }
+    ],
+    "name": "setTokenTransferAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -344,14 +590,27 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
         "type": "uint64"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "maxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "name": "setYieldBearingAssetData",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "swapRouter",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -373,6 +632,19 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
     "outputs": [
       {
         "internalType": "contract ITokenP",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenTransferAddress",
+    "outputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -429,12 +701,13 @@ export const Abi_BaseHarvester = /** @type {const} **/ ([
         "type": "uint64"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "maxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "stateMutability": "view",
     "type": "function"
   }
-]);
+];
+export declare const Abi_GenericRebalancer: Abi_GenericRebalancer;

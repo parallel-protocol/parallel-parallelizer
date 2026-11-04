@@ -1,4 +1,4 @@
-export type Abi_BaseHarvester = [
+export const Abi_BaseRebalancer = /** @type {const} **/ ([
   {
     "inputs": [
       {
@@ -57,6 +57,25 @@ export type Abi_BaseHarvester = [
     ],
     "name": "SafeERC20FailedOperation",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "AllowanceReset",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -208,25 +227,6 @@ export type Abi_BaseHarvester = [
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "maxTokenSlippage",
-    "outputs": [
-      {
-        "internalType": "uint96",
-        "name": "",
-        "type": "uint96"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "parallelizer",
     "outputs": [
@@ -266,6 +266,24 @@ export type Abi_BaseHarvester = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "spender",
+        "type": "address"
+      }
+    ],
+    "name": "resetAllowance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "newAuthority",
         "type": "address"
       }
@@ -283,9 +301,9 @@ export type Abi_BaseHarvester = [
         "type": "address"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "newMaxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "name": "setMaxSlippage",
@@ -344,9 +362,9 @@ export type Abi_BaseHarvester = [
         "type": "uint64"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "maxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "name": "setYieldBearingAssetData",
@@ -429,13 +447,12 @@ export type Abi_BaseHarvester = [
         "type": "uint64"
       },
       {
-        "internalType": "uint96",
+        "internalType": "uint64",
         "name": "maxSlippage",
-        "type": "uint96"
+        "type": "uint64"
       }
     ],
     "stateMutability": "view",
     "type": "function"
   }
-];
-export declare const Abi_BaseHarvester: Abi_BaseHarvester;
+]);
