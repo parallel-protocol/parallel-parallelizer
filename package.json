@@ -22,7 +22,7 @@
     "lint:sol": "bun solhint \"{scripts,contracts,tests}/**/*.sol\"",
     "prettier:check": "prettier --check \"**/*.{json,md,yml}\" --ignore-path \".prettierignore\"",
     "prettier:write": "prettier --write \"**/*.{json,md,yml}\" --ignore-path \".prettierignore\"",
-    "verify": "rocketh-verify etherscan"
+    "verify": "rocketh-verify etherscan --min-interval 1500"
   },
   "keywords": [],
   "author": "Parallel Labs, Inc.",

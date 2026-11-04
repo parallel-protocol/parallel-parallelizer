@@ -50,7 +50,8 @@
       "redemptionSetup": {
         "xRedeemFee": [0, 600000000, 1000000000],
         "yRedeemFee": [950000000, 950000000, 995000000]
-      }
+      },
+      "swapRouter": "0x0000000000000000000000000000000000000000"
     }
   },
   "savings": {
@@ -61,9 +62,26 @@
   },
   "genericRebalancer": {
     "usdp": {
+      "accessManager": "0x0f5543b12781242E192b4f85240280E168481B5A",
       "swapRouter": "0x88de50b233052e4fb783d4f6db78cc34fea3e9fc",
       "tokenTransferAddress": "0x88de50b233052e4fb783d4f6db78cc34fea3e9fc",
-      "flashloan": "0x9e0DCF7a33bBde6689560C5c807dd2a3dF991277"
+      "flashloan": "0x9e0DCF7a33bBde6689560C5c807dd2a3dF991277",
+      "keepers": [
+        "0xc351c917a7f7b267e86a5f5368be40fd1788c32b",
+        "0x82f603cd2c2166c9d94b3ca78a16a754f0a6657a",
+        "0xdfe85Af4c337d69F658a33Bddd59AbB2e01990E8"
+      ],
+      "yieldBearingAssets": [
+        {
+          "yieldBearingAsset": "0x9fD32FD5e32C6B95483d36C5E724C5C5250Ce010",
+          "asset": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+          "targetExposure": 900000000,
+          "minExposure": 200000000,
+          "maxExposure": 950000000,
+          "overrideExposures": 1,
+          "maxSlippage": 1000000
+        }
+      ]
     }
   }
 }

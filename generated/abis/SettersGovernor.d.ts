@@ -57,6 +57,11 @@ export type Abi_SettersGovernor = [
   },
   {
     "inputs": [],
+    "name": "InvalidPayee",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidRate",
     "type": "error"
   },
